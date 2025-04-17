@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package auth;
+
+service AuthService {
+  rpc CreateUser (CreateUserDto) returns (User) {}
+  rpc FindAllUsers (PaginationDto) returns (Users) {}
+  rpc FindOneUser (FindOneUserDto) returns (User) {}
+  rpc UpdateUser (UpdateUserDto) returns (User) {}
+  rpc RemoveUser (FindOneUserDto) returns (User) {}
+  rpc Login (LoginDto) returns (LoginResponse) {}
+  rpc RefreshToken (RefreshTokenDto) returns (LoginResponse) {}
+}
+
+message CreateUserDto {
+  string username = 1;
+  string password = 2;
+  string email = 3;
+  string role = 4;
+}
+
+message FindOneUserDto {
+  string id = 1;
+}
+
+message UpdateUserDto {
+  string id = 1;
+  string username = 2;
+  string password = 3;
+  string email = 4;
+  string role = 5;
+}
+
+message User {
+  string id = 1;
+  string username = 2;
+  string email = 3;
+  string role = 4;
+  string createdAt = 5;
+  string updatedAt = 6;
+}
+
+message Users {
+  repeated User users = 1;
+  int32 total = 2;
+}
+
+message PaginationDto {
+  int32 page = 1;
+  int32 limit = 2;
+}
+
+message LoginDto {
+  string username = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string accessToken = 1;
+  string refreshToken = 2;
+}
+
+message RefreshTokenDto {
+  string refreshToken = 1;
+}
