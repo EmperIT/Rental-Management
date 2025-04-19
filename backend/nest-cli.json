@@ -45,6 +45,19 @@
       "compilerOptions": {
         "tsConfigPath": "libs/commonn/tsconfig.lib.json"
       }
+    },
+    "rental": {
+      "type": "application",
+      "root": "apps/rental",
+      "entryFile": "src/main",
+      "sourceRoot": "./",
+      "compilerOptions": {
+        "tsConfigPath": "apps/rental/tsconfig.app.json",
+        "assets": [
+          "proto/*.proto"
+        ],
+        "watchAssets": true
+      }
     }
   }
 }

@@ -1,0 +1,181 @@
+syntax = "proto3";
+
+package rental;
+
+service OrderService {
+  // Room
+  rpc CreateRoom (CreateRoomDto) returns (Room) {}
+  rpc FindAllRooms (FindAllRoomsDto) returns (Rooms) {}
+  rpc FindOneRoom (FindOneRoomDto) returns (Room) {}
+  rpc UpdateRoom (UpdateRoomDto) returns (Room) {}
+  rpc RemoveRoom (FindOneRoomDto) returns (Room) {}
+
+  // Tenant
+  rpc CreateTenant (CreateTenantDto) returns (Tenant) {}
+  rpc FindAllTenantsByFilter (FindAllTenantsByFilterDto) returns (Tenants) {}
+  rpc FindOneTenant (FindOneTenantDto) returns (Tenant) {}
+  rpc UpdateTenant (UpdateTenantDto) returns (Tenant) {}
+  rpc RemoveTenant (FindOneTenantDto) returns (Tenant) {}
+
+  // Invoice
+  rpc CreateInvoice (CreateInvoiceDto) returns (Invoice) {}
+  rpc FindAllInvoicesByFilter (FindAllInvoicesByFilterDto) returns (Invoices) {}
+  rpc FindOneInvoice (FindOneInvoiceDto) returns (Invoice) {}
+  rpc UpdateInvoice (UpdateInvoiceDto) returns (Invoice) {}
+  rpc RemoveInvoice (FindOneInvoiceDto) returns (Invoice) {}
+}
+
+// Room Messages
+message CreateRoomDto {
+  string roomNumber = 1;
+  double price = 2;
+  string address = 3;
+  bool isEmpty = 4;
+}
+
+message UpdateRoomDto {
+  string id = 1;
+  string roomNumber = 2;
+  double price = 3;
+  string address = 4;
+  bool isEmpty = 5;
+}
+
+message FindAllRoomsDto {
+  int32 page = 1;
+  int32 limit = 2;
+}
+
+message FindOneRoomDto {
+  string id = 1;
+}
+
+message Room {
+  string id = 1;
+  string roomNumber = 2;
+  double price = 3;
+  string address = 4;
+  bool isEmpty = 5;
+  string createdAt = 6;
+  string updatedAt = 7;
+}
+
+message Rooms {
+  repeated Room rooms = 1;
+  int32 total = 2;
+}
+
+// Tenant Messages
+message CreateTenantDto {
+  string name = 1;
+  string email = 2;
+  string phone = 3;
+  string roomId = 4;
+  bool isLeadRoom = 5;
+  string identityNumber = 6;
+  string permanentAddress = 7;
+  string startDate = 8;
+}
+
+message UpdateTenantDto {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string phone = 4;
+  string roomId = 5;
+  bool isLeadRoom = 6;
+  string identityNumber = 7;
+  string permanentAddress = 8;
+  string startDate = 9;
+  bool isActive = 10;
+}
+
+message FindOneTenantDto {
+  string id = 1;
+}
+
+message FindAllTenantsByFilterDto {
+  optional string roomId = 1;
+  optional bool isLeadRoom = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
+
+message Tenant {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string phone = 4;
+  string roomId = 5;
+  bool isLeadRoom = 6;
+  string identityNumber = 7;
+  string permanentAddress = 8;
+  string startDate = 9;
+  bool isActive = 10;
+  string createdAt = 11;
+  string updatedAt = 12;
+}
+
+message Tenants {
+  repeated Tenant tenants = 1;
+  int32 total = 2;
+}
+
+// Fee Message
+message Fee {
+  string type = 1;
+  double amount = 2;
+  double reading = 3;
+  string description = 4;
+  string createdAt = 5;
+  string updatedAt = 6;
+}
+
+// Invoice Messages
+message CreateInvoiceDto {
+  string roomId = 1;
+  string month = 2;
+  repeated Fee fees = 3;
+  double total = 4;
+  string dueDate = 5;
+}
+
+message UpdateInvoiceDto {
+  string id = 1;
+  string roomId = 2;
+  string month = 3;
+  repeated Fee fees = 4;
+  double total = 5;
+  string dueDate = 6;
+  bool isPaid = 7;
+}
+
+message FindOneInvoiceDto {
+  string id = 1;
+}
+
+message FindAllInvoicesByFilterDto {
+  int32  page   = 1;
+  int32  limit  = 2;
+  optional bool isPaid = 3;
+  optional string roomId = 4;
+  optional string month  = 5;
+}
+
+message Invoice {
+  string id = 1;
+  string roomId = 2;
+  string month = 3;
+  repeated Fee fees = 4;
+  double total = 5;
+  string dueDate = 6;
+  bool isPaid = 7;
+  string paidAt = 8;
+  string createdAt = 9;
+  string updatedAt = 10;
+}
+
+message Invoices {
+  repeated Invoice invoices = 1;
+  int32 total = 2;
+}

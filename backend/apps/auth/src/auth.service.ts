@@ -31,6 +31,15 @@ export class AuthService {
     const existingUser = await this.userModel
       .findOne({ username: createUserDto.username })
       .exec();
+
+    // Kiểm tra email trùng
+    const existingEmail = await this.userModel
+      .findOne({ email: createUserDto.email })
+      .exec();
+
+    if (existingEmail) {
+      throw new RpcException('Email đã tồn tại');
+    }
     if (existingUser) {
       throw new RpcException('Username đã tồn tại');
     }
@@ -85,6 +94,19 @@ export class AuthService {
         throw new RpcException({
           statusCode: 409,
           message: 'Username đã tồn tại',
+        });
+      }
+    }
+
+    // Kiểm tra email trùng
+    if (updateUserDto.email && updateUserDto.email !== user.email) {
+      const existingEmail = await this.userModel
+        .findOne({ email: updateUserDto.email })
+        .exec();
+      if (existingEmail) {
+        throw new RpcException({
+          statusCode: 409,
+          message: 'Email đã tồn tại',
         });
       }
     }
