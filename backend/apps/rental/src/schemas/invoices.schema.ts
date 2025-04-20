@@ -10,7 +10,7 @@ const FeeSchema = new Schema({
 });
 
 export const InvoiceSchema = new Schema({
-  roomId: { type: Schema.Types.ObjectId, required: true, ref: 'Room' },
+  roomId: { type: Schema.Types.ObjectId, required: true, ref: 'Room', index: true },
   month: { type: String, required: true },
   fees: { type: [FeeSchema], required: true },
   total: { type: Number, required: true },
@@ -20,3 +20,6 @@ export const InvoiceSchema = new Schema({
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
+
+// Tạo index kết hợp cho roomId và month để tăng tốc độ truy vấn
+InvoiceSchema.index({ roomId: 1, month: 1 }, { unique: true });

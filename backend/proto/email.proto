@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package email;
+
+service EmailService {
+  // Email sending operations
+  rpc SendInvoiceEmail (SendInvoiceEmailDto) returns (EmailResponse) {}
+  rpc SendVerificationEmail (SendVerificationEmailDto) returns (EmailResponse) {}
+  rpc SendPasswordResetEmail (SendPasswordResetEmailDto) returns (EmailResponse) {}
+  rpc SendNotificationEmail (SendNotificationEmailDto) returns (EmailResponse) {}
+}
+
+// Common response for all email sending operations
+message EmailResponse {
+  bool success = 1;
+  string messageId = 2;
+  string previewUrl = 3;
+}
+
+// Fee for invoice email
+message FeeDto {
+  string type = 1;
+  double amount = 2;
+  string description = 3;
+}
+
+// Invoice Email Message
+message SendInvoiceEmailDto {
+  string to = 1;
+  string tenantName = 2;
+  string roomNumber = 3;
+  string month = 4;
+  string dueDate = 5;
+  double total = 6;
+  repeated FeeDto fees = 7;
+}
+
+// Verification Email Message
+message SendVerificationEmailDto {
+  string to = 1;
+  string username = 2;
+  string verificationLink = 3;
+  string expiresIn = 4;
+}
+
+// Password Reset Email Message
+message SendPasswordResetEmailDto {
+  string to = 1;
+  string username = 2;
+  string resetLink = 3;
+  string expiresIn = 4;
+}
+
+// Notification Email Message
+message SendNotificationEmailDto {
+  string to = 1;
+  string username = 2;
+  string message = 3;
+  string actionLink = 4;
+  string actionText = 5;
+}

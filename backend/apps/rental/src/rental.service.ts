@@ -521,6 +521,48 @@ export class RentalService {
     }
   }
 
+  // Phương thức để lấy số đọc điện nước mới nhất theo roomId
+  async findLatestReadings(FindLatestReadingsDto: Rental.FindLatestReadingsDto): Promise<{ [key: string]: number }> {
+    try {
+      const { roomId } = FindLatestReadingsDto;
+      if (!roomId) {
+        throw new RpcException({
+          statusCode: 400,
+          message: 'roomId là bắt buộc',
+        });
+      }
+
+      // Tìm hóa đơn gần nhất của phòng (sắp xếp theo thời gian tạo giảm dần)
+      const latestInvoice = await this.invoiceModel
+        .findOne({ roomId })
+        .sort({ createdAt: -1 })
+        .exec();
+
+      if (!latestInvoice) {
+        // Nếu không có hóa đơn nào, trả về đối tượng rỗng
+        return {};
+      }
+
+      // Khởi tạo đối tượng kết quả
+      const readings: { [key: string]: number } = {};
+
+      // Duyệt qua các khoản phí trong hóa đơn gần nhất để lấy các số đọc
+      latestInvoice.fees.forEach(fee => {
+        if (fee.reading !== undefined && fee.reading !== null) {
+          readings[fee.type] = fee.reading;
+        }
+      });
+
+      return readings;
+    } catch (error) {
+      this.logger.error(`Error finding latest readings: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Error finding latest readings',
+      });
+    }
+  }
+
   private calculateTotalFromFees(fees: FeeDocument[] | Rental.Fee[]): number {
     return fees.reduce((sum, fee) => sum + (fee.amount || 0), 0);
   }

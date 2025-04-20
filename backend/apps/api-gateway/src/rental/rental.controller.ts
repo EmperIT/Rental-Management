@@ -28,6 +28,7 @@ import {
   UpdateInvoiceSwaggerDto,
   InvoiceSwaggerDto,
   InvoicesSwaggerDto,
+  ReadingsResponseSwaggerDto,
 } from '../../dto/rental.dto';
 
 @ApiTags('rental')
@@ -306,6 +307,23 @@ export class RentalController {
   @ApiResponse({ status: 404, description: 'Không tìm thấy hóa đơn' })
   removeInvoice(@Param('id') id: string) {
     return this.rentalService.removeInvoice(id).pipe(
+      catchError((val) => {
+        throw new HttpException(val.message, val.statusCode || 400);
+      }),
+    );
+  }
+
+  @Get('readings/:roomId')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy số đọc điện nước mới nhất của phòng', description: 'Yêu cầu xác thực JWT' })
+  @ApiParam({ name: 'roomId', description: 'ID của phòng' })
+  @ApiResponse({ status: 200, description: 'Số đọc điện nước mới nhất', type: ReadingsResponseSwaggerDto })
+  @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ' })
+  @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy dữ liệu' })
+  findLatestReadings(@Param('roomId') roomId: string) {
+    return this.rentalService.findLatestReadings(roomId).pipe(
       catchError((val) => {
         throw new HttpException(val.message, val.statusCode || 400);
       }),

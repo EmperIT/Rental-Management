@@ -618,3 +618,23 @@ export class InvoicesSwaggerDto implements Rental.Invoices {
   })
   total: number;
 }
+
+// Readings DTOs
+export class FindLatestReadingsSwaggerDto {
+  @ApiProperty({
+    description: 'ID của phòng cần tìm số đọc điện nước mới nhất',
+    required: true
+  })
+  roomId: string;
+}
+
+export class ReadingsResponseSwaggerDto {
+  @ApiProperty({
+    description: 'Đối tượng chứa các số đọc mới nhất của phòng',
+    example: {
+      'Điện': 100,
+      'Nước': 15
+    }
+  })
+  readings: { [key: string]: number };
+}

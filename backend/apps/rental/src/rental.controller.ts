@@ -69,4 +69,10 @@ export class RentalController implements Rental.OrderServiceController {
   removeInvoice(request: Rental.FindOneInvoiceDto) {
     return this.rentalService.removeInvoice(request);
   }
+
+  // Readings endpoint
+  async findLatestReadings(request: Rental.FindLatestReadingsDto): Promise<Rental.ReadingsResponse> {
+    const readingsMap = await this.rentalService.findLatestReadings(request);
+    return { readings: readingsMap };
+  }
 }
