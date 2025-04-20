@@ -26,11 +26,11 @@ message PaginationDto {
 }
 
 message FindOneContractDto {
-  string contract_id = 1;
+  string contracId = 1;
 }
 
 message UpdateContractDto {
-  string  contract_id = 1;
+  string  contractId = 1;
   bool isActive = 2;
   string roomId = 3;    
   string content = 4;
@@ -42,7 +42,7 @@ message UpdateContractDto {
 }
 
 message Contract {
-  string contract_id = 1;
+  string contractId = 1;
   bool isActive = 2;
   string roomId = 3;
   string content = 4;
