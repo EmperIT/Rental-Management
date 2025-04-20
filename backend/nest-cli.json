@@ -45,6 +45,19 @@
       "compilerOptions": {
         "tsConfigPath": "libs/commonn/tsconfig.lib.json"
       }
+    },
+    "contract": {
+      "type": "application",
+      "root": "apps/contract",
+      "entryFile": "src/main",
+      "sourceRoot": "./",
+      "compilerOptions": {
+        "tsConfigPath": "apps/contract/tsconfig.app.json",
+        "assets": [
+          "proto/*.proto"
+        ],
+        "watchAssets": true
+      }
     }
   }
 }

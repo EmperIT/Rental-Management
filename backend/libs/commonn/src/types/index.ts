@@ -1,3 +1,4 @@
 import * as Auth from './auth';
-
-export { Auth};
+import * as Contract  from './contract';
+export { Auth };
+export { Contract };

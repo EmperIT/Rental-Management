@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package contract;
+
+service ContractService {
+  rpc CreateContract (CreateContractDto) returns (Contract) {}
+  rpc FindAllContracts (PaginationDto) returns (Contracts) {}
+  rpc FindOneContract (FindOneContractDto) returns (Contract) {}
+  rpc UpdateContract (UpdateContractDto) returns (Contract) {}
+  rpc RemoveContract (FindOneContractDto) returns (Contract) {}
+}
+
+message CreateContractDto {
+  string roomId = 1;
+  string content = 2;
+  string startDate = 3;
+  string endDate = 4;
+  double deposit = 5;
+  double rentAmount = 6;
+  string templateId = 7;
+}
+
+message PaginationDto {
+  int32 page = 1;
+  int32 limit = 2;
+}
+
+message FindOneContractDto {
+  string contract_id = 1;
+}
+
+message UpdateContractDto {
+  string  contract_id = 1;
+  bool isActive = 2;
+  string roomId = 3;    
+  string content = 4;
+  string startDate = 5;
+  string endDate = 6;
+  double deposit = 7;
+  double rentAmount = 8;
+  string templateId = 9;
+}
+
+message Contract {
+  string contract_id = 1;
+  bool isActive = 2;
+  string roomId = 3;
+  string content = 4;
+  string createdAt = 5;
+  string updatedAt = 6;
+  string startDate = 7;
+  string endDate = 8;
+  double deposit = 9;
+  double rentAmount = 10;
+  string templateId = 11;  
+}
+
+message Contracts {
+  repeated Contract contracts = 1;
+  int32 total = 2;
+}
+
+
