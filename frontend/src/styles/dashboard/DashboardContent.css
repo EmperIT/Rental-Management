@@ -1,0 +1,136 @@
+/* styles/dashboard/DashboardContent.css */
+.dashboard-content {
+    margin-left: 250px;
+    padding: 30px;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+  }
+  
+  .dashboard-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 20px;
+  }
+  
+  /* Override Sneat card styles for consistency */
+  .card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+  }
+  
+  .card-header {
+    background-color: #fff;
+    border-bottom: 1px solid #e9ecef;
+    padding: 15px 20px;
+    font-size: 18px;
+    font-weight: 500;
+    color: #2c3e50;
+  }
+  
+  .card-body {
+    padding: 20px;
+  }
+  
+  .card-title {
+    font-size: 18px;
+    font-weight: 500;
+    color: #2c3e50;
+    margin-bottom: 15px;
+  }
+  
+  /* Form elements */
+  .form-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #2c3e50;
+  }
+  
+  .form-control {
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    padding: 8px 12px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+  }
+  
+  .form-control:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.2);
+    outline: none;
+  }
+  
+  .form-check-input {
+    margin-top: 2px;
+  }
+  
+  /* Buttons */
+  .btn-primary {
+    background-color: #3498db;
+    border-color: #3498db;
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+  }
+  
+  .btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+  }
+  
+  .btn-outline-primary {
+    color: #3498db;
+    border-color: #3498db;
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 5px;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  
+  .btn-outline-primary:hover {
+    background-color: #3498db;
+    color: #fff;
+  }
+  
+  /* Table */
+  .table {
+    font-size: 14px;
+    color: #2c3e50;
+  }
+  
+  .table thead th {
+    background-color: #f1f3f5;
+    color: #2c3e50;
+    font-weight: 500;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .table td, .table th {
+    padding: 12px;
+    vertical-align: middle;
+  }
+  
+  .table tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+  
+  .btn-sm.btn-icon {
+    padding: 5px;
+    font-size: 16px;
+    color: #3498db;
+  }
+  
+  .btn-sm.btn-icon:hover {
+    color: #2980b9;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .dashboard-content {
+      margin-left: 0;
+      padding: 20px;
+    }
+  }
