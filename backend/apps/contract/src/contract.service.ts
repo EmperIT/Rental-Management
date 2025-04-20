@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { RpcException } from '@nestjs/microservices';
-import { ContractSchema } from './schemas/contract.schema';
 interface ContractDocument {
   contract_id: string;
   isActive: boolean;
