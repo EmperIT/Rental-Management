@@ -19,7 +19,11 @@
       "compilerOptions": {
         "tsConfigPath": "apps/api-gateway/tsconfig.app.json",
         "assets": [
-          "proto/*.proto"
+          "proto/*.proto",
+          {
+            "include": "apps/api-gateway/templates/**/*",
+            "outDir": "dist/apps/api-gateway"
+          }
         ],
         "watchAssets": true
       }
@@ -55,6 +59,23 @@
         "tsConfigPath": "apps/contract/tsconfig.app.json",
         "assets": [
           "proto/*.proto"
+        ],
+        "watchAssets": true
+      }
+    },
+    "email": {
+      "type": "application",
+      "root": "apps/email",
+      "entryFile": "src/main",
+      "sourceRoot": "./",
+      "compilerOptions": {
+        "tsConfigPath": "apps/email/tsconfig.app.json",
+        "assets": [
+          "proto/*.proto",
+          {
+            "include": "apps/email/templates/**/*",
+            "outDir": "dist/apps/email"
+          }
         ],
         "watchAssets": true
       }

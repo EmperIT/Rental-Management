@@ -165,6 +165,20 @@ export interface Invoices {
   total: number;
 }
 
+/** Readings Messages */
+export interface FindLatestReadingsDto {
+  roomId: string;
+}
+
+export interface ReadingsResponse {
+  readings: { [key: string]: number };
+}
+
+export interface ReadingsResponse_ReadingsEntry {
+  key: string;
+  value: number;
+}
+
 export const RENTAL_PACKAGE_NAME = "rental";
 
 export interface OrderServiceClient {
@@ -203,6 +217,10 @@ export interface OrderServiceClient {
   updateInvoice(request: UpdateInvoiceDto): Observable<Invoice>;
 
   removeInvoice(request: FindOneInvoiceDto): Observable<Invoice>;
+
+  /** Readings */
+
+  findLatestReadings(request: FindLatestReadingsDto): Observable<ReadingsResponse>;
 }
 
 export interface OrderServiceController {
@@ -241,6 +259,12 @@ export interface OrderServiceController {
   updateInvoice(request: UpdateInvoiceDto): Promise<Invoice> | Observable<Invoice> | Invoice;
 
   removeInvoice(request: FindOneInvoiceDto): Promise<Invoice> | Observable<Invoice> | Invoice;
+
+  /** Readings */
+
+  findLatestReadings(
+    request: FindLatestReadingsDto,
+  ): Promise<ReadingsResponse> | Observable<ReadingsResponse> | ReadingsResponse;
 }
 
 export function OrderServiceControllerMethods() {
@@ -261,6 +285,7 @@ export function OrderServiceControllerMethods() {
       "findOneInvoice",
       "updateInvoice",
       "removeInvoice",
+      "findLatestReadings",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Thông báo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            background-color: #f8f9fa;
+        }
+        .content {
+            padding: 20px;
+        }
+        .footer {
+            text-align: center;
+            padding: 15px 0;
+            font-size: 12px;
+            color: #6c757d;
+            border-top: 1px solid #e9ecef;
+            margin-top: 30px;
+        }
+        .btn-action {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Thông báo</h1>
+    </div>
+    
+    <div class="content">
+        <p>Xin chào <strong>{{username}}</strong>,</p>
+        
+        <p>{{message}}</p>
+        
+        {{#if actionLink}}
+        <div style="text-align: center;">
+            <a href="{{actionLink}}" class="btn-action">{{actionText}}</a>
+        </div>
+        {{/if}}
+        
+        <p>Xin cảm ơn!</p>
+    </div>
+    
+    <div class="footer">
+        <p>© 2025 Hệ thống quản lý nhà trọ. Mọi quyền được bảo lưu.</p>
+        <p>Email này được gửi tự động, vui lòng không phản hồi.</p>
+    </div>
+</body>
+</html>

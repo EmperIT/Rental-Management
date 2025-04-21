@@ -23,6 +23,9 @@ service OrderService {
   rpc FindOneInvoice (FindOneInvoiceDto) returns (Invoice) {}
   rpc UpdateInvoice (UpdateInvoiceDto) returns (Invoice) {}
   rpc RemoveInvoice (FindOneInvoiceDto) returns (Invoice) {}
+
+  // Readings
+  rpc FindLatestReadings (FindLatestReadingsDto) returns (ReadingsResponse) {}
 }
 
 // Room Messages
@@ -178,4 +181,13 @@ message Invoice {
 message Invoices {
   repeated Invoice invoices = 1;
   int32 total = 2;
+}
+
+// Readings Messages
+message FindLatestReadingsDto {
+  string roomId = 1;
+}
+
+message ReadingsResponse {
+  map<string, double> readings = 1;
 }

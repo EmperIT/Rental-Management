@@ -1,0 +1,208 @@
+/* App Container */
+.app-container {
+    min-height: 100vh;
+    background-color: #f3f4f6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem 1rem; /* Thêm padding để tránh nội dung sát cạnh */
+  }
+  
+  /* Content Wrapper */
+  .content-wrapper {
+    background-color: #ffffff;
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    padding: 3rem; /* Tăng padding cho màn hình lớn */
+    max-width: 90rem; /* Giới hạn chiều rộng tối đa cho màn hình siêu lớn */
+    width: 100%;
+    margin: 0 auto; /* Căn giữa */
+  }
+  
+  /* Header Styles */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5rem; /* Tăng margin để tạo không gian thoáng */
+  }
+  
+  .logo {
+    font-size: 2rem; /* Tăng kích thước logo cho màn hình lớn */
+    font-weight: bold;
+    color: #1e3a8a;
+  }
+  
+  .nav {
+    display: flex;
+    gap: 1.5rem; /* Tăng khoảng cách giữa các liên kết */
+  }
+  
+  .nav-link {
+    color: #2563eb;
+    text-decoration: none;
+    font-size: 1.125rem; /* Tăng kích thước chữ */
+  }
+  
+  .nav-link:hover {
+    text-decoration: underline;
+  }
+  
+  /* Main Content Styles */
+  .maincontent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem; /* Thêm khoảng cách giữa các phần tử */
+  }
+  
+  @media (min-width: 768px) {
+    .maincontent {
+      flex-direction: row;
+      gap: 3rem; /* Tăng khoảng cách cho màn hình lớn */
+    }
+  }
+  
+  /* Text Section */
+  .text-section {
+    width: 100%;
+    margin-bottom: 2rem; /* Tăng margin cho mobile */
+  }
+  
+  @media (min-width: 768px) {
+    .text-section {
+      width: 50%;
+      margin-bottom: 0;
+    }
+  }
+  
+  .title {
+    font-size: 3rem; /* Tăng kích thước tiêu đề cho màn hình lớn */
+    font-weight: bold;
+    color: #1e3a8a;
+    margin-bottom: 1.5rem; /* Tăng khoảng cách */
+  }
+  
+  .description {
+    color: #4b5563;
+    font-size: 1.125rem; /* Tăng kích thước chữ mô tả */
+    line-height: 1.75; /* Cải thiện khả năng đọc */
+    margin-bottom: 2rem;
+  }
+  
+  /* Button Group */
+  .button-group {
+    display: flex;
+    gap: 1.5rem; /* Tăng khoảng cách giữa các nút */
+  }
+  
+  .btn {
+    padding: 0.75rem 2rem; /* Tăng kích thước nút */
+    border-radius: 0.375rem; /* Bo góc nhẹ hơn */
+    font-size: 1.125rem; /* Tăng kích thước chữ */
+    cursor: pointer;
+    transition: all 0.3s ease; /* Hiệu ứng mượt mà */
+  }
+  
+  .btn-primary {
+    background-color: #2563eb;
+    color: #ffffff;
+    border: none;
+  }
+  
+  .btn-primary:hover {
+    background-color: #1d4ed8;
+  }
+  
+  .btn-secondary {
+    border: 1px solid #2563eb;
+    color: #2563eb;
+    background-color: transparent;
+  }
+  
+  .btn-secondary:hover {
+    background-color: #eff6ff;
+  }
+  
+  /* Illustration Section */
+  .illustration-section {
+    width: 100%;
+  }
+  
+  @media (min-width: 768px) {
+    .illustration-section {
+      width: 50%;
+    }
+  }
+  
+  .illustration-placeholder {
+    background-color: #e5e7eb;
+    height: 20rem; /* Tăng chiều cao hình minh họa */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+  }
+  
+  @media (min-width: 1024px) {
+    .illustration-placeholder {
+      height: 24rem; /* Tăng chiều cao cho màn hình lớn hơn */
+    }
+  }
+  
+  .illustration-placeholder p {
+    color: #6b7280;
+    font-size: 1.25rem; /* Tăng kích thước chữ */
+  }
+  
+  /* Social Media Styles */
+  .social-media {
+    margin-top: 3rem; /* Tăng khoảng cách trên */
+    display: flex;
+    gap: 1.5rem; /* Tăng khoảng cách giữa các biểu tượng */
+  }
+  
+  .social-link {
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+  }
+  
+  .social-link:hover {
+    color: #1d4ed8;
+  }
+  
+  .social-icon {
+    width: 2rem; /* Tăng kích thước biểu tượng */
+    height: 2rem;
+  }
+  
+  /* Responsive Adjustments for Larger Screens */
+  @media (min-width: 1280px) {
+    .content-wrapper {
+      padding: 4rem; /* Tăng padding cho màn hình siêu lớn */
+    }
+  
+    .title {
+      font-size: 3.5rem; /* Tăng kích thước tiêu đề */
+    }
+  
+    .description {
+      font-size: 1.25rem; /* Tăng kích thước mô tả */
+    }
+  
+    .btn {
+      padding: 1rem 2.5rem; /* Tăng kích thước nút */
+      font-size: 1.25rem;
+    }
+  
+    .illustration-placeholder {
+      height: 28rem; /* Tăng chiều cao hình minh họa */
+    }
+    .illustration-image {
+        width: 100%;
+        max-width: 500px;
+        object-fit: contain;
+      }
+      
+  }

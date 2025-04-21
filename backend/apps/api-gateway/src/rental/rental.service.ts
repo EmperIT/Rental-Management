@@ -83,4 +83,9 @@ export class RentalService implements OnModuleInit {
   removeInvoice(id: string) {
     return this.orderService.removeInvoice({ id });
   }
+
+  // Readings Method
+  findLatestReadings(roomId: string) {
+    return this.orderService.findLatestReadings({ roomId });
+  }
 }
