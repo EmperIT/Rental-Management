@@ -43,13 +43,37 @@ interface PaginationDto {
   limit: number;
 }
 
+interface ContractTemplateDocument {
+  templateId: string;
+  name: string;
+  description: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface CreateContractTemplateDto {
+  name: string;
+  description: string;
+  content: string;
+}
+
+interface UpdateContractTemplateDto {
+  templateId: string;
+  name?: string;
+  description?: string;
+  content?: string;
+}
+
+
 @Injectable()
 export class ContractService {
   constructor(
     @InjectModel('Contract') private readonly contractModel: Model<ContractDocument>,
+    @InjectModel('ContractTemplate') private readonly contractTemplateModel: Model<ContractTemplateDocument>,
   ) {}
 
-  async create(createContractDto: CreateContractDto): Promise<ContractDocument> {
+  async createContract(createContractDto: CreateContractDto): Promise<ContractDocument> {
     const startDate = new Date(createContractDto.startDate);
     const endDate = new Date(createContractDto.endDate);
 
@@ -68,7 +92,7 @@ export class ContractService {
     return contract.save();
   }
 
-  async findAll(paginationDto: PaginationDto): Promise<{ contracts: ContractDocument[]; total: number }> {
+  async findAllContracts(paginationDto: PaginationDto): Promise<{ contracts: ContractDocument[]; total: number }> {
     const { page, limit } = paginationDto;
     const skip = (page - 1) * limit;
     const contracts = await this.contractModel.find().skip(skip).limit(limit).exec();
@@ -76,7 +100,7 @@ export class ContractService {
     return { contracts, total };
   }
 
-  async findOne(contract_id: string): Promise<ContractDocument> {
+  async findOneContract(contract_id: string): Promise<ContractDocument> {
     const contract = await this.contractModel.findOne({ contract_id }).exec();
     if (!contract) {
       throw new RpcException({
@@ -87,7 +111,7 @@ export class ContractService {
     return contract;
   }
 
-  async update(updateContractDto: UpdateContractDto): Promise<ContractDocument> {
+  async updateContract(updateContractDto: UpdateContractDto): Promise<ContractDocument> {
     const { contract_id } = updateContractDto;
     const contract = await this.contractModel.findOne({ contract_id }).exec();
     if (!contract) {
@@ -119,7 +143,7 @@ export class ContractService {
     return contract.save();
   }
 
-  async remove(contract_id: string): Promise<ContractDocument> {
+  async removeContract(contract_id: string): Promise<ContractDocument> {
     const contract = await this.contractModel.findOneAndDelete({ contract_id }).exec();
     if (!contract) {
       throw new RpcException({
@@ -128,5 +152,60 @@ export class ContractService {
       });
     }
     return contract;
+  }
+
+  async createContractTemplate(createContractTemplateDto: CreateContractTemplateDto): Promise<CreateContractTemplateDto> {
+    // Implement the logic to create a contract template
+    // This is a placeholder implementation
+    const contractTemplate = new this.contractTemplateModel({
+      ...createContractTemplateDto,
+    });
+    return contractTemplate.save();
+  }
+
+  async findAllContractTemplates(paginationDto: PaginationDto): Promise<{ contractTemplates: ContractTemplateDocument[]; total: number }> {
+    const { page, limit } = paginationDto;
+    const skip = (page - 1) * limit;
+    const contractTemplates = await this.contractTemplateModel.find().skip(skip).limit(limit).exec();
+    const total = await this.contractTemplateModel.countDocuments().exec();
+    return { contractTemplates, total };
+  }
+
+  async findOneContractTemplate(templateId: string): Promise<ContractTemplateDocument> { 
+    const contractTemplate = await this.contractTemplateModel.findOne({ templateId }).exec();
+    if (!contractTemplate) {
+      throw new RpcException({
+        statusCode: 404,
+        message: `Không tìm thấy mẫu hợp đồng với id ${templateId}`,
+      });
+    }
+    return contractTemplate;
+  }
+
+  async updateContractTemplate(updateContractTemplateDto: UpdateContractTemplateDto): Promise<ContractTemplateDocument> {
+    const { templateId } = updateContractTemplateDto;
+    const contractTemplate = await this.contractTemplateModel.findOne({ templateId }).exec();
+    if (!contractTemplate) {
+      throw new RpcException({
+        statusCode: 404,
+        message: `Không tìm thấy mẫu hợp đồng với id ${templateId}`,
+      });
+    }
+    Object.assign(contractTemplate, updateContractTemplateDto);
+    contractTemplate.updatedAt = new Date();
+    return contractTemplate.save(); 
+  }
+
+  async removeContractTemplate(templateId: string): Promise<ContractTemplateDocument> {
+    const contractTemplate = await this.contractTemplateModel
+      .findOneAndDelete({ templateId })
+      .exec();
+    if (!contractTemplate) {
+      throw new RpcException({
+        statusCode: 404,
+        message: `Không tìm thấy mẫu hợp đồng với id ${templateId}`,
+      });
+    }
+    return contractTemplate;
   }
 }

@@ -99,7 +99,10 @@
     background-color: #e2e8f0;
     color: #2d3748;
   }
-  
+  .nav-subitem.active {
+    background-color: #6366f1;
+    color: #ffffff;
+  }
   @media (max-width: 768px) {
     .sidebar {
       transform: translateX(-100%);

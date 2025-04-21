@@ -1,0 +1,18 @@
+.summary-card-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin: 24px 0;
+  }
+  
+  
+.summary-card-wrapper > * {
+    flex: 1 1 250px;
+}
+
+.filter-wrapper{
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 20px 0;
+}

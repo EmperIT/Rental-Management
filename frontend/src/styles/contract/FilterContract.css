@@ -1,0 +1,19 @@
+.filter-contract {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 20px 0;
+  }
+  
+  .filter-select, .filter-date {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+  }
+  
+  .filter-select:focus, .filter-date:focus {
+    border-color: #4f46e5;
+  }
+  
