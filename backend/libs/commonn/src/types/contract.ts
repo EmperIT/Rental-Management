@@ -26,7 +26,7 @@ export interface PaginationDto {
 }
 
 export interface FindOneContractDto {
-  contractId: string;
+  contracId: string;
 }
 
 export interface UpdateContractDto {
@@ -60,6 +60,37 @@ export interface Contracts {
   total: number;
 }
 
+export interface CreateContractTemplateDto {
+  name: string;
+  description: string;
+  content: string;
+}
+
+export interface FindOneContractTemplateDto {
+  templateId: string;
+}
+
+export interface UpdateContractTemplateDto {
+  templateId: string;
+  name: string;
+  description: string;
+  content: string;
+}
+
+export interface ContractTemplate {
+  templateId: string;
+  name: string;
+  description: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContractTemplates {
+  contractTemplates: ContractTemplate[];
+  total: number;
+}
+
 export const CONTRACT_PACKAGE_NAME = "contract";
 
 export interface ContractServiceClient {
@@ -72,6 +103,16 @@ export interface ContractServiceClient {
   updateContract(request: UpdateContractDto): Observable<Contract>;
 
   removeContract(request: FindOneContractDto): Observable<Contract>;
+
+  createContractTemplate(request: CreateContractTemplateDto): Observable<ContractTemplate>;
+
+  findAllContractTemplates(request: PaginationDto): Observable<ContractTemplates>;
+
+  findOneContractTemplate(request: FindOneContractTemplateDto): Observable<ContractTemplate>;
+
+  updateContractTemplate(request: UpdateContractTemplateDto): Observable<ContractTemplate>;
+
+  removeContractTemplate(request: FindOneContractTemplateDto): Observable<ContractTemplate>;
 }
 
 export interface ContractServiceController {
@@ -84,6 +125,26 @@ export interface ContractServiceController {
   updateContract(request: UpdateContractDto): Promise<Contract> | Observable<Contract> | Contract;
 
   removeContract(request: FindOneContractDto): Promise<Contract> | Observable<Contract> | Contract;
+
+  createContractTemplate(
+    request: CreateContractTemplateDto,
+  ): Promise<ContractTemplate> | Observable<ContractTemplate> | ContractTemplate;
+
+  findAllContractTemplates(
+    request: PaginationDto,
+  ): Promise<ContractTemplates> | Observable<ContractTemplates> | ContractTemplates;
+
+  findOneContractTemplate(
+    request: FindOneContractTemplateDto,
+  ): Promise<ContractTemplate> | Observable<ContractTemplate> | ContractTemplate;
+
+  updateContractTemplate(
+    request: UpdateContractTemplateDto,
+  ): Promise<ContractTemplate> | Observable<ContractTemplate> | ContractTemplate;
+
+  removeContractTemplate(
+    request: FindOneContractTemplateDto,
+  ): Promise<ContractTemplate> | Observable<ContractTemplate> | ContractTemplate;
 }
 
 export function ContractServiceControllerMethods() {
@@ -94,6 +155,11 @@ export function ContractServiceControllerMethods() {
       "findOneContract",
       "updateContract",
       "removeContract",
+      "createContractTemplate",
+      "findAllContractTemplates",
+      "findOneContractTemplate",
+      "updateContractTemplate",
+      "removeContractTemplate",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

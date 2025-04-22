@@ -38,6 +38,10 @@ const AppRoutes = () => {
           element={<PrivateRoute element={<HomePage showContracts={true} />} />}
         />
         <Route
+          path="/templatecontracts"
+          element={<PrivateRoute element={<HomePage showTemplateContracts={true} />} />}
+        />
+        <Route
           path="/bills/room-rent"
           element={<PrivateRoute element={<HomePage showRoomRentBills={true} />} />}
         />

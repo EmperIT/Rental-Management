@@ -3,6 +3,8 @@ import Sidebar from '../components/dashboard/Sidebar';
 import Navbar from '../components/dashboard/Navbar';
 import DashboardStats from '../components/dashboard/DashboardStats';
 import RoomManagement from '../components/RoomManagement';
+import Contract from './Contract';
+import Templates from './Templates';
 import { FaBars } from 'react-icons/fa';
 import '../styles/HomePage.css';
 
@@ -10,6 +12,7 @@ function HomePage({
   showRoomManagement = false,
   showTenants = false,
   showContracts = false,
+  showTemplateContracts = false,
   showRoomRentBills = false,
   showUtilitiesBills = false,
   showWifiBills = false,
@@ -37,7 +40,8 @@ function HomePage({
   const renderContent = () => {
     if (showRoomManagement) return <RoomManagement />;
     if (showTenants) return <div>Quản lý khách (Chưa triển khai)</div>;
-    if (showContracts) return <div>Quản lý hợp đồng (Chưa triển khai)</div>;
+    if (showContracts) return <Contract />;
+    if (showTemplateContracts) return <Templates />;
     if (showRoomRentBills) return <div>Quản lý tiền phòng (Chưa triển khai)</div>;
     if (showUtilitiesBills) return <div>Quản lý hóa đơn điện nước (Chưa triển khai)</div>;
     if (showWifiBills) return <div>Quản lý hóa đơn Wifi (Chưa triển khai)</div>;

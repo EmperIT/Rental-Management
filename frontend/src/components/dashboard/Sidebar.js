@@ -29,9 +29,14 @@ function Sidebar({ toggleSidebar }) {
           <span className="nav-icon"><FaUserFriends /></span>
           Quản lý khách
         </Link>
-        <Link to="/contracts" className={`nav-item ${location.pathname === '/contracts' ? 'active' : ''}`}>
+        <div className="nav-section">QUẢN LÝ HỢP ĐỒNG</div>
+        <Link to="/contracts" className={`nav-subitem ${location.pathname === '/contracts' ? 'active' : ''}`}>
           <span className="nav-icon"><FaFileContract /></span>
           Quản lý hợp đồng
+        </Link>
+        <Link to="/templatecontracts" className={`nav-subitem ${location.pathname === '/templatecontracts' ? 'active' : ''}`}>
+          <span className="nav-icon"><FaFileContract /></span>
+          Mẫu hợp đồng
         </Link>
         <div className="nav-section">QUẢN LÝ HÓA ĐƠN</div>
         <Link
