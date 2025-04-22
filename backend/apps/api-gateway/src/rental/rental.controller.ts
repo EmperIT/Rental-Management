@@ -53,6 +53,41 @@ export class RentalController {
     );
   }
 
+  // Dữ liệu mẫu
+  private readonly meterData = [
+    { roomNumber: '101', month: '2024-03', electricity: 120, water: 20 },
+    { roomNumber: '101', month: '2024-04', electricity: 125, water: 21 },
+    { roomNumber: '102', month: '2024-03', electricity: 100, water: 18 },
+    { roomNumber: '102', month: '2024-04', electricity: 110, water: 20 },
+    { roomNumber: '103', month: '2024-03', electricity: 90, water: 17 },
+    { roomNumber: '103', month: '2024-04', electricity: 95, water: 18 },
+    { roomNumber: '104', month: '2024-03', electricity: 130, water: 22 },
+    { roomNumber: '104', month: '2024-04', electricity: 135, water: 23 },
+    { roomNumber: '105', month: '2024-03', electricity: 85, water: 15 },
+    { roomNumber: '105', month: '2024-04', electricity: 88, water: 16 },
+  ];
+  // API mẫu cho việc lấy dữ liệu điện nước
+  @Get("meters")
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy dữ liệu điện nước của phòng theo tháng', description: 'Yêu cầu xác thực JWT' })
+  @ApiQuery({ name: 'roomNumber', description: 'Số phòng', required: true })
+  @ApiQuery({ name: 'month', description: 'Tháng (YYYY-MM)', required: true })
+  @ApiResponse({ status: 200, description: 'Dữ liệu điện nước', type: ReadingsResponseSwaggerDto })
+  @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ' })
+  @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
+  getMeterData(@Query('roomNumber') roomNumber: string, @Query('month') month: string) {
+    const result = this.meterData.find(
+      (data) => data.roomNumber === roomNumber && data.month === month,
+    );
+
+    if (!result) {
+      return { message: 'Không tìm thấy dữ liệu' };
+    }
+
+    return result;
+  }
+
   @Get('rooms')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
