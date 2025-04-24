@@ -6,14 +6,42 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RoomSchema } from './schemas/rooms.schema';
 import { TenantSchema } from './schemas/tenants.schema';
 import { InvoiceSchema } from './schemas/invoices.schema';
+import { ServiceSchema } from './schemas/services.schema';
+import { ScheduleModule } from '@nestjs/schedule';
+import { HttpModule } from '@nestjs/axios';
+import { join } from 'path';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { Email } from '@app/commonn';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(), // Thêm schedule module để hỗ trợ cron jobs
+    HttpModule.register({
+      timeout: 5000,
+      maxRedirects: 5,
+    }), // Thêm HttpModule để gọi API đến gateway
+    // Add Email client module
+    ClientsModule.registerAsync([
+      {
+        name: Email.EMAIL_PACKAGE_NAME,
+        imports: [ConfigModule],
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.GRPC,
+          options: {
+            url: configService.get('EMAIL_SERVICE_URL') || 'localhost:5003',
+            package: Email.EMAIL_PACKAGE_NAME,
+            protoPath: join(__dirname, '../email.proto'),
+          },
+        }),
+        inject: [ConfigService],
+      },
+    ]),
     MongooseModule.forFeature([
       { name: 'Room', schema: RoomSchema },
       { name: 'Tenant', schema: TenantSchema },
       { name: 'Invoice', schema: InvoiceSchema },
+      { name: 'Service', schema: ServiceSchema },
     ]),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],

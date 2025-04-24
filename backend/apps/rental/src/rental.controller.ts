@@ -3,9 +3,11 @@ import { RentalService } from './rental.service';
 import { Rental } from '@app/commonn';
 
 @Controller()
-@Rental.OrderServiceControllerMethods()
-export class RentalController implements Rental.OrderServiceController {
-  constructor(private readonly rentalService: RentalService) {}
+@Rental.RentalServiceControllerMethods()
+export class RentalController implements Rental.RentalServiceController {
+  constructor(
+    private readonly rentalService: RentalService
+  ) {}
 
   // Room endpoints
   createRoom(request: Rental.CreateRoomDto) {
@@ -34,6 +36,7 @@ export class RentalController implements Rental.OrderServiceController {
   }
 
   findAllTenantsByFilter(request: Rental.FindAllTenantsByFilterDto) {
+    console.log(request)
     return this.rentalService.findAllTenantsByFilter(request);
   }
 
@@ -72,7 +75,34 @@ export class RentalController implements Rental.OrderServiceController {
 
   // Readings endpoint
   async findLatestReadings(request: Rental.FindLatestReadingsDto): Promise<Rental.ReadingsResponse> {
-    const readingsMap = await this.rentalService.findLatestReadings(request);
+    const readingsMap = await this.rentalService.findLatestReadings(request.roomId);
     return { readings: readingsMap };
+  }
+
+  // Services endpoints
+  getService(request: Rental.GetServiceRequest) {
+    return this.rentalService.getService(request.name);
+  
+  }
+
+  saveService(request: Rental.SaveServiceRequest) {
+    return this.rentalService.saveService(request);
+  }
+
+  getAllServices() {
+    return this.rentalService.getAllServices();
+  }
+
+  removeService(request: Rental.GetServiceRequest) {
+    return this.rentalService.removeService(request.name);
+  }
+
+  // Invoice generation endpoint
+  async triggerInvoiceGeneration(): Promise<Rental.InvoiceGenerationResponse> {
+    const result = await this.rentalService.manuallyTriggerInvoiceGeneration();
+    return {
+      success: result.success,
+      message: result.message
+    };
   }
 }
