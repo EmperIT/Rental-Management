@@ -114,3 +114,60 @@ export class ContractsSwaggerDto implements Contract.Contracts {
   @ApiProperty({ description: 'Tổng số hợp đồng' })
   total: number;
 }
+
+// CreateContractTemplate DTO
+export class CreateContractTemplateSwaggerDto implements Contract.CreateContractTemplateDto {
+  @ApiProperty({ description: 'Tên mẫu hợp đồng', required: true })
+  name: string;
+
+  @ApiProperty({ description: 'Mô tả mẫu hợp đồng', required: true })
+  description: string;
+
+  @ApiProperty({ description: 'Nội dung mẫu hợp đồng', required: true })
+  content: string;
+}
+
+// UpdateContractTemplate DTO
+export class UpdateContractTemplateSwaggerDto implements Partial<Contract.UpdateContractTemplateDto> {
+  @ApiProperty({ description: 'ID mẫu hợp đồng', required: true })
+  templateId: string;
+
+  @ApiProperty({ description: 'Tên mẫu hợp đồng', required: false })
+  name?: string;
+
+  @ApiProperty({ description: 'Mô tả mẫu hợp đồng', required: false })
+  description?: string;
+
+  @ApiProperty({ description: 'Nội dung mẫu hợp đồng', required: false })
+  content?: string;
+}
+
+// ContractTemplate DTO
+export class ContractTemplateSwaggerDto implements Contract.ContractTemplate {
+  @ApiProperty({ description: 'ID mẫu hợp đồng' })
+  templateId: string;
+
+  @ApiProperty({ description: 'Tên mẫu hợp đồng' })
+  name: string;
+
+  @ApiProperty({ description: 'Mô tả mẫu hợp đồng' })
+  description: string;
+
+  @ApiProperty({ description: 'Nội dung mẫu hợp đồng' })
+  content: string;
+
+  @ApiProperty({ description: 'Ngày tạo', format: 'date-time' })
+  createdAt: string;
+
+  @ApiProperty({ description: 'Ngày cập nhật', format: 'date-time' })
+  updatedAt: string;
+}
+
+// ContractTemplates DTO
+export class ContractTemplatesSwaggerDto implements Contract.ContractTemplates {
+  @ApiProperty({ description: 'Danh sách mẫu hợp đồng', type: [ContractTemplateSwaggerDto] })
+  contractTemplates: ContractTemplateSwaggerDto[];
+
+  @ApiProperty({ description: 'Tổng số mẫu hợp đồng' })
+  total: number;
+}

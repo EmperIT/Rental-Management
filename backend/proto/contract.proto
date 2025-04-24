@@ -31,11 +31,11 @@ message PaginationDto {
 }
 
 message FindOneContractDto {
-  string contracId = 1;
+  string contractId = 1;
 }
 
 message UpdateContractDto {
-  string  contractId = 1;
+  string contractId = 1;
   bool isActive = 2;
   string roomId = 3;    
   string content = 4;

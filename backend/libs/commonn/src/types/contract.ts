@@ -26,7 +26,7 @@ export interface PaginationDto {
 }
 
 export interface FindOneContractDto {
-  contracId: string;
+  contractId: string;
 }
 
 export interface UpdateContractDto {

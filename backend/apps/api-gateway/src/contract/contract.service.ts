@@ -37,4 +37,22 @@ export class ContractService implements OnModuleInit {
   removeContract(id: string) {
     return this.contractService.removeContract({ contractId: id });
   }
+
+  createContractTemplate(createContractTemplateDto: Contract.CreateContractTemplateDto) {
+    return this.contractService.createContractTemplate(createContractTemplateDto);
+  }
+  findAllContractTemplates(page: number, limit: number) {
+    return this.contractService.findAllContractTemplates({ page, limit });
+  }
+  findOneContractTemplate(id: string) {
+    return this.contractService.findOneContractTemplate({ templateId: id });
+  }
+  updateContractTemplate(id: string, updateContractTemplateDto: Contract.UpdateContractTemplateDto) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { templateId: _, ...updateData } = updateContractTemplateDto;
+    return this.contractService.updateContractTemplate({ templateId: id, ...updateData });
+  }
+  removeContractTemplate(id: string) {
+    return this.contractService.removeContractTemplate({ templateId: id });
+  }
 }
