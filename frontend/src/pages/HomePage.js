@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react'; // Đảm bảo import useEffect
+import { useState, useEffect } from 'react';
 import Sidebar from '../components/dashboard/Sidebar';
 import Navbar from '../components/dashboard/Navbar';
 import DashboardStats from '../components/dashboard/DashboardStats';
-import RoomManagement from '../components/RoomManagement';
+import RoomManagement from './RoomManagement';
+import TenantManagementPage from './TenantManagementPage';
 import Contract from './Contract';
 import Templates from './Templates';
+import AccountManagementPage from './AccountManagementPage';
+import ProfilePage from './ProfilePage';
 import { FaBars } from 'react-icons/fa';
 import '../styles/HomePage.css';
 
@@ -13,9 +16,15 @@ function HomePage({
   showTenants = false,
   showContracts = false,
   showTemplateContracts = false,
-  showRoomRentBills = false,
+  showBillCreate = false,
+  showBillEdit = false,
+  showBillDelete = false,
   showUtilitiesBills = false,
   showWifiBills = false,
+  showAssets = false,
+  showFinance = false,
+  showAccountManagement = false,
+  showProfile = false,
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -38,13 +47,34 @@ function HomePage({
   }, []);
 
   const renderContent = () => {
+    console.log('Rendering HomePage with props:', {
+      showRoomManagement,
+      showTenants,
+      showContracts,
+      showTemplateContracts,
+      showBillCreate,
+      showBillEdit,
+      showBillDelete,
+      showUtilitiesBills,
+      showWifiBills,
+      showAssets,
+      showFinance,
+      showAccountManagement,
+      showProfile,
+    });
     if (showRoomManagement) return <RoomManagement />;
-    if (showTenants) return <div>Quản lý khách (Chưa triển khai)</div>;
+    if (showTenants) return <TenantManagementPage />;
     if (showContracts) return <Contract />;
     if (showTemplateContracts) return <Templates />;
-    if (showRoomRentBills) return <div>Quản lý tiền phòng (Chưa triển khai)</div>;
+    if (showBillCreate) return <div>Tạo hóa đơn (Chưa triển khai)</div>;
+    if (showBillEdit) return <div>Chỉnh sửa hóa đơn (Chưa triển khai)</div>;
+    if (showBillDelete) return <div>Xóa hóa đơn (Chưa triển khai)</div>;
     if (showUtilitiesBills) return <div>Quản lý hóa đơn điện nước (Chưa triển khai)</div>;
     if (showWifiBills) return <div>Quản lý hóa đơn Wifi (Chưa triển khai)</div>;
+    if (showAssets) return <div>Quản lý tài sản (Chưa triển khai)</div>;
+    if (showFinance) return <div>Quản lý thu chi (Chưa triển khai)</div>;
+    if (showAccountManagement) return <AccountManagementPage />;
+    if (showProfile) return <ProfilePage />;
     return (
       <>
         <h2 className="dashboard-title">Dashboard</h2>

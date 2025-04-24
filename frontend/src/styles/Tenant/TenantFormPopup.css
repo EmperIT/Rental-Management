@@ -1,0 +1,212 @@
+/* TenantFormPopup.css */
+
+/* Overlay for the popup */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  /* Popup container */
+  .popup-container {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 24px;
+    position: relative;
+    animation: slideIn 0.3s ease-in-out;
+  }
+  
+  /* Popup header */
+  .popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .popup-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1a202c;
+    margin: 0;
+  }
+  
+  .popup-close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #4a5568;
+    transition: color 0.2s ease;
+  }
+  
+  .popup-close-btn:hover {
+    color: #e53e3e;
+  }
+  
+  /* Form grid layout */
+  .popup-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  
+  .popup-form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  /* Labels */
+  .popup-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #2d3748;
+    margin-bottom: 6px;
+    display: block;
+  }
+  
+  .popup-required {
+    color: #e53e3e;
+  }
+  
+  /* Inputs, Selects, Textarea */
+  .popup-input,
+  .popup-select,
+  .popup-textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #1a202c;
+    background-color: #f7fafc;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .popup-input:focus,
+  .popup-select:focus,
+  .popup-textarea:focus {
+    outline: none;
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+  }
+  
+  .popup-textarea {
+    min-height: 80px;
+    resize: vertical;
+  }
+  
+  /* File input */
+  .popup-input[type="file"] {
+    padding: 8px;
+    background-color: transparent;
+    border: none;
+  }
+  
+  /* Buttons */
+  .popup-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+  }
+  
+  .btn-primary {
+    background-color: #3182ce;
+    color: #ffffff;
+    border: none;
+  }
+  
+  .btn-primary:hover {
+    background-color: #2b6cb0;
+  }
+  
+  .btn-primary:active {
+    transform: scale(0.98);
+  }
+  
+  .btn-secondary {
+    background-color: #edf2f7;
+    color: #4a5568;
+    border: 1px solid #e2e8f0;
+  }
+  
+  .btn-secondary:hover {
+    background-color: #e2e8f0;
+  }
+  
+  .btn-secondary:active {
+    transform: scale(0.98);
+  }
+  
+  /* Animations */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideIn {
+    from {
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .popup-container {
+      width: 90%;
+      padding: 16px;
+    }
+  
+    .popup-form-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .popup-title {
+      font-size: 20px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .popup-buttons {
+      flex-direction: column;
+      gap: 8px;
+    }
+  
+    .btn-primary,
+    .btn-secondary {
+      width: 100%;
+    }
+  }

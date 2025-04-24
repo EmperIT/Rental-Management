@@ -4,7 +4,6 @@ import LoginPage from '../pages/LoginPage';
 import SignUpPage from '../pages/SignUpPage';
 import HomePage from '../pages/HomePage';
 
-
 const isAuthenticated = () => {
   return localStorage.getItem('isAuthenticated') === 'true';
 };
@@ -42,16 +41,40 @@ const AppRoutes = () => {
           element={<PrivateRoute element={<HomePage showTemplateContracts={true} />} />}
         />
         <Route
-          path="/bills/room-rent"
-          element={<PrivateRoute element={<HomePage showRoomRentBills={true} />} />}
+          path="/bills/create"
+          element={<PrivateRoute element={<HomePage showBillCreate={true} />} />}
         />
         <Route
-          path="/bills/utilities"
+          path="/bills/edit"
+          element={<PrivateRoute element={<HomePage showBillEdit={true} />} />}
+        />
+        <Route
+          path="/bills/delete"
+          element={<PrivateRoute element={<HomePage showBillDelete={true} />} />}
+        />
+        <Route
+          path="/services/utilities"
           element={<PrivateRoute element={<HomePage showUtilitiesBills={true} />} />}
         />
         <Route
-          path="/bills/wifi"
+          path="/services/wifi"
           element={<PrivateRoute element={<HomePage showWifiBills={true} />} />}
+        />
+        <Route
+          path="/assets"
+          element={<PrivateRoute element={<HomePage showAssets={true} />} />}
+        />
+        <Route
+          path="/finance"
+          element={<PrivateRoute element={<HomePage showFinance={true} />} />}
+        />
+        <Route
+          path="/accounts/manage"
+          element={<PrivateRoute element={<HomePage showAccountManagement={true} />} />}
+        />
+        <Route
+          path="/accounts/profile"
+          element={<PrivateRoute element={<HomePage showProfile={true} />} />}
         />
       </Routes>
     </Router>
