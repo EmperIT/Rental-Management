@@ -43,7 +43,7 @@ const LoginPage = () => {
                 type="text"
                 id="username"
                 name="username"
-                placeholder="Enter Username or Email Address"
+                placeholder="Enter Username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 autoFocus

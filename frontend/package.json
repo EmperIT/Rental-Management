@@ -14,14 +14,15 @@
     "css-select": "^5.1.0",
     "docx-preview": "^0.3.5",
     "react": "^18.3.1",
-    "react-datepicker": "^4.8.0",
+    "react-datepicker": "^4.25.0",
     "react-dom": "^18.3.1",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.3.0",
     "react-scripts": "^5.0.1",
     "resolve-url-loader": "^5.0.0",
     "svgo": "^3.3.2",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "xlsx": "^0.18.5"
   },
   "scripts": {
     "start": "cross-env PORT=5173 react-scripts start",

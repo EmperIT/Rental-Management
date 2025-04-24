@@ -1,3 +1,4 @@
+import e from 'express';
 import { Schema } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -13,4 +14,12 @@ export const ContractSchema = new Schema({
   deposit: { type: Number, required: true },
   rentAmount: { type: Number, required: true },
   templateId: { type: String, required: true },
+});
+
+export const ContractTemplateSchema = new Schema({
+  templateId: { type: String, default: uuidv4, unique: true },
+  name: { type: String, required: true },
+  content: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
 });
