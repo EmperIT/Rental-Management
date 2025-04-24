@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package rental;
 
-service OrderService {
+service RentalService {
   // Room
   rpc CreateRoom (CreateRoomDto) returns (Room) {}
   rpc FindAllRooms (FindAllRoomsDto) returns (Rooms) {}
@@ -26,6 +26,45 @@ service OrderService {
 
   // Readings
   rpc FindLatestReadings (FindLatestReadingsDto) returns (ReadingsResponse) {}
+  
+  // Services Management
+  rpc GetService (GetServiceRequest) returns (ServiceResponse) {}
+  rpc SaveService (SaveServiceRequest) returns (ServiceResponse) {}
+  rpc GetAllServices (Empty) returns (AllServicesResponse) {}
+  rpc RemoveService (GetServiceRequest) returns (ServiceResponse) {}
+
+  // Invoice Generation
+  rpc TriggerInvoiceGeneration (Empty) returns (InvoiceGenerationResponse) {}
+}
+
+// Empty message for requests with no parameters
+message Empty {}
+
+// Services Messages
+message GetServiceRequest {
+  string name = 1;
+}
+
+message SaveServiceRequest {
+  string name = 1;
+  string value = 2;
+  optional string description = 3;
+}
+
+message ServiceResponse {
+  string name = 1;
+  string value = 2;
+  string description = 3;
+  string lastUpdated = 4;
+}
+
+message AllServicesResponse {
+  repeated ServiceResponse services = 1;
+}
+
+message InvoiceGenerationResponse {
+  bool success = 1;
+  string message = 2;
 }
 
 // Room Messages

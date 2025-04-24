@@ -29,6 +29,10 @@ import {
   InvoiceSwaggerDto,
   InvoicesSwaggerDto,
   ReadingsResponseSwaggerDto,
+  ServiceSwaggerDto,
+  SaveServiceSwaggerDto,
+  AllServicesSwaggerDto,
+  InvoiceGenerationResponseSwaggerDto,
 } from '../../dto/rental.dto';
 
 @ApiTags('rental')
@@ -55,21 +59,19 @@ export class RentalController {
 
   // Dữ liệu mẫu
   private readonly meterData = [
-    { roomNumber: '101', month: '2024-03', electricity: 120, water: 20 },
-    { roomNumber: '101', month: '2024-04', electricity: 125, water: 21 },
-    { roomNumber: '102', month: '2024-03', electricity: 100, water: 18 },
-    { roomNumber: '102', month: '2024-04', electricity: 110, water: 20 },
-    { roomNumber: '103', month: '2024-03', electricity: 90, water: 17 },
-    { roomNumber: '103', month: '2024-04', electricity: 95, water: 18 },
-    { roomNumber: '104', month: '2024-03', electricity: 130, water: 22 },
-    { roomNumber: '104', month: '2024-04', electricity: 135, water: 23 },
-    { roomNumber: '105', month: '2024-03', electricity: 85, water: 15 },
-    { roomNumber: '105', month: '2024-04', electricity: 88, water: 16 },
+    { roomNumber: '001', month: '2025-03', electricity: 120, water: 20 },
+    { roomNumber: '001', month: '2025-04', electricity: 125, water: 21 },
+    { roomNumber: '002', month: '2025-03', electricity: 100, water: 18 },
+    { roomNumber: '002', month: '2025-04', electricity: 110, water: 20 },
+    { roomNumber: '003', month: '2025-03', electricity: 90, water: 17 },
+    { roomNumber: '003', month: '2025-04', electricity: 95, water: 18 },
+    { roomNumber: '004', month: '2025-03', electricity: 130, water: 22 },
+    { roomNumber: '004', month: '2025-04', electricity: 135, water: 23 },
+    { roomNumber: '005', month: '2025-03', electricity: 85, water: 15 },
+    { roomNumber: '005', month: '2025-04', electricity: 88, water: 16 },
   ];
   // API mẫu cho việc lấy dữ liệu điện nước
   @Get("meters")
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Lấy dữ liệu điện nước của phòng theo tháng', description: 'Yêu cầu xác thực JWT' })
   @ApiQuery({ name: 'roomNumber', description: 'Số phòng', required: true })
   @ApiQuery({ name: 'month', description: 'Tháng (YYYY-MM)', required: true })
@@ -359,6 +361,83 @@ export class RentalController {
   @ApiResponse({ status: 404, description: 'Không tìm thấy dữ liệu' })
   findLatestReadings(@Param('roomId') roomId: string) {
     return this.rentalService.findLatestReadings(roomId).pipe(
+      catchError((val) => {
+        throw new HttpException(val.message, val.statusCode || 400);
+      }),
+    );
+  }
+
+  /* Service Endpoints */
+  @Get('services/:name')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy thông tin dịch vụ theo tên', description: 'Yêu cầu xác thực JWT' })
+  @ApiParam({ name: 'name', description: 'Tên dịch vụ', example: 'ELECTRICITY_PRICE' })
+  @ApiResponse({ status: 200, description: 'Thông tin dịch vụ', type: ServiceSwaggerDto })
+  @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy dịch vụ' })
+  getService(@Param('name') name: string) {
+    return this.rentalService.getService(name).pipe(
+      catchError((val) => {
+        throw new HttpException(val.message, val.statusCode || 400);
+      }),
+    );
+  }
+
+  @Get('services')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy danh sách tất cả dịch vụ', description: 'Yêu cầu xác thực JWT' })
+  @ApiResponse({ status: 200, description: 'Danh sách dịch vụ', type: AllServicesSwaggerDto })
+  @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
+  getAllServices() {
+    return this.rentalService.getAllServices().pipe(
+      catchError((val) => {
+        throw new HttpException(val.message, val.statusCode || 400);
+      }),
+    );
+  }
+
+  @Post('services')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Tạo mới hoặc cập nhật dịch vụ', description: 'Yêu cầu xác thực JWT' })
+  @ApiBody({ type: SaveServiceSwaggerDto })
+  @ApiResponse({ status: 200, description: 'Dịch vụ đã được tạo/cập nhật thành công', type: ServiceSwaggerDto })
+  @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ' })
+  @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
+  saveService(@Body() saveServiceDto: SaveServiceSwaggerDto) {
+    return this.rentalService.saveService(saveServiceDto.name, saveServiceDto.value, saveServiceDto.description).pipe(
+      catchError((val) => {
+        throw new HttpException(val.message, val.statusCode || 400);
+      }),
+    );
+  }
+
+  @Delete('services/:name')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Xóa một dịch vụ', description: 'Yêu cầu xác thực JWT' })
+  @ApiParam({ name: 'name', description: 'Tên dịch vụ', example: 'ELECTRICITY_PRICE' })
+  @ApiResponse({ status: 200, description: 'Dịch vụ đã được xóa thành công', type: ServiceSwaggerDto })
+  @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy dịch vụ' })
+  removeService(@Param('name') name: string) {
+    return this.rentalService.removeService(name).pipe(
+      catchError((val) => {
+        throw new HttpException(val.message, val.statusCode || 400);
+      }),
+    );
+  }
+
+  @Post('invoices/generate')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Kích hoạt tự động tạo hóa đơn cho tất cả phòng', description: 'Yêu cầu xác thực JWT' })
+  @ApiResponse({ status: 200, description: 'Đã bắt đầu tạo hóa đơn', type: InvoiceGenerationResponseSwaggerDto })
+  @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
+  triggerInvoiceGeneration() {
+    return this.rentalService.triggerInvoiceGeneration().pipe(
       catchError((val) => {
         throw new HttpException(val.message, val.statusCode || 400);
       }),

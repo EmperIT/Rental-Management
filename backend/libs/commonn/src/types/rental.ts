@@ -10,6 +10,37 @@ import { Observable } from "rxjs";
 
 export const protobufPackage = "rental";
 
+/** Empty message for requests with no parameters */
+export interface Empty {
+}
+
+/** Services Messages */
+export interface GetServiceRequest {
+  name: string;
+}
+
+export interface SaveServiceRequest {
+  name: string;
+  value: string;
+  description?: string | undefined;
+}
+
+export interface ServiceResponse {
+  name: string;
+  value: string;
+  description: string;
+  lastUpdated: string;
+}
+
+export interface AllServicesResponse {
+  services: ServiceResponse[];
+}
+
+export interface InvoiceGenerationResponse {
+  success: boolean;
+  message: string;
+}
+
 /** Room Messages */
 export interface CreateRoomDto {
   roomNumber: string;
@@ -181,7 +212,7 @@ export interface ReadingsResponse_ReadingsEntry {
 
 export const RENTAL_PACKAGE_NAME = "rental";
 
-export interface OrderServiceClient {
+export interface RentalServiceClient {
   /** Room */
 
   createRoom(request: CreateRoomDto): Observable<Room>;
@@ -221,9 +252,23 @@ export interface OrderServiceClient {
   /** Readings */
 
   findLatestReadings(request: FindLatestReadingsDto): Observable<ReadingsResponse>;
+
+  /** Services Management */
+
+  getService(request: GetServiceRequest): Observable<ServiceResponse>;
+
+  saveService(request: SaveServiceRequest): Observable<ServiceResponse>;
+
+  getAllServices(request: Empty): Observable<AllServicesResponse>;
+
+  removeService(request: GetServiceRequest): Observable<ServiceResponse>;
+
+  /** Invoice Generation */
+
+  triggerInvoiceGeneration(request: Empty): Observable<InvoiceGenerationResponse>;
 }
 
-export interface OrderServiceController {
+export interface RentalServiceController {
   /** Room */
 
   createRoom(request: CreateRoomDto): Promise<Room> | Observable<Room> | Room;
@@ -265,9 +310,25 @@ export interface OrderServiceController {
   findLatestReadings(
     request: FindLatestReadingsDto,
   ): Promise<ReadingsResponse> | Observable<ReadingsResponse> | ReadingsResponse;
+
+  /** Services Management */
+
+  getService(request: GetServiceRequest): Promise<ServiceResponse> | Observable<ServiceResponse> | ServiceResponse;
+
+  saveService(request: SaveServiceRequest): Promise<ServiceResponse> | Observable<ServiceResponse> | ServiceResponse;
+
+  getAllServices(request: Empty): Promise<AllServicesResponse> | Observable<AllServicesResponse> | AllServicesResponse;
+
+  removeService(request: GetServiceRequest): Promise<ServiceResponse> | Observable<ServiceResponse> | ServiceResponse;
+
+  /** Invoice Generation */
+
+  triggerInvoiceGeneration(
+    request: Empty,
+  ): Promise<InvoiceGenerationResponse> | Observable<InvoiceGenerationResponse> | InvoiceGenerationResponse;
 }
 
-export function OrderServiceControllerMethods() {
+export function RentalServiceControllerMethods() {
   return function (constructor: Function) {
     const grpcMethods: string[] = [
       "createRoom",
@@ -286,17 +347,22 @@ export function OrderServiceControllerMethods() {
       "updateInvoice",
       "removeInvoice",
       "findLatestReadings",
+      "getService",
+      "saveService",
+      "getAllServices",
+      "removeService",
+      "triggerInvoiceGeneration",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcMethod("OrderService", method)(constructor.prototype[method], method, descriptor);
+      GrpcMethod("RentalService", method)(constructor.prototype[method], method, descriptor);
     }
     const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcStreamMethod("OrderService", method)(constructor.prototype[method], method, descriptor);
+      GrpcStreamMethod("RentalService", method)(constructor.prototype[method], method, descriptor);
     }
   };
 }
 
-export const ORDER_SERVICE_NAME = "OrderService";
+export const RENTAL_SERVICE_NAME = "RentalService";

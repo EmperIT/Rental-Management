@@ -1,0 +1,248 @@
+/* Room Management Styles */
+@import url('https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css');
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f9fafb;
+}
+
+.container {
+  max-width: 1500px;
+}
+
+.dashboard-title {
+  font-size: 1.875rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 2rem;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.card-body {
+  padding: 1.5rem 2rem;
+}
+
+.summary-card {
+  padding: 1.5rem;
+  text-align: left;
+}
+
+.summary-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.summary-value {
+  font-size: 1.875rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 0.25rem;
+}
+
+.summary-change {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.btn {
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease-in-out;
+}
+
+.btn-primary {
+  background-color: #6366f1;
+  color: #ffffff;
+  padding: 0.75rem 1.5rem;
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: #5455d3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.btn-outline-primary {
+  background-color: transparent;
+  color: #6366f1;
+  border: 1px solid #6366f1;
+  padding: 0.75rem 1.5rem;
+}
+
+.btn-outline-primary:hover {
+  background-color: #eef2ff;
+  color: #5455d3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  width: 150px;
+}
+
+.form-control {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: #1a202c;
+  transition: all 0.3s ease-in-out;
+  background-color: #ffffff;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-control:hover {
+  border-color: #a1a1aa;
+}
+
+.form-check-input {
+  margin-right: 0.5rem;
+  transition: all 0.3s ease-in-out;
+}
+
+.form-check-input:hover {
+  cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-check-label {
+  font-size: 0.875rem;
+  color: #4a5568;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table th {
+  background: #ffffff;
+  color: #6b7280;
+  font-weight: 500;
+  padding: 1rem 1.5rem;
+  text-align: left;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-transform: uppercase;
+}
+
+.table td {
+  padding: 1rem 1.5rem;
+  font-size: 0.875rem;
+  color: #4a5568;
+  border-bottom: 1px solid #e2e8f0;
+  transition: background-color 0.3s ease-in-out;
+}
+
+.table tr:hover {
+  background-color: #f1f5f9;
+}
+
+.btn-icon {
+  color: #6b7280;
+  transition: color 0.3s ease-in-out;
+}
+
+.btn-icon:hover {
+  color: #6366f1;
+}
+
+.text-danger {
+  color: #e53e3e;
+}
+
+/* Horizontal Form Layout */
+.form-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  flex: 0 0 150px;
+}
+
+.form-group .form-control {
+  flex: 1;
+}
+
+.form-group .form-check {
+  margin-left: 150px;
+}
+
+.form-group .form-check-input {
+  margin-top: 0;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+  .dashboard-title {
+    font-size: 1.5rem;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+
+  .summary-card {
+    padding: 1rem;
+  }
+
+  .summary-value {
+    font-size: 1.5rem;
+  }
+
+  .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+  }
+
+  .form-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .form-group label {
+    flex: none;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-group .form-control {
+    width: 100%;
+  }
+
+  .form-group .form-check {
+    margin-left: 0;
+    margin-top: 0.5rem;
+  }
+}

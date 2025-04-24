@@ -638,3 +638,93 @@ export class ReadingsResponseSwaggerDto {
   })
   readings: { [key: string]: number };
 }
+
+// Service DTOs
+export class ServiceSwaggerDto implements Rental.ServiceResponse {
+  @ApiProperty({
+    description: 'Tên dịch vụ',
+    example: 'ELECTRICITY_PRICE'
+  })
+  name: string;
+
+  @ApiProperty({
+    description: 'Giá trị dịch vụ',
+    example: '3500'
+  })
+  value: string;
+
+  @ApiProperty({
+    description: 'Mô tả dịch vụ',
+    example: 'Giá điện (VND/kWh)'
+  })
+  description: string;
+
+  @ApiProperty({
+    description: 'Thời gian cập nhật gần nhất',
+    format: 'date-time'
+  })
+  lastUpdated: string;
+}
+
+export class GetServiceSwaggerDto implements Rental.GetServiceRequest {
+  @ApiProperty({
+    description: 'Tên dịch vụ cần lấy thông tin',
+    example: 'ELECTRICITY_PRICE',
+    required: true
+  })
+  name: string;
+}
+
+export class SaveServiceSwaggerDto implements Rental.SaveServiceRequest {
+  @ApiProperty({
+    description: 'Tên dịch vụ',
+    example: 'ELECTRICITY_PRICE',
+    required: true
+  })
+  name: string;
+
+  @ApiProperty({
+    description: 'Giá trị dịch vụ',
+    example: '3500',
+    required: true
+  })
+  value: string;
+
+  @ApiProperty({
+    description: 'Mô tả dịch vụ',
+    example: 'Giá điện (VND/kWh)',
+    required: false
+  })
+  description?: string;
+}
+
+export class AllServicesSwaggerDto implements Rental.AllServicesResponse {
+  @ApiProperty({
+    description: 'Danh sách dịch vụ',
+    type: [ServiceSwaggerDto]
+  })
+  services: ServiceSwaggerDto[];
+}
+
+export class RemoveServiceSwaggerDto implements Rental.GetServiceRequest {
+  @ApiProperty({
+    description: 'Tên dịch vụ cần xóa',
+    example: 'ELECTRICITY_PRICE',
+    required: true
+  })
+  name: string;
+}
+
+export class InvoiceGenerationResponseSwaggerDto implements Rental.InvoiceGenerationResponse {
+  @ApiProperty({
+    description: 'Trạng thái thành công',
+    example: true
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Thông báo kết quả',
+    example: 'Đã xử lý hóa đơn cho 5 phòng'
+  })
+  message: string;
+}

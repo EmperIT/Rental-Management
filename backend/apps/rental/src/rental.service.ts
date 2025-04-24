@@ -1,8 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Rental } from '@app/commonn';
-import { RpcException } from '@nestjs/microservices';
+import { Rental, Email } from '@app/commonn';
+import { ClientGrpc, RpcException } from '@nestjs/microservices';
+import { ConfigService } from '@nestjs/config';
+import { Cron, SchedulerRegistry } from '@nestjs/schedule';
+import { firstValueFrom } from 'rxjs';
+import { HttpService } from '@nestjs/axios';
+import { catchError, lastValueFrom } from 'rxjs';
 
 interface RoomDocument {
   _id: string;
@@ -51,15 +56,478 @@ interface InvoiceDocument {
   updatedAt: Date;
 }
 
+interface ServiceDocument {
+  name: string;
+  value: string;
+  description: string;
+  lastUpdated: Date;
+}
+
+interface ReadingData {
+  [key: string]: number;
+}
+
 @Injectable()
-export class RentalService {
+export class RentalService implements OnModuleInit {
   private readonly logger = new Logger(RentalService.name);
+  private emailService: Email.EmailServiceClient;
 
   constructor(
     @InjectModel('Room') private readonly roomModel: Model<RoomDocument>,
     @InjectModel('Tenant') private readonly tenantModel: Model<TenantDocument>,
     @InjectModel('Invoice') private readonly invoiceModel: Model<InvoiceDocument>,
-  ) {}
+    @InjectModel('Service') private readonly serviceModel: Model<ServiceDocument>,
+    @Inject(Email.EMAIL_PACKAGE_NAME) private readonly client: ClientGrpc,
+    private configService: ConfigService,
+    private schedulerRegistry: SchedulerRegistry,
+    private httpService: HttpService,
+  ) {
+    // Khởi tạo client để kết nối với email service
+    this.emailService = this.client.getService<Email.EmailServiceClient>(
+      Email.EMAIL_SERVICE_NAME,
+    );
+  }
+
+  async onModuleInit() {
+    await this.initializeDefaultServices();
+  }
+
+  // ***** SERVICE MANAGEMENT *****
+
+  /**
+   * Khởi tạo các cấu hình dịch vụ mặc định khi service được khởi động
+   */
+  private async initializeDefaultServices() {
+    try {
+      const defaultServices = [
+        { 
+          name: 'ELECTRICITY_PRICE', 
+          value: 3500, 
+          description: 'Giá điện (VND/kWh)' 
+        },
+        { 
+          name: 'WATER_PRICE', 
+          value: 15000, 
+          description: 'Giá nước (VND/m³)' 
+        },
+        { 
+          name: 'INVOICE_GENERATION_DAY', 
+          value: '28', 
+          description: 'Ngày trong tháng để gửi hóa đơn (1-31)' 
+        },
+        {
+          name: 'INVOICE_DUE_DAYS',
+          value: 7,
+          description: 'Số ngày để thanh toán hóa đơn sau khi gửi'
+        },
+        {
+          name: 'AUTO_SEND_INVOICE',
+          value: true,
+          description: 'Tự động gửi hóa đơn khi đến ngày được cấu hình'
+        }
+      ];
+      
+      for (const service of defaultServices) {
+        const exists = await this.serviceModel.findOne({ name: service.name }).exec();
+        if (!exists) {
+          const newService = new this.serviceModel({
+            name: service.name,
+            value: service.value,
+            description: service.description
+          });
+          await newService.save();
+          this.logger.log(`Đã khởi tạo dịch vụ mặc định: ${service.name} = ${service.value}`);
+        }
+      }
+    } catch (error) {
+      this.logger.error(`Lỗi khởi tạo dịch vụ mặc định: ${error.message}`, error.stack);
+    }
+  }
+
+  /**
+   * Lấy giá trị của một dịch vụ theo tên
+   */
+  async getService(name: string): Promise<Rental.ServiceResponse> {
+    const service = await this.serviceModel.findOne({ name }).exec();
+    if (!service) {
+      throw new RpcException({
+        statusCode: 404,
+        message: `Không tìm thấy dịch vụ ${name}`,
+      });
+    }
+    return this.mapToService(service);
+  }
+
+  /**
+   * Lưu giá trị của một dịch vụ
+   */
+  async saveService(SaveServiceRequest: Rental.SaveServiceRequest): Promise<Rental.ServiceResponse> {
+    try {
+      const { name, value, description } = SaveServiceRequest;
+      const service = await this.serviceModel.findOne({ name }).exec();
+      
+      if (!service) {
+        // Nếu dịch vụ không tồn tại, tạo mới
+        const newService = new this.serviceModel({
+          name,
+          value,
+          description: description || '',
+          lastUpdated: new Date()
+        });
+        await newService.save();
+        this.logger.log(`Đã tạo mới dịch vụ ${name} với giá trị ${value}`);
+
+        return this.mapToService(newService);
+      }
+
+      service.value = value;
+      service.description = description || service.description;
+      service.lastUpdated = new Date();
+      await service.save();
+
+      this.logger.log(`Đã lưu dịch vụ ${name} với giá trị ${value}`);
+      return this.mapToService(service);
+    } catch (error) {
+      this.logger.error(`Lỗi lưu dịch vụ ${name}: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: 500,
+        message: `Lỗi lưu dịch vụ: ${error.message}`,
+      });
+    }
+  }
+
+  /**
+   * Lấy tất cả các dịch vụ
+   */
+  async getAllServices(): Promise<Rental.AllServicesResponse> {
+    try {
+      const services = await this.serviceModel.find().exec();
+      return {
+        services: services.map(this.mapToService)
+      };
+    } catch (error) {
+      this.logger.error(`Lỗi lấy tất cả dịch vụ: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: 500,
+        message: `Lỗi lấy tất cả dịch vụ: ${error.message}`,
+      });
+    }
+  }
+
+  async removeService(name: string): Promise<Rental.ServiceResponse> {
+    try {
+      const service = await this.serviceModel.findOneAndDelete({ name }).exec();
+      
+      if (!service) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Không tìm thấy dịch vụ ${name}`,
+        });
+      }
+  
+      this.logger.log(`Đã xóa dịch vụ: ${name}`);
+      return this.mapToService(service);
+    } catch (error) {
+      this.logger.error(`Lỗi xóa dịch vụ ${name}: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || `Lỗi xóa dịch vụ: ${error.message}`,
+      });
+    }
+  }
+
+  // ***** INVOICE AUTOMATION *****
+
+  /**
+   * Chạy định kỳ mỗi ngày vào lúc 00:01 để kiểm tra xem có phải là ngày gửi hóa đơn không
+   */
+  @Cron('1 0 * * *')
+  async checkAndGenerateInvoices() {
+    try {
+      // Kiểm tra cấu hình có bật tự động gửi không
+      const autoSend = await this.getService('AUTO_SEND_INVOICE');
+      if (!autoSend) {
+        this.logger.log('Chức năng tự động gửi hóa đơn đang bị tắt');
+        return;
+      }
+      
+      // Lấy ngày gửi hóa đơn từ cấu hình
+      const invoiceDay = await this.getService('INVOICE_GENERATION_DAY');
+      if (!invoiceDay) {
+        this.logger.warn('Chưa cấu hình ngày gửi hóa đơn');
+        return;
+      }
+      
+      const today = new Date();
+      // Kiểm tra xem hôm nay có phải là ngày gửi hóa đơn không
+      const { value } = invoiceDay;
+      if (today.getDate() === parseInt(value)) {
+        this.logger.log('Bắt đầu quy trình tạo và gửi hóa đơn tự động');
+        await this.generateAndSendInvoices();
+      } else {
+        this.logger.debug(
+          `Hôm nay không phải là ngày gửi hóa đơn. Ngày hiện tại: ${today.getDate()}, Ngày cấu hình: ${invoiceDay}`
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Lỗi kiểm tra lịch gửi hóa đơn: ${error.message}`, error.stack);
+    }
+  }
+
+  /**
+   * Tạo và gửi hóa đơn cho tất cả các phòng đang có người thuê
+   */
+  async generateAndSendInvoices() {
+    try {
+      this.logger.log('Đang tạo và gửi hóa đơn cho tất cả phòng...');
+      
+      // 1. Lấy tất cả phòng đang có người thuê
+      const rooms = await this.getAllOccupiedRooms();
+      this.logger.log(`Tìm thấy ${rooms.length} phòng đang có người thuê`);
+      
+      // 2. Duyệt qua từng phòng và tạo/gửi hóa đơn
+      for (const room of rooms) {
+        await this.processRoomInvoice(room);
+      }
+      
+      this.logger.log('Hoàn thành quy trình tạo và gửi hóa đơn');
+      return {
+        success: true,
+        message: `Đã xử lý hóa đơn cho ${rooms.length} phòng`
+      };
+    } catch (error) {
+      this.logger.error(`Lỗi tạo và gửi hóa đơn: ${error.message}`, error.stack);
+      return {
+        success: false,
+        message: `Lỗi tạo và gửi hóa đơn: ${error.message}`
+      };
+    }
+  }
+
+  /**
+   * Khởi động thủ công quy trình tạo và gửi hóa đơn
+   */
+  async manuallyTriggerInvoiceGeneration() {
+    this.logger.log('Kích hoạt thủ công quy trình tạo và gửi hóa đơn');
+    return await this.generateAndSendInvoices();
+  }
+
+  /**
+   * Lấy tất cả các phòng đang có người thuê
+   */
+  private async getAllOccupiedRooms(): Promise<RoomDocument[]> {
+    try {
+      // Lấy tất cả phòng không trống
+      const rooms = await this.roomModel.find({ isEmpty: false }).exec();
+      return rooms;
+    } catch (error) {
+      this.logger.error(`Lỗi lấy danh sách phòng đang có người thuê: ${error.message}`, error.stack);
+      throw new Error('Không thể lấy danh sách phòng');
+    }
+  }
+
+  /**
+   * Xử lý tạo và gửi hóa đơn cho một phòng
+   */
+  private async processRoomInvoice(room: RoomDocument) {
+    try {
+      this.logger.log(`Đang xử lý hóa đơn cho phòng ${room.roomNumber}`);
+      
+      // 1. Lấy thông tin người thuê chính trong phòng
+      const leadTenant = await this.tenantModel.findOne({
+        roomId: room._id,
+        isLeadRoom: true,
+        isActive: true
+      }).exec();
+      
+      if (!leadTenant) {
+        this.logger.warn(`Không tìm thấy người thuê chính cho phòng ${room.roomNumber}`);
+        throw new Error('Không tìm thấy người thuê chính cho phòng');
+      }
+      
+      this.logger.log(`Tìm thấy người thuê chính: ${leadTenant.name}, email: ${leadTenant.email}`);
+      
+      // 2. Lấy số đọc điện nước mới nhất và tính toán
+      const currentDate = new Date();
+      const month = `${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`;
+      const formattedMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+      
+      // Lấy thông tin đồng hồ mới nhất cho phòng hiện tại
+      const meterData = await this.getLatestReadingsForRoom(room.roomNumber, formattedMonth);
+      
+      // 3. Lấy cấu hình giá điện nước
+      const electricityService = await this.getService('ELECTRICITY_PRICE') || null;
+      const { value: electricityPrice } = electricityService;
+      const waterService = await this.getService('WATER_PRICE') || null;
+      const { value: waterPrice } = waterService;
+
+      
+      // 4. Tạo thông tin hóa đơn
+      // Số ngày để thanh toán sau khi nhận hóa đơn
+      const dueDayService = await this.getService('INVOICE_DUE_DAYS') || null;
+      const { value: dueDays } = dueDayService;
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + parseInt(dueDays.toString()));
+      
+      // Tạo danh sách khoản phí
+      const fees: FeeDocument[] = [];
+      
+      // Thêm phí phòng
+      fees.push({
+        type: 'room',
+        amount: room.price,
+        reading: 0,
+        description: `Tiền thuê phòng tháng ${month}`,
+        createdAt: currentDate,
+        updatedAt: currentDate
+      });
+      
+      // Lấy số đọc tháng trước
+      const previousMeterData = this.findLatestReadings(room._id);
+      
+      // Thêm phí điện nếu có số đọc
+      if (meterData && meterData.electricity !== undefined) {
+        const previousElectricity = previousMeterData["Điện"] || 0;
+        const consumption = meterData.electricity - previousElectricity;
+        
+        if (consumption > 0) {
+          fees.push({
+            type: 'electricity',
+            amount: consumption * +electricityPrice,
+            reading: meterData.electricity,
+            description: `Tiền điện: ${consumption} kWh x ${electricityPrice}đ = ${consumption * +electricityPrice}đ`,
+            createdAt: currentDate,
+            updatedAt: currentDate
+          });
+        }
+      }
+      
+      // Thêm phí nước nếu có số đọc
+      if (meterData && meterData.water !== undefined) {
+        const previousWater = previousMeterData["Nước"] || 0;
+        const consumption = meterData.water - previousWater;
+        
+        if (consumption > 0) {
+          fees.push({
+            type: 'water',
+            amount: consumption * +waterPrice,
+            reading: meterData.water,
+            description: `Tiền nước: ${consumption} khối x ${waterPrice}đ = ${consumption * +waterPrice}đ`,
+            createdAt: currentDate,
+            updatedAt: currentDate
+          });
+        }
+      }
+      
+      // Tính tổng tiền
+      const total = fees.reduce((sum, fee) => sum + fee.amount, 0);
+      
+      // 5. Tạo hóa đơn trong database
+      const rentalFees = fees.map(fee => ({
+        type: fee.type,
+        amount: fee.amount,
+        reading: fee.reading,
+        description: fee.description,
+        createdAt: fee.createdAt.toISOString(),
+        updatedAt: fee.updatedAt.toISOString()
+      }));
+
+      const invoiceData = {
+        roomId: room._id.toString(),
+        month: formattedMonth,
+        fees: rentalFees,
+        total: total,
+        dueDate: dueDate.toISOString(),
+        isPaid: false
+      };
+      const invoice = await this.createInvoice(invoiceData);
+      // 6. Gửi email hóa đơn đến người thuê chính
+      try {
+        const emailResponse = await firstValueFrom(
+          this.emailService.sendInvoiceEmail({
+            to: leadTenant.email,
+            tenantName: leadTenant.name,
+            roomNumber: room.roomNumber,
+            month: month,
+            dueDate: dueDate.toLocaleDateString('vi-VN'),
+            total: total,
+            fees: rentalFees
+          })
+        );
+        
+        this.logger.log(`Đã gửi email hóa đơn thành công đến ${leadTenant.email}`);
+          return {
+            success: true,
+            invoice: invoice,
+            emailSent: true,
+            emailId: emailResponse.messageId
+          };
+      } catch (error) {
+        this.logger.error(`Lỗi gửi email hóa đơn: ${error.message}`, error.stack);
+        return {
+          success: true,
+          invoice: invoice,
+          emailSent: false,
+          error: `Lỗi gửi email hóa đơn: ${error.message}`
+        };
+      }
+    } catch (error) {
+      this.logger.error(`Lỗi xử lý hóa đơn cho phòng ${room.roomNumber}: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: 500,
+        message: `${error.message}`
+      });
+    }
+  }
+
+  /**
+   * Lấy số đọc điện nước cho một phòng từ API gateway
+   */
+  private async getLatestReadingsForRoom(roomNumber: string, month: string) {
+    try {
+      const gatewayUrl = this.configService.get<string>('API_GATEWAY_URL') || 'http://localhost:3000';
+      const url = `${gatewayUrl}/rental/meters?roomNumber=${roomNumber}&month=${month}`;
+      
+      this.logger.log(`Đang gọi API để lấy dữ liệu điện nước: ${url}`);
+      
+      const response = await lastValueFrom(
+        this.httpService.get(url).pipe(
+          catchError(error => {
+            this.logger.error(`Lỗi gọi API meters: ${error.message}`);
+            throw new Error(`Không thể lấy dữ liệu đồng hồ: ${error.message}`);
+          })
+        )
+      );
+      
+      if (response.data && !response.data.message) {
+        return {
+          electricity: response.data.electricity,
+          water: response.data.water
+        };
+      }
+      
+      this.logger.warn(`Không tìm thấy dữ liệu đồng hồ cho phòng ${roomNumber}, tháng ${month}`);
+      return null;
+    } catch (error) {
+      this.logger.error(`Lỗi lấy dữ liệu đồng hồ: ${error.message}`, error.stack);
+      return null;
+    }
+  }
+
+  /**
+   * Lấy tháng trước theo định dạng YYYY-MM
+   */
+  private getPreviousMonth(currentMonth: string): string {
+    const [year, month] = currentMonth.split('-').map(Number);
+    
+    // Nếu là tháng 1 thì tháng trước là tháng 12 năm trước
+    if (month === 1) {
+      return `${year - 1}-12`;
+    }
+    
+    // Ngược lại thì là tháng trước cùng năm
+    return `${year}-${String(month - 1).padStart(2, '0')}`;
+  }
 
   // Room Methods
   async createRoom(createRoomDto: Rental.CreateRoomDto): Promise<Rental.Room> {
@@ -202,10 +670,19 @@ export class RentalService {
       }
 
       // Kiểm tra nếu phòng đang trống
-      if (room.isEmpty) {
+      if (!room.isEmpty && createTenantDto.isLeadRoom === true) {
         throw new RpcException({
           statusCode: 400,
           message: `Phòng ${room.roomNumber} đã có người thuê`,
+        });
+      }
+
+      // Kiểm tra email tenant
+      const emailCheck = await this.tenantModel.findOne({ email: createTenantDto.email })
+      if (emailCheck) {
+        throw new RpcException({
+          statusCode: 400,
+          message: `Email ${createTenantDto.email} đã tồn tại trong hệ thống`,
         });
       }
 
@@ -233,8 +710,7 @@ export class RentalService {
       
       const filter: any = {};
       if (roomId) filter.roomId = roomId;
-      if (isLeadRoom !== undefined) filter.isLeadRoom = isLeadRoom ? 'true' : 'false';
-      
+      if (isLeadRoom !== undefined) filter.isLeadRoom = isLeadRoom ? true : false;
       const tenants = await this.tenantModel.find(filter)
         .skip(skip)
         .limit(limit)
@@ -290,7 +766,7 @@ export class RentalService {
           });
         }
         
-        if (newRoom.isEmpty) {
+        if (!newRoom.isEmpty && updateTenantDto.isLeadRoom === true) {
           throw new RpcException({
             statusCode: 400,
             message: `Phòng ${newRoom.roomNumber} đã có người thuê`,
@@ -522,9 +998,8 @@ export class RentalService {
   }
 
   // Phương thức để lấy số đọc điện nước mới nhất theo roomId
-  async findLatestReadings(FindLatestReadingsDto: Rental.FindLatestReadingsDto): Promise<{ [key: string]: number }> {
+  async findLatestReadings(roomId: string): Promise<ReadingData> {
     try {
-      const { roomId } = FindLatestReadingsDto;
       if (!roomId) {
         throw new RpcException({
           statusCode: 400,
@@ -615,6 +1090,15 @@ export class RentalService {
       paidAt: invoice.paidAt,
       createdAt: invoice.createdAt.toISOString(),
       updatedAt: invoice.updatedAt.toISOString(),
+    };
+  }
+
+  private mapToService(service: ServiceDocument): Rental.ServiceResponse {
+    return {
+      name: service.name,
+      value: service.value,
+      description: service.description,
+      lastUpdated: service.lastUpdated.toISOString(),
     };
   }
 }

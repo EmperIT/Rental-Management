@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaEdit, FaTrash } from 'react-icons/fa';
-import '../styles/dashboard/DashboardContent.css';
 
 const RoomManagement = () => {
   const [activeTab, setActiveTab] = useState('manual');

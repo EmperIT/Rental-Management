@@ -1,0 +1,324 @@
+/* Overlay mờ tối */
+.ccm-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  /* Container modal */
+  .ccm-modal {
+    background: #fff;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 640px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    padding: 24px;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+  }
+  
+  /* Modal chọn dịch vụ/tài sản */
+  .ccm-selection-modal {
+    max-width: 400px;
+    padding: 20px;
+  }
+  
+  /* Tiêu đề */
+  .ccm-modal h2 {
+    margin: 0 0 16px;
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  /* Nhãn */
+  .ccm-modal label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: #555;
+  }
+  
+  /* Select và input chung */
+  .ccm-modal select,
+  .ccm-modal input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    color: #333;
+    transition: border-color 0.2s;
+    box-sizing: border-box; /* Ensure padding doesn't affect width */
+  }
+  
+  .ccm-modal select:focus,
+  .ccm-modal input:focus {
+    outline: none;
+    border-color: #007bff;
+  }
+  
+  /* Hàng ngày bắt đầu + kết thúc */
+  .ccm-date-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+  
+  /* Hàng thông tin hợp đồng */
+  .ccm-contract-info-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)); /* Equal columns */
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  
+  .ccm-contract-field {
+    display: flex;
+    flex-direction: column;
+    width: 100%; /* Ensure each field takes full width of its grid cell */
+  }
+  
+  /* Hàng thông tin thanh toán */
+  .ccm-payment-info-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two equal columns */
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  
+  .ccm-payment-field {
+    display: flex;
+    flex-direction: column;
+    width: 100%; /* Ensure each field takes full width of its grid cell */
+  }
+  
+  /* Nút thêm khách */
+  .ccm-add-guest-btn {
+    display: inline-block;
+    padding: 12px 24px;
+    background-color: #28a745;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.1s;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .ccm-add-guest-btn:hover {
+    background-color: #218838;
+    transform: scale(1.05);
+  }
+  
+  .ccm-add-guest-btn:focus {
+    outline: none;
+  }
+  
+  /* Nút thêm dịch vụ/tài sản */
+  .ccm-add-item-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #17a2b8;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.1s;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  
+  .ccm-add-item-btn:hover {
+    background-color: #138496;
+    transform: scale(1.05);
+  }
+  
+  .ccm-add-item-btn:focus {
+    outline: none;
+  }
+  
+  /* Checkbox item */
+  .ccm-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .ccm-checkbox-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+  
+  .ccm-checkbox-item label {
+    margin-bottom: 0;
+    font-weight: 400;
+    color: #333;
+    cursor: pointer;
+  }
+  
+  /* Select All checkbox */
+  .ccm-select-all {
+    font-weight: 600;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+  }
+  
+  /* Dòng khách hàng */
+  .ccm-guest-info {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 2fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    margin-bottom: 12px;
+  }
+  
+  .ccm-guest-info:hover {
+    background-color: #e9ecef;
+  }
+  
+  .ccm-guest-info input {
+    padding: 8px 10px;
+    font-size: 0.95rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    transition: border-color 0.2s;
+  }
+  
+  .ccm-guest-info input:focus {
+    outline: none;
+    border-color: #007bff;
+  }
+  
+  .ccm-guest-info .ccm-remove-btn {
+    padding: 8px 16px;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.1s;
+  }
+  
+  .ccm-guest-info .ccm-remove-btn:hover {
+    background-color: #c82333;
+    transform: scale(1.05);
+  }
+  
+  /* Dịch vụ */
+  .ccm-services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  
+  .ccm-service-card {
+    background: #f1f3f5;
+    padding: 12px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .ccm-service-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .ccm-service-name {
+    font-weight: 600;
+    color: #333;
+    font-size: 1rem;
+  }
+  
+  .ccm-service-price {
+    color: #666;
+    font-size: 0.875rem;
+    margin-top: 4px;
+  }
+  
+  /* Tài sản */
+  .ccm-assets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .ccm-asset-item {
+    background: #e9ecef;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.95rem;
+    color: #333;
+    transition: background-color 0.2s;
+  }
+  
+  .ccm-asset-item:hover {
+    background: #dee2e6;
+  }
+  
+  /* Chỉnh sửa các phần khác của modal */
+  .ccm-modal h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 24px;
+    color: #333;
+  }
+  
+  .ccm-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  
+  .ccm-modal-actions button {
+    font-size: 1rem;
+    border-radius: 6px;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.1s;
+  }
+  
+  .ccm-modal-actions button:active {
+    transform: scale(0.98);
+  }
+  
+  .ccm-modal-actions button:first-child {
+    background: #f0f0f0;
+    color: #555;
+  }
+  
+  .ccm-modal-actions button:first-child:hover {
+    background: #e0e0e0;
+  }
+  
+  .ccm-modal-actions .ccm-primary {
+    background: #007bff;
+    color: #fff;
+  }
+  
+  .ccm-modal-actions .ccm-primary:hover {
+    background: #0056b3;
+  } 
