@@ -3,6 +3,12 @@ import LandingPage from '../pages/LandingPage';
 import LoginPage from '../pages/LoginPage';
 import SignUpPage from '../pages/SignUpPage';
 import HomePage from '../pages/HomePage';
+import AccountManagementPage from '../pages/AccountManagementPage';
+import ProfilePage from '../pages/ProfilePage';
+import RoomManagement from '../pages/RoomManagement';
+import TenantManagementPage from '../pages/TenantManagementPage';
+import Contract from '../pages/Contract';
+import Templates from '../pages/Templates';
 
 const isAuthenticated = () => {
   return localStorage.getItem('isAuthenticated') === 'true';
@@ -33,6 +39,10 @@ const AppRoutes = () => {
           element={<PrivateRoute element={<HomePage showTenants={true} />} />}
         />
         <Route
+          path="/residence-registration"
+          element={<PrivateRoute element={<HomePage showResidenceRegistration={true} />} />}
+        />
+        <Route
           path="/contracts"
           element={<PrivateRoute element={<HomePage showContracts={true} />} />}
         />
@@ -41,24 +51,12 @@ const AppRoutes = () => {
           element={<PrivateRoute element={<HomePage showTemplateContracts={true} />} />}
         />
         <Route
-          path="/bills/create"
-          element={<PrivateRoute element={<HomePage showBillCreate={true} />} />}
+          path="/bills"
+          element={<PrivateRoute element={<HomePage showBills={true} />} />}
         />
         <Route
-          path="/bills/edit"
-          element={<PrivateRoute element={<HomePage showBillEdit={true} />} />}
-        />
-        <Route
-          path="/bills/delete"
-          element={<PrivateRoute element={<HomePage showBillDelete={true} />} />}
-        />
-        <Route
-          path="/services/utilities"
-          element={<PrivateRoute element={<HomePage showUtilitiesBills={true} />} />}
-        />
-        <Route
-          path="/services/wifi"
-          element={<PrivateRoute element={<HomePage showWifiBills={true} />} />}
+          path="/services"
+          element={<PrivateRoute element={<HomePage showServices={true} />} />}
         />
         <Route
           path="/assets"
