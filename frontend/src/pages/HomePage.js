@@ -14,13 +14,11 @@ import '../styles/HomePage.css';
 function HomePage({
   showRoomManagement = false,
   showTenants = false,
+  showResidenceRegistration = false,
   showContracts = false,
   showTemplateContracts = false,
-  showBillCreate = false,
-  showBillEdit = false,
-  showBillDelete = false,
-  showUtilitiesBills = false,
-  showWifiBills = false,
+  showBills = false,
+  showServices = false,
   showAssets = false,
   showFinance = false,
   showAccountManagement = false,
@@ -50,13 +48,11 @@ function HomePage({
     console.log('Rendering HomePage with props:', {
       showRoomManagement,
       showTenants,
+      showResidenceRegistration,
       showContracts,
       showTemplateContracts,
-      showBillCreate,
-      showBillEdit,
-      showBillDelete,
-      showUtilitiesBills,
-      showWifiBills,
+      showBills,
+      showServices,
       showAssets,
       showFinance,
       showAccountManagement,
@@ -64,13 +60,11 @@ function HomePage({
     });
     if (showRoomManagement) return <RoomManagement />;
     if (showTenants) return <TenantManagementPage />;
+    if (showResidenceRegistration) return <div>Quản lý hóa đơn (Chưa triển khai)</div>;
     if (showContracts) return <Contract />;
     if (showTemplateContracts) return <Templates />;
-    if (showBillCreate) return <div>Tạo hóa đơn (Chưa triển khai)</div>;
-    if (showBillEdit) return <div>Chỉnh sửa hóa đơn (Chưa triển khai)</div>;
-    if (showBillDelete) return <div>Xóa hóa đơn (Chưa triển khai)</div>;
-    if (showUtilitiesBills) return <div>Quản lý hóa đơn điện nước (Chưa triển khai)</div>;
-    if (showWifiBills) return <div>Quản lý hóa đơn Wifi (Chưa triển khai)</div>;
+    if (showBills) return <div>Quản lý hóa đơn (Chưa triển khai)</div>;
+    if (showServices) return <div>Quản lý dịch vụ (Chưa triển khai)</div>;
     if (showAssets) return <div>Quản lý tài sản (Chưa triển khai)</div>;
     if (showFinance) return <div>Quản lý thu chi (Chưa triển khai)</div>;
     if (showAccountManagement) return <AccountManagementPage />;
