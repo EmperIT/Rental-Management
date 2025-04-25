@@ -21,8 +21,10 @@ function HomePage({
   showServices = false,
   showAssets = false,
   showFinance = false,
-  showAccountManagement = false,
+  showManagerAccounts = false,
+  showTenantAccounts = false,
   showProfile = false,
+  showTenantManagementPage = false,
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -55,8 +57,10 @@ function HomePage({
       showServices,
       showAssets,
       showFinance,
-      showAccountManagement,
+      showManagerAccounts,
+      showTenantAccounts,
       showProfile,
+      showTenantManagementPage,
     });
     if (showRoomManagement) return <RoomManagement />;
     if (showTenants) return <TenantManagementPage />;
@@ -67,8 +71,10 @@ function HomePage({
     if (showServices) return <div>Quản lý dịch vụ (Chưa triển khai)</div>;
     if (showAssets) return <div>Quản lý tài sản (Chưa triển khai)</div>;
     if (showFinance) return <div>Quản lý thu chi (Chưa triển khai)</div>;
-    if (showAccountManagement) return <AccountManagementPage />;
+    if (showManagerAccounts) return <AccountManagementPage type="manager" />;
+    if (showTenantAccounts) return <AccountManagementPage type="tenant" />;
     if (showProfile) return <ProfilePage />;
+    if (showTenantManagementPage) return <TenantManagementPage />;
     return (
       <>
         <h2 className="dashboard-title">Dashboard</h2>

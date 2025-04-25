@@ -1,141 +1,232 @@
-import React, { useState } from 'react';
-import { FaTimes, FaEdit, FaPhone, FaEnvelope, FaKey } from 'react-icons/fa';
+import React from 'react';
+import { FaTimes } from 'react-icons/fa';
+import '../../styles/Tenant/TenantDetailsPopup.css';
 
-const TenantDetailsPopup = ({
-  tenant,
-  onClose,
-  onEdit,
-  isReservation,
-  onEditReservation,
-  onDeleteReservation,
-}) => {
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPasswordChange, setShowPasswordChange] = useState(false);
+const TenantDetailsPopup = ({ tenant, onClose, onEdit, onChangeStatus, onReRent, onConvertToTenant, isReservation, rooms }) => {
+  const selectedRoom = rooms.find((room) => room.room_id === tenant.room_id);
 
-  const handlePasswordChange = () => {
-    if (newPassword !== confirmPassword) {
-      alert('Mật khẩu xác nhận không khớp');
-      return;
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0);
+  };
+
+  const formatDate = (date) => {
+    return date ? new Date(date).toLocaleDateString('vi-VN') : 'N/A';
+  };
+
+  const handleChangeStatus = () => {
+    const confirm = window.confirm('Bạn có chắc chắn muốn chuyển trạng thái khách thuê thành "Rời đi"?');
+    if (confirm && onChangeStatus) {
+      onChangeStatus(tenant, false);
     }
-    alert('Đổi mật khẩu thành công');
-    setShowPasswordChange(false);
-    setNewPassword('');
-    setConfirmPassword('');
+  };
+
+  const handleReRent = () => {
+    const confirm = window.confirm('Bạn có chắc chắn muốn cho khách thuê lại?');
+    if (confirm && onReRent) {
+      onReRent(tenant);
+    }
+  };
+
+  const handleConvertToTenant = () => {
+    const confirm = window.confirm('Bạn có chắc chắn muốn chuyển khách cọc thành khách đang thuê?');
+    if (confirm && onConvertToTenant) {
+      onConvertToTenant(tenant);
+    }
   };
 
   return (
     <div className="popup-overlay">
       <div className="popup-container">
         <div className="popup-header">
-          <h2 className="popup-title">Thông tin khách thuê</h2>
+          <h2 className="popup-title">
+            {isReservation ? 'Chi tiết cọc giữ chỗ' : tenant.is_active ? 'Chi tiết khách đang thuê' : 'Chi tiết khách đã rời'}
+          </h2>
           <button onClick={onClose} className="popup-close-btn">
             <FaTimes size={20} />
           </button>
         </div>
-        <div className="details-content">
-          <div className="details-header">
-            <h3 className="details-title">{tenant.name}</h3>
-            {!isReservation && (
-              <button className="details-edit-btn" onClick={onEdit}>
-                <FaEdit />
-              </button>
-            )}
-            {isReservation && (
-              <div className="flex space-x-3">
-                <button className="details-edit-btn" onClick={onEditReservation}>
-                  Sửa
-                </button>
-                <button className="details-delete-btn" onClick={() => onDeleteReservation(tenant.id)}>
-                  Xóa
-                </button>
+        <div className="popup-content">
+          {/* Thông tin khách */}
+          <div className="popup-section">
+            <h3 className="popup-section-title">Thông tin khách</h3>
+            <div className="info-grid">
+              <div className="info-item">
+                <span className="info-label">Họ tên:</span>
+                <span className="info-value">{tenant.name || 'N/A'}</span>
               </div>
+              <div className="info-item">
+                <span className="info-label">Số điện thoại:</span>
+                <span className="info-value">{tenant.phone || 'N/A'}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Email:</span>
+                <span className="info-value">{tenant.email || 'N/A'}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">CMTND/CCCD:</span>
+                <span className="info-value">{tenant.identity_number || tenant.idNumber || 'N/A'}</span>
+              </div>
+              {isReservation && (
+                <>
+                  <div className="info-item">
+                    <span className="info-label">Tỉnh/Thành phố:</span>
+                    <span className="info-value">{tenant.province || 'N/A'}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Quận/Huyện:</span>
+                    <span className="info-value">{tenant.district || 'N/A'}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Phường/Xã:</span>
+                    <span className="info-value">{tenant.ward || 'N/A'}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Địa chỉ:</span>
+                    <span className="info-value">{tenant.address || 'N/A'}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Ngày dự kiến chuyển vào:</span>
+                    <span className="info-value">{formatDate(tenant.moveInDate)}</span>
+                  </div>
+                </>
+              )}
+              {!isReservation && (
+                <>
+                  <div className="info-item">
+                    <span className="info-label">Địa chỉ thường trú:</span>
+                    <span className="info-value">{tenant.address || 'N/A'}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Trạng thái:</span>
+                    <span className="info-value">
+                      {tenant.is_active ? 'Đang thuê' : 'Rời đi'}
+                    </span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Là trưởng phòng:</span>
+                    <span className="info-value">{tenant.is_lead_room ? 'Có' : 'Không'}</span>
+                  </div>
+                  {!tenant.is_active && tenant.reason_for_leaving && (
+                    <div className="info-item">
+                      <span className="info-label">Lý do rời đi:</span>
+                      <span className="info-value">{tenant.reason_for_leaving}</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Thông tin phòng */}
+          <div className="popup-section">
+            <h3 className="popup-section-title">Thông tin phòng</h3>
+            {selectedRoom ? (
+              <div className="info-grid">
+                <div className="info-item">
+                  <span className="info-label">Tên phòng:</span>
+                  <span className="info-value">{selectedRoom.roomName || 'N/A'}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Tầng:</span>
+                  <span className="info-value">{selectedRoom.floor || 'N/A'}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Trạng thái:</span>
+                  <span className="info-value">{selectedRoom.status || 'N/A'}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Giá thuê:</span>
+                  <span className="info-value">{formatPrice(selectedRoom.price)}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Tiền cọc:</span>
+                  <span className="info-value">{formatPrice(selectedRoom.deposit)}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Diện tích:</span>
+                  <span className="info-value">{selectedRoom.area || 0} m²</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Sức chứa:</span>
+                  <span className="info-value">{selectedRoom.capacity || 0} người</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Ngày có thể thuê:</span>
+                  <span className="info-value">{selectedRoom.availableDate || 'N/A'}</span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-500">Không tìm thấy thông tin phòng</p>
             )}
           </div>
-          <p><span className="details-info">Số điện thoại:</span> <a href={`tel:${tenant.phone}`} className="details-info-value">{tenant.phone}</a></p>
-          <p><span className="details-info">Email:</span> {tenant.email || 'N/A'}</p>
-          <p><span className="details-info">CMTND/CCCD:</span> {tenant.identity_number}</p>
-          <p><span className="details-info">Nhà:</span> {tenant.house}</p>
-          <p><span className="details-info">Phòng:</span> {tenant.room}</p>
-          {isReservation && <p><span className="details-info">Ngày vào dự kiến:</span> {tenant.moveInDate}</p>}
-          <p><span className="details-info">Địa chỉ:</span> {tenant.address}, {tenant.ward}, {tenant.district}, {tenant.province}</p>
-          <p><span className="details-info">Ghi chú:</span> {tenant.notes || 'N/A'}</p>
-          {!isReservation && (
+
+          {/* Thông tin hợp đồng - Chỉ hiển thị cho khách thuê, không hiển thị cho khách cọc */}
+          {!isReservation && tenant.contract && (
+            <div className="popup-section">
+              <h3 className="popup-section-title">Thông tin hợp đồng</h3>
+              <div className="info-grid">
+                <div className="info-item">
+                  <span className="info-label">Mã hợp đồng:</span>
+                  <span className="info-value">{tenant.contract.contract_id || 'N/A'}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Tiền cọc:</span>
+                  <span className="info-value">{formatPrice(tenant.contract.deposit)}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Tiền thuê:</span>
+                  <span className="info-value">{formatPrice(tenant.contract.rent_amount)}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Ngày bắt đầu:</span>
+                  <span className="info-value">{formatDate(tenant.contract.start_date)}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Ngày kết thúc:</span>
+                  <span className="info-value">{formatDate(tenant.contract.end_date)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Nút chức năng */}
+        <div className="popup-buttons">
+          {isReservation ? (
             <>
-              <h3 className="details-subsection-title">Thông tin hợp đồng</h3>
-              <p><span className="details-info">Mã hợp đồng:</span> {tenant.contract.contract_id}</p>
-              <p><span className="details-info">Tiền cọc:</span> {tenant.contract.deposit}</p>
-              <p><span className="details-info">Tiền thuê:</span> {tenant.contract.rent_amount}</p>
-              <p><span className="details-info">Ngày bắt đầu:</span> {tenant.contract.start_date}</p>
-              <p><span className="details-info">Ngày kết thúc:</span> {tenant.contract.end_date}</p>
+              <button className="btn-primary bg-green-600 hover:bg-green-700" onClick={handleConvertToTenant}>
+                Chuyển thành khách thuê
+              </button>
+              <button className="btn-secondary" onClick={onClose}>
+                Đóng
+              </button>
+            </>
+          ) : tenant.is_active ? (
+            <>
+              <button className="btn-primary" onClick={onEdit}>
+                Sửa
+              </button>
+              <button className="btn-danger" onClick={handleChangeStatus}>
+                Chuyển trạng thái rời đi
+              </button>
+              <button className="btn-secondary" onClick={onClose}>
+                Đóng
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="btn-primary" onClick={onEdit}>
+                Sửa
+              </button>
+              <button className="btn-success" onClick={handleReRent}>
+                Cho thuê lại
+              </button>
+              <button className="btn-secondary" onClick={onClose}>
+                Đóng
+              </button>
             </>
           )}
         </div>
-        {!isReservation && (
-          <div className="details-actions">
-            <h3 className="details-actions-title">Hành động</h3>
-            <div className="details-action-buttons">
-              <button
-                className="details-action-button"
-                onClick={() => alert('Chuyển đến màn hình nhắn tin (mock)')}
-              >
-                <FaEnvelope className="details-action-icon" /> Nhắn tin
-              </button>
-              <button className="details-action-button">
-                <FaPhone className="details-action-icon" /> <a href={`tel:${tenant.phone}`}>Gọi điện</a>
-              </button>
-              <button
-                className="details-action-button"
-                onClick={() => setShowPasswordChange(true)}
-              >
-                <FaKey className="details-action-icon" /> Đổi mật khẩu
-              </button>
-            </div>
-          </div>
-        )}
-
-        {showPasswordChange && (
-          <div className="details-subsection">
-            <h3 className="details-subsection-title">Đổi mật khẩu</h3>
-            <div className="space-y-3">
-              <div>
-                <label htmlFor="newPassword" className="popup-label">
-                  Mật khẩu mới
-                </label>
-                <input
-                  type="password"
-                  className="popup-input"
-                  id="newPassword"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="confirmPassword" className="popup-label">
-                  Xác nhận mật khẩu
-                </label>
-                <input
-                  type="password"
-                  className="popup-input"
-                  id="confirmPassword"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
-              </div>
-              <div className="flex space-x-3">
-                <button className="btn-primary" onClick={handlePasswordChange}>
-                  Xác nhận
-                </button>
-                <button
-                  className="btn-secondary"
-                  onClick={() => setShowPasswordChange(false)}
-                >
-                  Hủy
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

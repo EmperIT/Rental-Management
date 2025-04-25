@@ -9,6 +9,7 @@ import RoomManagement from '../pages/RoomManagement';
 import TenantManagementPage from '../pages/TenantManagementPage';
 import Contract from '../pages/Contract';
 import Templates from '../pages/Templates';
+import TenantDashboardPage from '../pages/TenantDashboardPage';
 
 const isAuthenticated = () => {
   return localStorage.getItem('isAuthenticated') === 'true';
@@ -67,12 +68,20 @@ const AppRoutes = () => {
           element={<PrivateRoute element={<HomePage showFinance={true} />} />}
         />
         <Route
-          path="/accounts/manage"
-          element={<PrivateRoute element={<HomePage showAccountManagement={true} />} />}
+          path="/accounts/managers"
+          element={<PrivateRoute element={<HomePage showManagerAccounts={true} />} />}
+        />
+        <Route
+          path="/accounts/tenants"
+          element={<PrivateRoute element={<HomePage showTenantAccounts={true} />} />}
         />
         <Route
           path="/accounts/profile"
           element={<PrivateRoute element={<HomePage showProfile={true} />} />}
+        />
+        <Route
+          path="/tenant-dashboard"
+          element={<PrivateRoute element={<HomePage showTenantDashboard={true} />} />}
         />
       </Routes>
     </Router>

@@ -1,0 +1,238 @@
+.account-management {
+    padding: 20px;
+    max-width: 1200px; /* Giảm từ 1400px để giao diện gọn hơn */
+    margin: 0 auto;
+  }
+  
+  .account-management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px; /* Giảm từ 30px */
+  }
+  
+  .account-management-header h2 {
+    font-size: 24px; /* Giảm từ 28px */
+    color: #333;
+  }
+  
+  .add-button {
+    background-color: #5a67d8;
+    color: white;
+    padding: 10px 20px; /* Giảm từ 12px 24px */
+    border: none;
+    border-radius: 5px; /* Giảm từ 6px */
+    cursor: pointer;
+    font-size: 16px; /* Giảm từ 18px */
+    transition: background-color 0.3s;
+  }
+  
+  .add-button:hover {
+    background-color: #5a67d8;
+  }
+  
+  .account-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Giảm shadow */
+  }
+  
+  .account-table th,
+  .account-table td {
+    padding: 12px 16px; /* Giảm từ 16px 20px */
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    font-size: 14px; /* Giảm từ 16px */
+  }
+  
+  .account-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .account-table tr:hover {
+    background-color: #f1f1f1;
+  }
+  
+  .action-button {
+    padding: 8px 12px; /* Giảm từ 10px 16px */
+    margin-right: 6px; /* Giảm từ 8px */
+    border: none;
+    border-radius: 4px; /* Giảm từ 5px */
+    cursor: pointer;
+    font-size: 14px; /* Giảm từ 16px */
+  }
+  
+  .action-button.edit {
+    background-color: #007bff;
+    color: white;
+  }
+  
+  .action-button.edit:hover {
+    background-color: #0056b3;
+  }
+  
+  .action-button.delete {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  .action-button.delete:hover {
+    background-color: #c82333;
+  }
+  
+  .popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .popup {
+    background-color: #fff;
+    padding: 20px; /* Giảm từ 30px */
+    border-radius: 8px; /* Giảm từ 10px */
+    width: 600px; /* Giảm từ 600px */
+    max-width: 100%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Giảm shadow */
+  }
+  
+  .popup h3 {
+    margin-bottom: 20px; /* Giảm từ 25px */
+    font-size: 20px; /* Giảm từ 24px */
+    color: #333;
+  }
+  
+  .form-section {
+    margin-bottom: 20px; /* Giảm từ 25px */
+    padding: 15px; /* Giảm từ 20px */
+    border: 1px solid #e0e0e0;
+    border-radius: 5px; /* Giảm từ 6px */
+    background-color: #f9f9f9;
+  }
+  
+  .form-section h4 {
+    margin-bottom: 12px; /* Giảm từ 15px */
+    font-size: 16px; /* Giảm từ 18px */
+    color: #555;
+  }
+  
+  .form-group {
+    margin-bottom: 15px; /* Giảm từ 20px */
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 6px; /* Giảm từ 8px */
+    font-weight: 500;
+    font-size: 14px; /* Giảm từ 16px */
+    color: #333;
+  }
+  
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 10px; /* Giảm từ 12px */
+    border: 1px solid #ccc;
+    border-radius: 4px; /* Giảm từ 5px */
+    font-size: 14px; /* Giảm từ 16px */
+  }
+  
+  .form-group input:disabled {
+    background-color: #e9ecef;
+    color: #6c757d;
+    cursor: not-allowed;
+  }
+  
+  .form-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 10px; /* Giảm từ 12px */
+  }
+  
+  .password-group {
+    position: relative;
+  }
+  
+  .password-input-wrapper {
+    position: relative;
+  }
+  
+  .password-toggle {
+    position: absolute;
+    right: 10px; /* Giảm từ 12px */
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 16px; /* Giảm từ 18px */
+    color: #555;
+  }
+  
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px; /* Giảm từ 12px */
+  }
+  
+  .save-button {
+    background-color: #5a67d8;
+    color: white;
+    padding: 10px 20px; /* Giảm từ 12px 24px */
+    border: none;
+    border-radius: 4px; /* Giảm từ 5px */
+    cursor: pointer;
+    font-size: 14px; /* Giảm từ 16px */
+  }
+  
+  .save-button:hover {
+    background-color: #5a67d8;
+  }
+  
+  .cancel-button {
+    background-color: #6c757d;
+    color: white;
+    padding: 10px 20px; /* Giảm từ 12px 24px */
+    border: none;
+    border-radius: 4px; /* Giảm từ 5px */
+    cursor: pointer;
+    font-size: 14px; /* Giảm từ 16px */
+  }
+  
+  .cancel-button:hover {
+    background-color: #5a6268;
+  }
+  
+  @media (max-width: 600px) {
+    .account-management {
+      padding: 15px; /* Giảm từ 20px */
+    }
+  
+    .account-table th,
+    .account-table td {
+      padding: 10px; /* Giảm từ 12px */
+      font-size: 12px; /* Giảm từ 14px */
+    }
+  
+    .popup {
+      width: 90%;
+      padding: 15px; /* Giảm từ 20px */
+    }
+  
+    .add-button {
+      padding: 8px 16px; /* Giảm từ 10px 20px */
+      font-size: 14px; /* Giảm từ 16px */
+    }
+  
+    .form-group input,
+    .form-group select {
+      padding: 8px; /* Giảm từ 10px */
+      font-size: 12px; /* Giảm từ 14px */
+    }
+  }

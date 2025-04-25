@@ -13,6 +13,8 @@ const RoomFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false }
     amenities: [],
     photos: [],
     status: 'Trống',
+    leadTenant: '',
+    createdDate: new Date().toISOString().split('T')[0],
   });
 
   useEffect(() => {
@@ -20,6 +22,14 @@ const RoomFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false }
       setFormData(initialData);
     }
   }, [initialData]);
+
+  const floorsList = [
+    'Tầng 1',
+    'Tầng 2',
+    'Tầng 3',
+    'Tầng 4',
+    'Tầng 5',
+  ];
 
   const amenitiesList = [
     { id: 'wifi', label: 'WiFi' },
@@ -49,9 +59,9 @@ const RoomFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false }
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const { roomName, floor, price, deposit, area, capacity, availableDate, status } = formData;
+    const { roomName, floor, price, deposit, area, capacity, status } = formData;
 
-    if (!roomName || !floor || !price || !deposit || !area || !capacity || !availableDate || !status) {
+    if (!roomName || !floor || !price || !deposit || !area || !capacity || !status) {
       alert('Vui lòng điền đầy đủ các trường thông tin bắt buộc.');
       return;
     }
@@ -95,16 +105,21 @@ const RoomFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false }
                 <label htmlFor="floor" className="block text-sm font-medium text-gray-700 mb-1">
                   Tầng/Khu/Dãy <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
+                <select
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                   id="floor"
                   name="floor"
                   value={formData.floor}
                   onChange={handleFormChange}
-                  placeholder="Tầng 1"
                   required
-                />
+                >
+                  <option value="">Chọn tầng</option>
+                  {floorsList.map((floor) => (
+                    <option key={floor} value={floor}>
+                      {floor}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
@@ -170,7 +185,7 @@ const RoomFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false }
               </div>
               <div>
                 <label htmlFor="availableDate" className="block text-sm font-medium text-gray-700 mb-1">
-                  Ngày phòng sắp trống <span className="text-red-500">*</span>
+                  Ngày phòng sắp trống
                 </label>
                 <input
                   type="date"
@@ -179,7 +194,20 @@ const RoomFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false }
                   name="availableDate"
                   value={formData.availableDate}
                   onChange={handleFormChange}
-                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="leadTenant" className="block text-sm font-medium text-gray-700 mb-1">
+                  Trưởng phòng
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  id="leadTenant"
+                  name="leadTenant"
+                  value={formData.leadTenant}
+                  onChange={handleFormChange}
+                  placeholder="Nguyễn Văn A"
                 />
               </div>
               <div>
@@ -195,7 +223,9 @@ const RoomFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false }
                   required
                 >
                   <option value="Trống">Trống</option>
-                  <option value="Đang cho thuê">Đang cho thuê</option>
+                  <option value="Đang thuê">Đang thuê</option>
+                  <option value="Đã đặt">Đã đặt</option>
+                  <option value="Đã cọc">Đã cọc</option>
                 </select>
               </div>
               <div>
