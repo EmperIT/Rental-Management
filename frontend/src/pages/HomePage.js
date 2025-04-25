@@ -12,6 +12,7 @@ import AssetPage from './AssetPage';
 import FinancePage from './FinancePage';
 import AccountManagementPage from './AccountManagementPage';
 import ProfilePage from './ProfilePage';
+import TemporaryResidenceManagement from './TemporaryResidenceManagement';
 import { FaBars } from 'react-icons/fa';
 import '../styles/HomePage.css';
 
@@ -29,6 +30,7 @@ function HomePage({
   showTenantAccounts = false,
   showProfile = false,
   showTenantManagementPage = false,
+  showTemporaryResidenceManagement  = false,
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -65,10 +67,11 @@ function HomePage({
       showTenantAccounts,
       showProfile,
       showTenantManagementPage,
+      showTemporaryResidenceManagement,
     });
     if (showRoomManagement) return <RoomManagement />;
     if (showTenants) return <TenantManagementPage />;
-    if (showResidenceRegistration) return <div>Quản lý hóa đơn (Chưa triển khai)</div>;
+    if (showResidenceRegistration) return <TemporaryResidenceManagement/>;
     if (showContracts) return <Contract />;
     if (showTemplateContracts) return <Templates />;
     if (showBills) return <div><InvoicePage /></div>;

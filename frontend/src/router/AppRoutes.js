@@ -4,7 +4,6 @@ import LoginPage from '../pages/LoginPage';
 import SignUpPage from '../pages/SignUpPage';
 import HomePage from '../pages/HomePage';
 
-
 const isAuthenticated = () => {
   return localStorage.getItem('isAuthenticated') === 'true';
 };
