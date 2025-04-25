@@ -1,14 +1,21 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 
 function RoleBasedAccess({ allowedRoles, children }) {
-  // Mock current user role (replace with auth context or API call)
-  const currentUserRole = localStorage.getItem('userRole') || 'tenant_regular';
+  const userRole = localStorage.getItem('userRole') || 'tenant';
+  const location = useLocation();
 
-  if (!allowedRoles.includes(currentUserRole)) {
-    return <Navigate to="/home" replace />;
-  }
+  const roleAccessMap = {
+    '/residence-registration': ['landlord', 'manager'],
+    '/accounts/managers': ['landlord'],
+    '/accounts/tenants': ['landlord'],
+    '/tenant-dashboard': ['tenant'],
+  };
 
-  return children;
+  const isAllowed = roleAccessMap[location.pathname]
+    ? roleAccessMap[location.pathname].includes(userRole)
+    : allowedRoles.includes(userRole);
+
+  return isAllowed ? children : <Navigate to="/home" replace />;
 }
 
 export default RoleBasedAccess;

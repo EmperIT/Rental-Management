@@ -1,93 +1,69 @@
+.account-management-page {
+  padding: 5px;
+}
+
 .account-management {
-    padding: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-  
-  .account-title {
-    font-size: 24px;
-    margin-bottom: 20px;
-  }
-  
-  .error-message {
-    color: #ef4444;
-    margin-bottom: 15px;
-    font-size: 16px;
-  }
-  
-  .account-form {
-    display: grid;
-    gap: 15px;
-    margin-bottom: 30px;
-  }
-  
-  .account-form input,
-  .account-form select {
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 16px;
-  }
-  
-  .account-form input:disabled {
-    background-color: #f4f4f4;
-  }
-  
-  .account-form button {
-    padding: 10px;
-    background-color: #6366F1;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-  }
-  
-  .account-form button:hover {
-    background-color: #5457cd;
-  }
-  
-  .account-list h3 {
-    font-size: 20px;
-    margin-bottom: 15px;
-  }
-  
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-  }
-  
-  th,
-  td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  th {
-    background-color: #f4f4f4;
-  }
-  
-  .edit-btn,
-  .delete-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 18px;
-    margin-right: 10px;
-  }
-  
-  .edit-btn:hover {
-    color: #6366F1;
-  }
-  
-  .delete-btn:hover {
-    color: #ef4444;
-  }
-  
-  .edit-btn:disabled,
-  .delete-btn:disabled {
-    color: #ccc;
-    cursor: not-allowed;
-  }
+  max-width: 2000px;
+  margin: 0 auto;
+}
+
+.account-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.account-form input,
+.account-form select {
+  padding: 10px;
+  border: 1px solid #D1D5DB;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.account-form label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.account-form button {
+  background-color: #6366F1;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.account-form button:hover {
+  background-color: #4F46E5;
+}
+
+.account-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.account-table th,
+.account-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #D1D5DB;
+}
+
+.account-table th {
+  background-color: #F3F4F6;
+}
+
+.action-icon {
+  margin: 0 10px;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.action-icon:hover {
+  color: #6366F1;
+}

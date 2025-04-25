@@ -25,8 +25,10 @@ function HomePage({
   showServices = false,
   showAssets = false,
   showFinance = false,
-  showAccountManagement = false,
+  showManagerAccounts = false,
+  showTenantAccounts = false,
   showProfile = false,
+  showTenantManagementPage = false,
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -59,8 +61,10 @@ function HomePage({
       showServices,
       showAssets,
       showFinance,
-      showAccountManagement,
+      showManagerAccounts,
+      showTenantAccounts,
       showProfile,
+      showTenantManagementPage,
     });
     if (showRoomManagement) return <RoomManagement />;
     if (showTenants) return <TenantManagementPage />;
@@ -71,8 +75,9 @@ function HomePage({
     if (showServices) return <div><ServicePage /></div>;
     if (showAssets) return <div><AssetPage /></div>;
     if (showFinance) return <div><FinancePage /></div>;
-    if (showAccountManagement) return <AccountManagementPage />;
+    if (showManagerAccounts) return <AccountManagementPage />;
     if (showProfile) return <ProfilePage />;
+    if (showTenantManagementPage) return <TenantManagementPage />;
     return (
       <>
         <h2 className="dashboard-title">Dashboard</h2>

@@ -1,60 +1,109 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaCalendarAlt } from 'react-icons/fa';
+import { FaTimes } from 'react-icons/fa';
+import '../../styles/Tenant/TenantFormPopup.css';
 
-const TenantFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false, houses, rooms }) => {
+const TenantFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false, rooms, onUpdateRoom }) => {
   const [formData, setFormData] = useState({
-    id: initialData ? initialData.id : Date.now(),
+    tenant_id: initialData ? initialData.tenant_id : Date.now(),
+    room_id: '',
     name: '',
-    phone: '',
     email: '',
+    phone: '',
     identity_number: '',
-    idFrontPhoto: null,
-    idBackPhoto: null,
-    house: '',
-    room: '',
     province: '',
     district: '',
     ward: '',
     address: '',
-    notes: '',
     is_lead_room: false,
-    deposit: '',
-    rent_amount: '',
-    start_date: '',
-    end_date: '',
+    is_active: true,
+    create_at: initialData ? initialData.create_at : new Date().toISOString(),
+    update_at: new Date().toISOString(),
+    contract: null,
   });
 
   useEffect(() => {
     if (initialData) {
       setFormData({
         ...initialData,
-        deposit: initialData.contract?.deposit || '',
-        rent_amount: initialData.contract?.rent_amount || '',
-        start_date: initialData.contract?.start_date || '',
-        end_date: initialData.contract?.end_date || '',
+        update_at: new Date().toISOString(),
       });
     }
   }, [initialData]);
 
   const handleFormChange = (e) => {
-    const { name, value, type, files } = e.target;
-    if (type === 'file') {
-      setFormData((prev) => ({ ...prev, [name]: files[0] }));
+    const { name, value, type, checked } = e.target;
+    if (type === 'checkbox') {
+      setFormData((prev) => ({ ...prev, [name]: checked }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
+  const handleRoomChange = (e) => {
+    const roomId = e.target.value;
+    const selectedRoom = rooms.find((room) => room.room_id === roomId);
+    setFormData((prev) => ({
+      ...prev,
+      room_id: roomId,
+      roomName: selectedRoom?.roomName || '',
+      floor: selectedRoom?.floor || '',
+    }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    const { name, phone, identity_number, house, room, province, district, ward, deposit, rent_amount, start_date, end_date } = formData;
+    const { name, phone, identity_number, room_id, province, district, ward } = formData;
 
-    if (!name || !phone || !identity_number || !house || !room || !province || !district || !ward || !deposit || !rent_amount || !start_date || !end_date) {
+    if (!name || !phone || !identity_number || !room_id || !province || !district || !ward) {
       alert('Vui lòng điền đầy đủ các trường thông tin bắt buộc.');
       return;
     }
 
-    onSubmit(formData);
+    const permanent_address = `${formData.address ? formData.address + ', ' : ''}${formData.ward}, ${formData.district}, ${formData.province}`;
+
+    const selectedRoom = rooms.find((room) => room.room_id === formData.room_id);
+
+    let contract = formData.contract;
+    if (!isEdit && formData.is_lead_room && selectedRoom) {
+      contract = {
+        contract_id: `HD${Date.now()}`,
+        deposit: selectedRoom.deposit,
+        rent_amount: selectedRoom.price,
+        start_date: new Date().toISOString().split('T')[0],
+        end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+      };
+    }
+
+    const tenantData = {
+      ...formData,
+      permanent_address,
+      contract,
+    };
+
+    let account = null;
+    if (formData.is_lead_room) {
+      account = {
+        username: formData.email || formData.phone,
+        password: 'Password123!',
+      };
+    }
+
+    if (!isEdit && selectedRoom) {
+      const updatedRoom = { ...selectedRoom };
+      if (updatedRoom.status === 'Trống') {
+        updatedRoom.status = 'Đã thuê';
+      }
+      if (formData.is_lead_room) {
+        updatedRoom.leadTenant = formData.name;
+      }
+      onUpdateRoom(updatedRoom);
+    }
+
+    onSubmit(tenantData, account);
+  };
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0);
   };
 
   return (
@@ -130,66 +179,32 @@ const TenantFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false
                   required
                 />
               </div>
-              <div>
-                <label htmlFor="idFrontPhoto" className="popup-label">
-                  Ảnh mặt trước CMTND/CCCD
-                </label>
-                <input
-                  type="file"
-                  className="popup-input"
-                  id="idFrontPhoto"
-                  name="idFrontPhoto"
-                  onChange={handleFormChange}
-                />
-              </div>
-              <div>
-                <label htmlFor="idBackPhoto" className="popup-label">
-                  Ảnh mặt sau CMTND/CCCD
-                </label>
-                <input
-                  type="file"
-                  className="popup-input"
-                  id="idBackPhoto"
-                  name="idBackPhoto"
-                  onChange={handleFormChange}
-                />
-              </div>
             </div>
             <div className="popup-form-section">
               <div>
-                <label htmlFor="house" className="popup-label">
-                  Chọn nhà <span className="popup-required">*</span>
-                </label>
-                <select
-                  className="popup-select"
-                  id="house"
-                  name="house"
-                  value={formData.house}
-                  onChange={handleFormChange}
-                  required
-                >
-                  <option value="">Chọn nhà</option>
-                  {houses.map((house, index) => (
-                    <option key={index} value={house}>{house}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="room" className="popup-label">
+                <label htmlFor="room_id" className="popup-label">
                   Chọn phòng <span className="popup-required">*</span>
                 </label>
                 <select
                   className="popup-select"
-                  id="room"
-                  name="room"
-                  value={formData.room}
-                  onChange={handleFormChange}
+                  id="room_id"
+                  name="room_id"
+                  value={formData.room_id}
+                  onChange={handleRoomChange}
                   required
                 >
                   <option value="">Chọn phòng</option>
-                  {rooms.map((room, index) => (
-                    <option key={index} value={room}>{room}</option>
-                  ))}
+                  {rooms && rooms.length > 0 ? (
+                    rooms.map((room) => (
+                      <option key={room.room_id} value={room.room_id}>
+                        {`${room.roomName || 'N/A'} - ${room.floor || 'N/A'} - ${room.status || 'N/A'} - ${formatPrice(room.price)}`}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>
+                      Không có phòng nào
+                    </option>
+                  )}
                 </select>
               </div>
               <div>
@@ -258,81 +273,30 @@ const TenantFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false
                 />
               </div>
               <div>
-                <label htmlFor="notes" className="popup-label">
-                  Ghi chú
-                </label>
-                <textarea
-                  className="popup-textarea"
-                  id="notes"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleFormChange}
-                  placeholder="Ghi chú thêm"
-                />
-              </div>
-              <div>
-                <label htmlFor="deposit" className="popup-label">
-                  Tiền cọc <span className="popup-required">*</span>
+                <label htmlFor="is_lead_room" className="popup-label">
+                  Là trưởng phòng
                 </label>
                 <input
-                  type="text"
-                  className="popup-input"
-                  id="deposit"
-                  name="deposit"
-                  value={formData.deposit}
+                  type="checkbox"
+                  id="is_lead_room"
+                  name="is_lead_room"
+                  checked={formData.is_lead_room}
                   onChange={handleFormChange}
-                  placeholder="1,000,000"
-                  required
+                  className="popup-checkbox"
                 />
               </div>
               <div>
-                <label htmlFor="rent_amount" className="popup-label">
-                  Tiền thuê <span className="popup-required">*</span>
+                <label htmlFor="is_active" className="popup-label">
+                  Trạng thái hoạt động
                 </label>
                 <input
-                  type="text"
-                  className="popup-input"
-                  id="rent_amount"
-                  name="rent_amount"
-                  value={formData.rent_amount}
+                  type="checkbox"
+                  id="is_active"
+                  name="is_active"
+                  checked={formData.is_active}
                   onChange={handleFormChange}
-                  placeholder="5,000,000"
-                  required
+                  className="popup-checkbox"
                 />
-              </div>
-              <div>
-                <label htmlFor="start_date" className="popup-label">
-                  Ngày bắt đầu <span className="popup-required">*</span>
-                </label>
-                <div className="popup-date-wrapper">
-                  <input
-                    type="date"
-                    className="popup-input"
-                    id="start_date"
-                    name="start_date"
-                    value={formData.start_date}
-                    onChange={handleFormChange}
-                    required
-                  />
-                  <FaCalendarAlt className="popup-date-icon" />
-                </div>
-              </div>
-              <div>
-                <label htmlFor="end_date" className="popup-label">
-                  Ngày kết thúc <span className="popup-required">*</span>
-                </label>
-                <div className="popup-date-wrapper">
-                  <input
-                    type="date"
-                    className="popup-input"
-                    id="end_date"
-                    name="end_date"
-                    value={formData.end_date}
-                    onChange={handleFormChange}
-                    required
-                  />
-                  <FaCalendarAlt className="popup-date-icon" />
-                </div>
               </div>
             </div>
           </div>
