@@ -1,297 +1,422 @@
-import React, { useState } from 'react';
-import TenantFilter from '../components/Tenant/TenantFilter';
-import TenantTable from '../components/Tenant/TenantTable';
+import React, { useState, useEffect } from 'react';
 import TenantFormPopup from '../components/Tenant/TenantFormPopup';
 import TenantDetailsPopup from '../components/Tenant/TenantDetailsPopup';
 import ReservationFormPopup from '../components/Tenant/ReservationFormPopup';
-import '../styles/Tenant/tenantmanagement.css'
-import ExcelUpload from '../components/Tenant/ExcelUpload'; // Import ExcelUpload component
+import TenantTable from '../components/Tenant/TenantTable';
+import SummaryCards from '../components/Tenant/SummaryCards';
+import ExcelExport from '../components/Tenant/ExcelExport';
+import '../styles/Tenant/tenantmanagement.css';
+
 const TenantManagementPage = () => {
-  const [activeTab, setActiveTab] = useState('current');
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  const [showFormPopup, setShowFormPopup] = useState(false);
+  const [showDetailsPopup, setShowDetailsPopup] = useState(false);
+  const [showReservationPopup, setShowReservationPopup] = useState(false);
   const [tenants, setTenants] = useState([]);
   const [reservations, setReservations] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [houseFilter, setHouseFilter] = useState('');
-  const [roomFilter, setRoomFilter] = useState('');
-  const [showAddTenantPopup, setShowAddTenantPopup] = useState(false);
-  const [showEditTenantPopup, setShowEditTenantPopup] = useState(false);
-  const [showTenantDetailsPopup, setShowTenantDetailsPopup] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState(null);
-  const [showAddReservationPopup, setShowAddReservationPopup] = useState(false);
-  const [showEditReservationPopup, setShowEditReservationPopup] = useState(false);
-  const [selectedReservation, setSelectedReservation] = useState(null);
-  const [showExcelUpload, setShowExcelUpload] = useState(false);
+  const [activeTab, setActiveTab] = useState('current');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [floorFilter, setFloorFilter] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [rooms, setRooms] = useState([
+    {
+      room_id: '1',
+      roomName: 'Phòng 101',
+      floor: 'Tầng 1',
+      price: 3000000,
+      deposit: 1500000,
+      area: 25,
+      capacity: 2,
+      availableDate: '2025-05-01',
+      status: 'Trống',
+    },
+    {
+      room_id: '2',
+      roomName: 'Phòng 102',
+      floor: 'Tầng 2',
+      price: 3500000,
+      deposit: 1750000,
+      area: 30,
+      capacity: 3,
+      availableDate: '2025-05-01',
+      status: 'Đã thuê',
+    },
+    {
+      room_id: '3',
+      roomName: 'Phòng 103',
+      floor: 'Tầng 1',
+      price: 3200000,
+      deposit: 1600000,
+      area: 28,
+      capacity: 2,
+      availableDate: '2025-05-01',
+      status: 'Trống',
+    },
+    {
+      room_id: '4',
+      roomName: 'Phòng 104',
+      floor: 'Tầng 2',
+      price: 4000000,
+      deposit: 2000000,
+      area: 35,
+      capacity: 4,
+      availableDate: '2025-05-01',
+      status: 'Đã thuê',
+    },
+    {
+      room_id: '5',
+      roomName: 'Phòng 105',
+      floor: 'Tầng 3',
+      price: 2800000,
+      deposit: 1400000,
+      area: 20,
+      capacity: 2,
+      availableDate: '2025-05-01',
+      status: 'Trống',
+    },
+  ]);
 
-  const houses = ['Nhà A', 'Nhà B'];
-  const rooms = ['Phòng 101', 'Phòng 102'];
-
-  const filteredTenants = tenants.filter((tenant) => {
-    const matchesTab = activeTab === 'current'; // Only "Current" tenants
-    const matchesSearch = tenant.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesHouse = !houseFilter || tenant.house === houseFilter;
-    const matchesRoom = !roomFilter || tenant.room === roomFilter;
-    return matchesTab && matchesSearch && matchesHouse && matchesRoom;
-  });
-
-  const filteredReservations = reservations.filter((reservation) => {
-    const matchesSearch = reservation.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesHouse = !houseFilter || reservation.house === houseFilter;
-    const matchesRoom = !roomFilter || reservation.room === roomFilter;
-    return matchesSearch && matchesHouse && matchesRoom;
-  });
-
-  const handleAddTenant = (tenantData) => {
-    // Add contract information to tenant
+  const handleAddTenant = (tenantData, account) => {
     const newTenant = {
-      ...tenantData,
-      is_active: true, // From schema
-      is_lead_room: tenantData.isRepresentative || false,
+      tenant_id: Date.now(),
+      room_id: tenantData.room_id,
+      name: tenantData.name,
+      email: tenantData.email,
+      phone: tenantData.phone,
+      identity_number: tenantData.identity_number,
+      province: tenantData.province,
+      district: tenantData.district,
+      ward: tenantData.ward,
+      address: tenantData.address,
+      is_lead_room: tenantData.is_lead_room,
+      is_active: true,
       create_at: new Date().toISOString(),
       update_at: new Date().toISOString(),
-      contract: {
-        contract_id: Date.now(), // Mock contract_id
-        tenant_id: tenantData.id,
-        room_id: tenantData.room, // Link to room
-        template_id: null, // Optional
-        deposit: '0', // Default
-        rent_amount: '0', // Default
-        content: '', // Default
-        start_date: new Date().toISOString().split('T')[0],
-        end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0], // 1 year contract
-        create_at: new Date().toISOString(),
-        update_at: new Date().toISOString(),
-      },
+      contract: tenantData.contract,
     };
     setTenants((prev) => [...prev, newTenant]);
-    setShowAddTenantPopup(false);
-  };
-
-  const handleEditTenant = (updatedTenant) => {
-    setTenants((prev) =>
-      prev.map((tenant) =>
-        tenant.id === updatedTenant.id
-          ? {
-              ...tenant,
-              ...updatedTenant,
-              update_at: new Date().toISOString(),
-              contract: {
-                ...tenant.contract,
-                room_id: updatedTenant.room, // Update room in contract
-                update_at: new Date().toISOString(),
-              },
-            }
-          : tenant
+    setRooms((prevRooms) =>
+      prevRooms.map((room) =>
+        room.room_id === tenantData.room_id ? { ...room, status: 'Đã thuê' } : room
       )
     );
-    setShowEditTenantPopup(false);
-    setShowTenantDetailsPopup(false);
-  };
-
-  const handleExcelUpload = (data) => {
-    const newTenants = data.map((row, index) => ({
-      id: Date.now() + index,
-      room_id: row.room || rooms[0], // Map to room_id
-      is_active: true,
-      is_lead_room: row.isRepresentative === 'true',
-      name: row.name || '',
-      email: row.email || '',
-      phone: row.phone || '',
-      identity_number: row.identityNumber || '',
-      house: row.house || houses[0],
-      room: row.room || rooms[0],
-      province: row.province || '',
-      district: row.district || '',
-      ward: row.ward || '',
-      address: row.address || '',
-      notes: row.notes || '',
-      create_at: new Date().toISOString(),
-      update_at: new Date().toISOString(),
-      contract: {
-        contract_id: Date.now() + index,
-        tenant_id: Date.now() + index,
-        room_id: row.room || rooms[0],
-        template_id: null,
-        deposit: row.deposit || '0',
-        rent_amount: row.rent_amount || '0',
-        content: '',
-        start_date: new Date().toISOString().split('T')[0],
-        end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
-        create_at: new Date().toISOString(),
-        update_at: new Date().toISOString(),
-      },
-    }));
-    setTenants((prev) => [...prev, ...newTenants]);
-    setShowExcelUpload(false);
+    setShowFormPopup(false);
   };
 
   const handleAddReservation = (reservationData) => {
-    setReservations((prev) => [...prev, reservationData]);
-    setShowAddReservationPopup(false);
+    const newReservation = {
+      tenant_id: Date.now(),
+      room_id: reservationData.room_id,
+      name: reservationData.name,
+      email: reservationData.email,
+      phone: reservationData.phone,
+      identity_number: reservationData.identity_number,
+      province: reservationData.province || '',
+      district: reservationData.district || '',
+      ward: reservationData.ward || '',
+      address: reservationData.address || '',
+      is_lead_room: false,
+      create_at: new Date().toISOString(),
+      update_at: new Date().toISOString(),
+      contract: reservationData.contract,
+      moveInDate: reservationData.moveInDate,
+    };
+    setReservations((prev) => [...prev, newReservation]);
+    setShowReservationPopup(false);
   };
 
-  const handleEditReservation = (updatedReservation) => {
-    setReservations((prev) =>
-      prev.map((reservation) =>
-        reservation.id === updatedReservation.id ? { ...reservation, ...updatedReservation } : reservation
-      )
+  const handleUpdateRoom = (updatedRoom) => {
+    console.log('Cập nhật phòng:', updatedRoom);
+  };
+
+  const handleEditTenant = () => {
+    setShowDetailsPopup(false);
+    setShowFormPopup(true);
+  };
+
+  const handleChangeStatus = (tenant, isActive) => {
+    const confirm = window.confirm(
+      isActive
+        ? 'Bạn có chắc chắn muốn cho khách thuê lại?'
+        : 'Bạn có chắc chắn muốn chuyển trạng thái khách thuê thành "Rời đi"?'
     );
-    setShowEditReservationPopup(false);
+    if (confirm) {
+      const updatedTenant = { ...tenant, is_active: isActive, update_at: new Date().toISOString() };
+      if (isActive) {
+        setTenants((prev) => [...prev, updatedTenant]);
+        setRooms((prevRooms) =>
+          prevRooms.map((room) =>
+            room.room_id === tenant.room_id ? { ...room, status: 'Đã thuê' } : room
+          )
+        );
+      } else {
+        setTenants((prev) =>
+          prev.map((t) => (t.tenant_id === tenant.tenant_id ? updatedTenant : t))
+        );
+        const remainingTenants = tenants.filter(
+          (t) => t.room_id === tenant.room_id && t.tenant_id !== tenant.tenant_id && t.is_active
+        );
+        if (remainingTenants.length === 0) {
+          setRooms((prevRooms) =>
+            prevRooms.map((room) =>
+              room.room_id === tenant.room_id ? { ...room, status: 'Trống' } : room
+            )
+          );
+        }
+      }
+      setShowDetailsPopup(false);
+      setSelectedTenant(null);
+    }
   };
 
-  const handleDeleteReservation = (reservationId) => {
-    setReservations((prev) => prev.filter((reservation) => reservation.id !== reservationId));
-    alert('Xóa thành công!');
+  const handleReRent = (tenant) => {
+    handleChangeStatus(tenant, true);
   };
+
+  const handleConvertToTenant = (reservation) => {
+    const confirm = window.confirm('Bạn có chắc chắn muốn chuyển khách cọc thành khách đang thuê?');
+    if (confirm) {
+      const newTenant = {
+        ...reservation,
+        is_active: true,
+        is_lead_room: false,
+        create_at: new Date().toISOString(),
+        update_at: new Date().toISOString(),
+      };
+      setTenants((prev) => [...prev, newTenant]);
+      setReservations((prev) =>
+        prev.filter((r) => r.tenant_id !== reservation.tenant_id)
+      );
+      setRooms((prevRooms) =>
+        prevRooms.map((room) =>
+          room.room_id === reservation.room_id ? { ...room, status: 'Đã thuê' } : room
+        )
+      );
+      setShowDetailsPopup(false);
+      setSelectedTenant(null);
+    }
+  };
+
+  const openDetailsPopup = (tenant, isReservation = false) => {
+    setSelectedTenant({ ...tenant, isReservation });
+    setShowDetailsPopup(true);
+  };
+
+  const floors = [...new Set(rooms.map((room) => room.floor))];
+
+  const filterTenantsAndReservations = (data, isReservation = false) => {
+    return data.filter((item) => {
+      let nameMatch = true;
+      if (searchQuery) {
+        nameMatch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+      }
+
+      let statusMatch = true;
+      if (statusFilter && !isReservation) {
+        statusMatch = statusFilter === 'active' ? item.is_active : !item.is_active;
+      } else if (statusFilter && isReservation) {
+        statusMatch = statusFilter === 'reservation';
+      }
+
+      let floorMatch = true;
+      if (floorFilter) {
+        const room = rooms.find((r) => r.room_id === item.room_id);
+        floorMatch = room && room.floor === floorFilter;
+      }
+
+      let dateMatch = true;
+      if (dateFrom && dateTo) {
+        const itemDate = new Date(item.create_at);
+        const fromDate = new Date(dateFrom);
+        const toDate = new Date(dateTo);
+        dateMatch = itemDate >= fromDate && itemDate <= toDate;
+      }
+
+      return nameMatch && statusMatch && floorMatch && dateMatch;
+    });
+  };
+
+  const allTenantsAndReservations = [
+    ...tenants.map((tenant) => ({ ...tenant, type: tenant.is_active ? 'active' : 'past' })),
+    ...reservations.map((reservation) => ({ ...reservation, type: 'reservation' })),
+  ];
+
+  const filteredData = filterTenantsAndReservations(allTenantsAndReservations);
+
+  const filteredCurrentTenants = filteredData.filter((item) => item.type === 'active');
+  const filteredPastTenants = filteredData.filter((item) => item.type === 'past');
+  const filteredReservations = filteredData.filter((item) => item.type === 'reservation');
 
   return (
     <div className="page-container">
       <div className="page-content">
-        <header className="header">
-          <h1 className="header-title">Quản lý khách thuê</h1>
+        <div className="header">
+          <h1 className="header-title">Quản lý phòng trọ</h1>
           <div className="header-buttons">
-            {activeTab === 'current' && (
-              <>
-                <button
-                  className="btn-primary"
-                  onClick={() => setShowAddTenantPopup(true)}
-                >
-                  Thêm khách
-                </button>
-                <button
-                  className="btn-primary"
-                  onClick={() => setShowExcelUpload(true)}
-                >
-                  Thêm bằng Excel
-                </button>
-              </>
-            )}
-            {activeTab === 'upcoming' && (
-              <button
-                className="btn-primary"
-                onClick={() => setShowAddReservationPopup(true)}
-              >
-                Thêm cọc giữ chỗ
-              </button>
-            )}
+            <button className="btn-primary" onClick={() => setShowFormPopup(true)}>
+              Thêm khách thuê
+            </button>
+            <button className="btn-primary" onClick={() => setShowReservationPopup(true)}>
+              Thêm khách cọc
+            </button>
+            <ExcelExport tenants={tenants} reservations={reservations} rooms={rooms} />
           </div>
-        </header>
+        </div>
+
+        <SummaryCards
+          currentTenants={filteredCurrentTenants}
+          pastTenants={filteredPastTenants}
+          reservations={filteredReservations}
+        />
+
+        <div className="filter-container">
+          <div className="filter-content">
+            <div className="filter-search-wrapper">
+              <span className="filter-search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="Tìm kiếm khách thuê"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="filter-input filter-search-input"
+              />
+            </div>
+            <div className="filter-select-wrapper">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="filter-select"
+              >
+                <option value="">Tất cả</option>
+                <option value="active">Khách đang thuê</option>
+                <option value="past">Khách đã rời</option>
+                <option value="reservation">Khách cọc</option>
+              </select>
+            </div>
+            <div className="filter-select-wrapper">
+              <select
+                value={floorFilter}
+                onChange={(e) => setFloorFilter(e.target.value)}
+                className="filter-select"
+              >
+                <option value="">Tất cả tầng</option>
+                {floors.map((floor) => (
+                  <option key={floor} value={floor}>
+                    {floor}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="filter-date-wrapper">
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="filter-input"
+                placeholder="mm/dd/yyyy"
+              />
+              <span className="mx-2">-</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="filter-input"
+                placeholder="mm/dd/yyyy"
+              />
+            </div>
+          </div>
+        </div>
 
         <div className="tabs-container">
           <button
             className={`tab ${activeTab === 'current' ? 'active' : ''}`}
             onClick={() => setActiveTab('current')}
           >
-            Đang thuê
+            Khách đang thuê ({filteredCurrentTenants.length})
           </button>
           <button
-            className={`tab ${activeTab === 'upcoming' ? 'active' : ''}`}
-            onClick={() => setActiveTab('upcoming')}
+            className={`tab ${activeTab === 'past' ? 'active' : ''}`}
+            onClick={() => setActiveTab('past')}
           >
-            Sắp chuyển đến
+            Khách đã rời ({filteredPastTenants.length})
+          </button>
+          <button
+            className={`tab ${activeTab === 'reservation' ? 'active' : ''}`}
+            onClick={() => setActiveTab('reservation')}
+          >
+            Khách cọc giữ chỗ ({filteredReservations.length})
           </button>
         </div>
 
-        <TenantFilter
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          houseFilter={houseFilter}
-          setHouseFilter={setHouseFilter}
-          roomFilter={roomFilter}
-          setRoomFilter={setRoomFilter}
-          houses={houses}
-          rooms={rooms}
-        />
+        {activeTab === 'current' && (
+          <TenantTable
+            tenants={filteredCurrentTenants}
+            rooms={rooms}
+            onViewDetails={(tenant) => openDetailsPopup(tenant, false)}
+            isReservationTab={false}
+          />
+        )}
+        {activeTab === 'past' && (
+          <TenantTable
+            tenants={filteredPastTenants}
+            rooms={rooms}
+            onViewDetails={(tenant) => openDetailsPopup(tenant, false)}
+            isReservationTab={false}
+          />
+        )}
+        {activeTab === 'reservation' && (
+          <TenantTable
+            tenants={filteredReservations}
+            rooms={rooms}
+            onViewDetails={(tenant) => openDetailsPopup(tenant, true)}
+            isReservationTab={true}
+          />
+        )}
 
-        <TenantTable
-          tenants={activeTab === 'upcoming' ? filteredReservations : filteredTenants}
-          onView={(tenant) => {
-            setSelectedTenant(tenant);
-            setShowTenantDetailsPopup(true);
-          }}
-          isReservation={activeTab === 'upcoming'}
-        />
-
-        {showAddTenantPopup && (
+        {showFormPopup && (
           <TenantFormPopup
-            onClose={() => setShowAddTenantPopup(false)}
+            onClose={() => setShowFormPopup(false)}
             onSubmit={handleAddTenant}
-            houses={houses}
             rooms={rooms}
-          />
-        )}
-
-        {showEditTenantPopup && selectedTenant && (
-          <TenantFormPopup
-            onClose={() => setShowEditTenantPopup(false)}
-            onSubmit={handleEditTenant}
+            onUpdateRoom={handleUpdateRoom}
             initialData={selectedTenant}
-            isEdit={true}
-            houses={houses}
-            rooms={rooms}
+            isEdit={!!selectedTenant}
           />
         )}
 
-        {showTenantDetailsPopup && selectedTenant && (
+        {showDetailsPopup && selectedTenant && (
           <TenantDetailsPopup
             tenant={selectedTenant}
-            onClose={() => setShowTenantDetailsPopup(false)}
-            onEdit={() => {
-              setShowEditTenantPopup(true);
-              setShowTenantDetailsPopup(false);
+            onClose={() => {
+              setShowDetailsPopup(false);
+              setSelectedTenant(null);
             }}
-            roomTenants={tenants.filter(
-              (t) => t.room === selectedTenant.room && t.is_active && t.id !== selectedTenant.id
-            )}
-            isReservation={activeTab === 'upcoming'}
-            onEditReservation={() => {
-              setSelectedReservation(selectedTenant);
-              setShowEditReservationPopup(true);
-              setShowTenantDetailsPopup(false);
-            }}
-            onDeleteReservation={handleDeleteReservation}
+            onEdit={handleEditTenant}
+            onChangeStatus={handleChangeStatus}
+            onReRent={handleReRent}
+            onConvertToTenant={handleConvertToTenant}
+            isReservation={selectedTenant.isReservation || false}
+            rooms={rooms}
           />
         )}
 
-        {showAddReservationPopup && (
+        {showReservationPopup && (
           <ReservationFormPopup
-            onClose={() => setShowAddReservationPopup(false)}
+            onClose={() => setShowReservationPopup(false)}
             onSubmit={handleAddReservation}
-            houses={houses}
             rooms={rooms}
-          />
-        )}
-
-        {showEditReservationPopup && selectedReservation && (
-          <ReservationFormPopup
-            onClose={() => setShowEditReservationPopup(false)}
-            onSubmit={handleEditReservation}
-            initialData={selectedReservation}
-            isEdit={true}
-            houses={houses}
-            rooms={rooms}
-          />
-        )}
-
-        {showExcelUpload && (
-          <ExcelUpload
-            onClose={() => setShowExcelUpload(false)}
-            onUpload={handleExcelUpload}
-            expectedHeaders={[
-              'name',
-              'email',
-              'phone',
-              'identityNumber',
-              'house',
-              'room',
-              'province',
-              'district',
-              'ward',
-              'address',
-              'notes',
-              'isRepresentative',
-              'deposit',
-              'rent_amount',
-            ]}
           />
         )}
       </div>
