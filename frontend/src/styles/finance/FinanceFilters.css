@@ -1,0 +1,40 @@
+.filters {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    border: 1px solid #ddd;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .filter-group label {
+    font-size: 0.9rem;
+    color: #555;
+  }
+  
+  .filter-group select,
+  .filter-group input {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+  
+  .date-range {
+    display: flex;
+    gap: 20px;
+  }
+  
+  .date-range div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }

@@ -1,0 +1,143 @@
+.room-asset-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  
+  .room-asset-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  }
+  
+  .room-asset-header {
+    margin-bottom: 20px;
+  }
+  
+  .room-asset-header h3 {
+    font-size: 1.25rem;
+    color: #333;
+    margin: 0 0 8px 0;
+  }
+  
+  .room-asset-header p {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0;
+  }
+  
+  .assets-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  
+  .room-assets h4 {
+    font-size: 1rem;
+    color: #333;
+    margin: 0;
+  }
+  
+  .no-assets {
+    font-size: 0.9rem;
+    color: #888;
+    font-style: italic;
+  }
+  
+  .asset-item {
+    margin-bottom: 16px;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #f8f9fa;
+  }
+  
+  .asset-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  
+  .asset-header span {
+    font-weight: 500;
+    color: #333;
+  }
+  
+  .asset-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .asset-status {
+    font-size: 0.875rem;
+    color: #666;
+  }
+  
+  /* Toggle Switch */
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+  }
+  
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 20px;
+  }
+  
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+  }
+  
+  input:checked + .slider {
+    background-color: #38a169;
+  }
+  
+  input:checked + .slider:before {
+    transform: translateX(20px);
+  }
+  
+  .btn-details {
+    background: transparent;
+    border: 1px solid #38a169;
+    color: #38a169;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    transition: background 0.3s, color 0.3s;
+  }
+  
+  .btn-details:hover {
+    background: #38a169;
+    color: #fff;
+  }

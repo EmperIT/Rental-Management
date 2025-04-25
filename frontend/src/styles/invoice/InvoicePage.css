@@ -1,0 +1,37 @@
+.invoice-page {
+    padding: 32px;
+    background-color: #f7fafc;
+    min-height: 100vh;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  
+  .invoice-page h2 {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 24px;
+    color: #2d3748;
+  }
+  
+  .filter-bar {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  
+  .filter-bar select,
+  .filter-bar input[type="month"] {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e0;
+    background-color: white;
+    font-size: 14px;
+    outline: none;
+    min-width: 160px;
+  }
+  
+  .room-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  

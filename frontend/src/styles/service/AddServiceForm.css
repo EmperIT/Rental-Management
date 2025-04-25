@@ -1,0 +1,183 @@
+.add-service-form {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    border: 1px solid #ddd;
+  }
+  
+  .add-service-form h3 {
+    font-size: 1.2rem;
+    color: #333;
+    margin-bottom: 15px;
+  }
+  
+  .add-service-form h4 {
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 10px;
+    margin-top: 20px;
+  }
+  
+  /* Simplified Existing Services Section */
+  .existing-services {
+    margin-bottom: 20px;
+  }
+  
+  .service-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+  }
+  
+
+  
+  .service-row span {
+    font-size: 0.9rem;
+    color: #333;
+  }
+  
+  .edit-service-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+  
+  .edit-service-form span {
+    font-size: 0.9rem;
+    color: #333;
+  }
+  
+  .edit-rate-input {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .edit-rate-input label {
+    font-size: 0.85rem;
+    color: #555;
+  }
+  
+  .edit-rate-input input {
+    width: 100px;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.85rem;
+  }
+  
+  .edit-actions {
+    display: flex;
+    gap: 5px;
+  }
+  
+  /* Basic Action Buttons */
+  .btn-edit,
+  .btn-save,
+  .btn-delete,
+  .btn-cancel {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .btn-edit {
+    border: 1px solid #007bff;
+    color: #007bff;
+    background: none;
+    transition: background 0.3s, color 0.3s;
+  }
+  .btn-edit:hover {
+    background: #007bff;
+    color: #fff;
+  }
+  
+  .btn-save {
+    border: 1px solid #28a745;
+    color: #28a745;
+    background: none;
+    transition: background 0.3s, color 0.3s;
+  }
+  .btn-save:hover {
+    background: #28a745;
+    color: #fff;
+  }
+  .btn-cancel, .btn-delete {
+    border: 1px solid hsl(354, 70%, 54%);
+    color: #dc3545;
+    background: none;
+    transition: background 0.3s, color 0.3s;
+
+  }
+  
+  .btn-cancel:hover {
+    background: #dc3545;
+    color: #fff;
+  }
+  .btn-delete:hover {
+    background: #dc3545;
+    color: #fff;
+  }
+  /* Add Service Form Section */
+  .add-service-inputs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .add-service-inputs div {
+    flex: 1;
+    min-width: 180px;
+  }
+  
+  .add-service-inputs label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    color: #555;
+  }
+  
+  .add-service-inputs input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+  
+  .checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .checkbox-group label {
+    font-size: 0.9rem;
+    margin: 0;
+  }
+  
+  .checkbox-group input {
+    width: auto;
+  }
+  
+  .btn-add-service {
+    background: #28a745;
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9rem;
+  }

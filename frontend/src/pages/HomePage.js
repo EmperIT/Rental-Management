@@ -6,6 +6,10 @@ import RoomManagement from './RoomManagement';
 import TenantManagementPage from './TenantManagementPage';
 import Contract from './Contract';
 import Templates from './Templates';
+import InvoicePage from './InvoicePage';
+import ServicePage from './ServicePage';
+import AssetPage from './AssetPage';
+import FinancePage from './FinancePage';
 import AccountManagementPage from './AccountManagementPage';
 import ProfilePage from './ProfilePage';
 import { FaBars } from 'react-icons/fa';
@@ -63,10 +67,10 @@ function HomePage({
     if (showResidenceRegistration) return <div>Quản lý hóa đơn (Chưa triển khai)</div>;
     if (showContracts) return <Contract />;
     if (showTemplateContracts) return <Templates />;
-    if (showBills) return <div>Quản lý hóa đơn (Chưa triển khai)</div>;
-    if (showServices) return <div>Quản lý dịch vụ (Chưa triển khai)</div>;
-    if (showAssets) return <div>Quản lý tài sản (Chưa triển khai)</div>;
-    if (showFinance) return <div>Quản lý thu chi (Chưa triển khai)</div>;
+    if (showBills) return <div><InvoicePage /></div>;
+    if (showServices) return <div><ServicePage /></div>;
+    if (showAssets) return <div><AssetPage /></div>;
+    if (showFinance) return <div><FinancePage /></div>;
     if (showAccountManagement) return <AccountManagementPage />;
     if (showProfile) return <ProfilePage />;
     return (
