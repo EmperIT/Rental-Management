@@ -1,13 +1,14 @@
-.finance-page {
+.asset-page {
     padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
   }
   
-  .finance-page h2 {
-    font-size: 1.5rem;
+  .asset-page h2 {
+    font-size: 28px;
     color: #333;
     margin-bottom: 20px;
+    font-weight: bold;
   }
   
   .stats-grid {

@@ -5,9 +5,10 @@
   }
   
   .finance-page h2 {
-    font-size: 1.5rem;
+    font-size: 28px;
     color: #333;
     margin-bottom: 20px;
+    font-weight: bold;
   }
   
   .stats-grid {

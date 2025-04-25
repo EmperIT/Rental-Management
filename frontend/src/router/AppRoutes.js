@@ -3,13 +3,7 @@ import LandingPage from '../pages/LandingPage';
 import LoginPage from '../pages/LoginPage';
 import SignUpPage from '../pages/SignUpPage';
 import HomePage from '../pages/HomePage';
-import AccountManagementPage from '../pages/AccountManagementPage';
-import ProfilePage from '../pages/ProfilePage';
-import RoomManagement from '../pages/RoomManagement';
-import TenantManagementPage from '../pages/TenantManagementPage';
-import Contract from '../pages/Contract';
-import Templates from '../pages/Templates';
-import TenantDashboardPage from '../pages/TenantDashboardPage';
+
 
 const isAuthenticated = () => {
   return localStorage.getItem('isAuthenticated') === 'true';

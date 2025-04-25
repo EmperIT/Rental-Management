@@ -256,7 +256,7 @@ const initialTransactions = [
             onSubmit={(newTransaction, isRecurring) => {
               if (modalType === 'add') {
                 if (isRecurring) {
-                  const [year, month, day] = newTransaction.date.split('-');
+                  const [year, day] = newTransaction.date.split('-');
                   const newTransactions = [];
                   for (let m = 1; m <= 12; m++) {
                     const formattedMonth = m.toString().padStart(2, '0');
