@@ -81,7 +81,7 @@ export class ContractService {
     
     const skip = (page - 1) * limit;
     const contracts = await this.contractModel.find(filter).skip(skip).limit(limit).exec();
-    const total = await this.contractModel.countDocuments().exec();
+    const total = await this.contractModel.countDocuments(filter).exec();
     return { contracts, total };
   }
 

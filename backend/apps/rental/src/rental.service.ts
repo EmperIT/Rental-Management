@@ -658,7 +658,7 @@ export class RentalService implements OnModuleInit {
         .limit(limit)
         .exec();
       
-      const total = await this.roomModel.countDocuments().exec();
+      const total = await this.roomModel.countDocuments(filter).exec();
       return { rooms: rooms.map(this.mapToRoom), total };
     } catch (error) {
       this.logger.error(`Error finding rooms: ${error.message}`, error.stack);

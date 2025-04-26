@@ -21,6 +21,9 @@ export class ContractService implements OnModuleInit {
   }
 
   findAllContracts(page: number, limit: number, roomId?: string, tenantId?: string, isActive?: boolean) {
+    if (isActive !== undefined && typeof isActive === 'string') {
+      isActive = isActive === 'true';
+    }
     return this.contractService.findAllContracts({ page, limit, roomId, tenantId, isActive });
   }
 
