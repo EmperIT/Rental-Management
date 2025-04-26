@@ -36,6 +36,7 @@ service RentalService {
   // Room Services Management
   rpc AddRoomService (AddRoomServiceRequest) returns (RoomServiceResponse) {}
   rpc GetRoomServices (GetRoomServicesRequest) returns (RoomServicesResponse) {}
+  rpc UpdateRoomService (UpdateRoomServiceRequest) returns (RoomServicesResponse) {}
   rpc RemoveRoomService (RemoveRoomServiceRequest) returns (RoomServiceResponse) {}
 
   // Invoice Generation
@@ -108,6 +109,15 @@ message AddRoomServiceRequest {
 
 message GetRoomServicesRequest {
   string roomId = 1;
+}
+
+message UpdateRoomServiceRequest {
+  string id = 1;
+  string roomId = 2;
+  string serviceName = 3;
+  int32 quantity = 4;
+  double customPrice = 5;
+  bool isActive = 6;
 }
 
 message RemoveRoomServiceRequest {
@@ -360,11 +370,12 @@ message GetRoomAssetsRequest {
 }
 
 message UpdateRoomAssetRequest {
-  string roomId = 1;
-  string assetName = 2;
-  int32 quantity = 3;
-  optional double customPrice = 4;
-  optional bool isActive = 5;
+  string id = 1;
+  string roomId = 2;
+  string assetName = 3;
+  int32 quantity = 4;
+  double customPrice = 5;
+  bool isActive = 6;
 }
 
 message RemoveRoomAssetRequest {

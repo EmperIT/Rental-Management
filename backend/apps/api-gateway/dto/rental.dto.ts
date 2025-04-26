@@ -83,7 +83,7 @@ export class UpdateRoomSwaggerDto{
   @ApiProperty({
     description: 'Diện tích phòng',
     example: 32,
-    required: true
+    required: false
   })
   area: number;
 
@@ -101,7 +101,7 @@ export class UpdateRoomSwaggerDto{
 
   @ApiProperty({
     description: 'Tiền cọc phòng',
-    required: true
+    required: false
   })
   depositPrice: number;
 
@@ -175,7 +175,7 @@ export class RoomSwaggerDto implements Rental.Room {
 
   @ApiProperty({
     description: 'Thời gian đặt cọc phòng',
-    required: false
+    required: true
   })
   depositDate: string;
 
@@ -187,7 +187,7 @@ export class RoomSwaggerDto implements Rental.Room {
 
   @ApiProperty({
     description: 'Số người tối đa trong phòng',
-    required: false
+    required: true
   })
   maxTenants: number;
 
@@ -983,6 +983,42 @@ export class RoomServicesResponseSwaggerDto implements Rental.RoomServicesRespon
   services: RoomServiceSwaggerDto[];
 }
 
+export class UpdateRoomServiceSwaggerDto implements Partial<Rental.UpdateRoomServiceRequest> {
+  @ApiProperty({
+    description: 'ID của phòng',
+    required: true,
+  })
+  roomId: string;
+
+  @ApiProperty({
+    description: 'Tên dịch vụ',
+    example: 'ELECTRICITY',
+    required: true,
+  })
+  serviceName: string;
+
+  @ApiProperty({
+    description: 'Số lượng/khối lượng',
+    example: 1,
+    required: false,
+  })
+  quantity?: number;
+
+  @ApiProperty({
+    description: 'Giá tùy chỉnh',
+    example: 50000,
+    required: false,
+  })
+  customPrice?: number;
+  
+  @ApiProperty({
+    description: 'Trạng thái hoạt động',
+    example: true,
+    required: false,
+  })
+  isActive?: boolean;
+}
+
 // ***** Định nghĩa các DTO cho assets *****
 export class CreateAssetSwaggerDto implements Rental.CreateAssetDto {
   @ApiProperty({ description: 'Tên tài sản', example: 'Tủ lạnh' })
@@ -1046,7 +1082,7 @@ export class AddRoomAssetSwaggerDto implements Rental.AddRoomAssetRequest {
   customPrice?: number;
 }
 
-export class UpdateRoomAssetSwaggerDto implements Rental.UpdateRoomAssetRequest {
+export class UpdateRoomAssetSwaggerDto implements Partial<Rental.UpdateRoomAssetRequest> {
   @ApiProperty({ description: 'ID phòng', example: '64f7f3e659b16d0964e96db9' })
   roomId: string;
 

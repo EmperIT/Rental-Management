@@ -32,7 +32,7 @@ export class RentalController {
 
   @GrpcMethod('RentalService', 'UpdateRoom')
   async updateRoom(updateRoomDto: Rental.UpdateRoomDto): Promise<Rental.Room> {
-    this.logger.log(`Updating room with id: ${updateRoomDto.id}`);
+    this.logger.log(`Updating room with id: ${updateRoomDto.isEmpty}`);
     return this.rentalService.updateRoom(updateRoomDto);
   }
 
@@ -158,6 +158,12 @@ export class RentalController {
   async removeRoomService(request: Rental.RemoveRoomServiceRequest): Promise<Rental.RoomServiceResponse> {
     this.logger.log(`Removing service ${request.serviceName} from room: ${request.roomId}`);
     return this.rentalService.removeRoomService(request);
+  }
+
+  @GrpcMethod('RentalService', 'UpdateRoomService')
+  async updateRoomService(request: Rental.UpdateRoomServiceRequest): Promise<Rental.RoomServiceResponse> {
+    this.logger.log(`Updating service ${request.serviceName} for room: ${request.roomId}`);
+    return this.rentalService.updateRoomService(request);
   }
 
   // ***** INVOICE GENERATION *****
