@@ -1,102 +1,163 @@
-import { Controller } from '@nestjs/common';
-import { GrpcMethod } from '@nestjs/microservices';
+import { Controller, Logger } from '@nestjs/common';
 import { ContractService } from './contract.service';
+import { GrpcMethod } from '@nestjs/microservices';
+
+// Các kiểu dữ liệu đơn giản cho các tham số và kết quả
+interface CreateContractDto {
+  roomId: string;
+  tenantId: string;
+  content: string;
+  startDate: string;
+  endDate: string;
+  deposit: number;
+  rentAmount: number;
+  templateId: string;
+}
+
+interface PaginationDto {
+  page: number;
+  limit: number;
+}
+
+interface FindOneContractDto {
+  contractId: string;
+}
+
+interface UpdateContractDto {
+  contractId: string;
+  isActive?: boolean;
+  roomId?: string;
+  tenantId?: string;
+  content?: string;
+  startDate?: string;
+  endDate?: string;
+  deposit?: number;
+  rentAmount?: number;
+  templateId?: string;
+}
+
+interface Contract {
+  contractId: string;
+  isActive: boolean;
+  roomId: string;
+  tenantId: string;
+  content: string;
+  startDate: string;
+  endDate: string;
+  deposit?: number;
+  rentAmount?: number;
+  templateId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Contracts {
+  contracts: Contract[];
+  total: number;
+}
 
 @Controller()
 export class ContractController {
+  private readonly logger = new Logger(ContractController.name);
+
   constructor(private readonly contractService: ContractService) {}
 
   @GrpcMethod('ContractService', 'CreateContract')
-  async createContract(data: any) {
-    const contract = await this.contractService.createContract(data);
-    return this.mapToContractResponse(contract);
+  async createContract(createContractDto: CreateContractDto): Promise<Contract> {
+    this.logger.log(`Creating contract for room: ${createContractDto.roomId}, tenant: ${createContractDto.tenantId}`);
+    const contract = await this.contractService.createContract(createContractDto);
+    return {
+      contractId: contract._id.toString(),
+      isActive: contract.isActive,
+      roomId: contract.roomId,
+      tenantId: contract.tenantId,
+      content: contract.content,
+      startDate: contract.startDate.toISOString(),
+      endDate: contract.endDate.toISOString(),
+      createdAt: contract.createdAt.toISOString(),
+      updatedAt: contract.updatedAt.toISOString()
+    };
   }
 
   @GrpcMethod('ContractService', 'FindAllContracts')
-  async findAllContracts(data: any) {
-    const { contracts, total } = await this.contractService.findAllContracts(data);
+  async findAllContracts(paginationDto: PaginationDto): Promise<Contracts> {
+    this.logger.log(`Finding all contracts with pagination: ${JSON.stringify(paginationDto)}`);
+    const result = await this.contractService.findAllContracts(paginationDto);
+    
     return {
-      contracts: contracts.map(this.mapToContractResponse),
-      total,
+      contracts: result.contracts.map(contract => ({
+        contractId: contract._id.toString(),
+        isActive: contract.isActive,
+        roomId: contract.roomId,
+        tenantId: contract.tenantId,
+        content: contract.content,
+        startDate: contract.startDate.toISOString(),
+        endDate: contract.endDate.toISOString(),
+        createdAt: contract.createdAt.toISOString(),
+        updatedAt: contract.updatedAt.toISOString()
+      })),
+      total: result.total
     };
   }
 
   @GrpcMethod('ContractService', 'FindOneContract')
-  async findOneContract(data: { contract_id: string }) {
-    const contract = await this.contractService.findOneContract(data.contract_id);
-    return this.mapToContractResponse(contract);
+  async findOneContract(dto: FindOneContractDto): Promise<Contract> {
+    this.logger.log(`Finding contract with ID: ${dto.contractId}`);
+    const contract = await this.contractService.findOneContract(dto.contractId);
+    return {
+      contractId: contract._id.toString(),
+      isActive: contract.isActive,
+      roomId: contract.roomId,
+      tenantId: contract.tenantId,
+      content: contract.content,
+      startDate: contract.startDate.toISOString(),
+      endDate: contract.endDate.toISOString(),
+      createdAt: contract.createdAt.toISOString(),
+      updatedAt: contract.updatedAt.toISOString()
+    };
   }
 
   @GrpcMethod('ContractService', 'UpdateContract')
-  async updateContract(data: any) {
-    const contract = await this.contractService.updateContract(data);
-    return this.mapToContractResponse(contract);
+  async updateContract(updateContractDto: UpdateContractDto): Promise<Contract> {
+    this.logger.log(`Updating contract with ID: ${updateContractDto.contractId}`);
+    const contract = await this.contractService.updateContract({
+      _id: updateContractDto.contractId,
+      isActive: updateContractDto.isActive,
+      roomId: updateContractDto.roomId,
+      tenantId: updateContractDto.tenantId,
+      content: updateContractDto.content,
+      startDate: updateContractDto.startDate,
+      endDate: updateContractDto.endDate
+    });
+    
+    return {
+      contractId: contract._id.toString(),
+      isActive: contract.isActive,
+      roomId: contract.roomId,
+      tenantId: contract.tenantId,
+      content: contract.content,
+      startDate: contract.startDate.toISOString(),
+      endDate: contract.endDate.toISOString(),
+      createdAt: contract.createdAt.toISOString(),
+      updatedAt: contract.updatedAt.toISOString()
+    };
   }
 
   @GrpcMethod('ContractService', 'RemoveContract')
-  async removeContract(data: { contract_id: string }) {
-    const contract = await this.contractService.removeContract(data.contract_id);
-    return this.mapToContractResponse(contract);
-  }
-
-  @GrpcMethod('ContractService', 'CreateContractTemplate')
-  async createContractTemplate(data: any) {
-    const contractTemplate = await this.contractService.createContractTemplate(data);
-    return this.mapToContractTemplateResponse(contractTemplate);
-  }
-  
-  @GrpcMethod('ContractService', 'FindAllContractTemplates')
-  async findAllContractTemplates(data: any) {
-    const { contractTemplates, total } = await this.contractService.findAllContractTemplates(data);
+  async removeContract(dto: FindOneContractDto): Promise<Contract> {
+    this.logger.log(`Removing contract with ID: ${dto.contractId}`);
+    const contract = await this.contractService.removeContract(dto.contractId);
+    
     return {
-      contractTemplates: contractTemplates.map(this.mapToContractTemplateResponse),
-      total,
-    };
-  }
-
-  @GrpcMethod('ContractService', 'FindOneContractTemplate')
-  async findOneContractTemplate(data: { templateId: string }) {
-    const contractTemplate = await this.contractService.findOneContractTemplate(data.templateId);
-    return this.mapToContractTemplateResponse(contractTemplate);
-  }
-
-  @GrpcMethod('ContractService', 'UpdateContractTemplate')
-  async updateContractTemplate(data: any) {
-    const contractTemplate = await this.contractService.updateContractTemplate(data);
-    return this.mapToContractTemplateResponse(contractTemplate);
-  }
-
-  @GrpcMethod('ContractService', 'RemoveContractTemplate')
-  async removeContractTemplate(data: { templateId: string }) {
-    const contractTemplate = await this.contractService.removeContractTemplate(data.templateId);
-    return this.mapToContractTemplateResponse(contractTemplate);
-  }
-
-  private mapToContractTemplateResponse(contractTemplate: any) {
-    return {
-      template_id: contractTemplate.template_id,
-      name: contractTemplate.name,
-      content: contractTemplate.content,
-      createdAt: contractTemplate.createdAt.toISOString(),
-      updatedAt: contractTemplate.updatedAt.toISOString(),
-    };
-  }
-
-  private mapToContractResponse(contract: any) {
-    return {
-      contract_id: contract.contract_id,
+      contractId: contract._id.toString(),
       isActive: contract.isActive,
       roomId: contract.roomId,
+      tenantId: contract.tenantId,
       content: contract.content,
-      createdAt: contract.createdAt.toISOString(),
-      updatedAt: contract.updatedAt.toISOString(),
       startDate: contract.startDate.toISOString(),
       endDate: contract.endDate.toISOString(),
-      deposit: contract.deposit,
-      rentAmount: contract.rentAmount,
-      templateId: contract.templateId,
+      createdAt: contract.createdAt.toISOString(),
+      updatedAt: contract.updatedAt.toISOString()
     };
   }
-
-
 }

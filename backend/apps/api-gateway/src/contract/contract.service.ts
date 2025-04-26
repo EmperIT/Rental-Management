@@ -20,8 +20,8 @@ export class ContractService implements OnModuleInit {
     return this.contractService.createContract(createContractDto);
   }
 
-  findAllContracts(page: number, limit: number) {
-    return this.contractService.findAllContracts({ page, limit });
+  findAllContracts(page: number, limit: number, roomId?: string, tenantId?: string, isActive?: boolean) {
+    return this.contractService.findAllContracts({ page, limit, roomId, tenantId, isActive });
   }
 
   findOneContract(id: string) {
@@ -36,23 +36,5 @@ export class ContractService implements OnModuleInit {
 
   removeContract(id: string) {
     return this.contractService.removeContract({ contractId: id });
-  }
-
-  createContractTemplate(createContractTemplateDto: Contract.CreateContractTemplateDto) {
-    return this.contractService.createContractTemplate(createContractTemplateDto);
-  }
-  findAllContractTemplates(page: number, limit: number) {
-    return this.contractService.findAllContractTemplates({ page, limit });
-  }
-  findOneContractTemplate(id: string) {
-    return this.contractService.findOneContractTemplate({ templateId: id });
-  }
-  updateContractTemplate(id: string, updateContractTemplateDto: Contract.UpdateContractTemplateDto) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { templateId: _, ...updateData } = updateContractTemplateDto;
-    return this.contractService.updateContractTemplate({ templateId: id, ...updateData });
-  }
-  removeContractTemplate(id: string) {
-    return this.contractService.removeContractTemplate({ templateId: id });
   }
 }

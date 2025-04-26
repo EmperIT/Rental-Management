@@ -17,7 +17,7 @@ interface RoomDocument {
   images?: string[];
   depositDate?: Date;
   depositPrice: number;
-  maxTenant: number;
+  maxTenants: number;
   isEmpty: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -636,7 +636,6 @@ export class RentalService implements OnModuleInit {
       const room = new this.roomModel(createRoomDto);
       room.isEmpty = true;
       await room.save();
-      console.log('tạo thành công', room);
       return this.mapToRoom(room);
     } catch (error) {
       this.logger.error(`Error creating room: ${error.message}`, error.stack);
@@ -1208,6 +1207,52 @@ export class RentalService implements OnModuleInit {
   }
 
   /**
+   * Chỉnh sửa dịch vụ phòng
+   */
+  async updateRoomService(updateRequest: Rental.UpdateRoomServiceRequest): Promise<Rental.RoomServiceResponse> {
+    try {
+      const { roomId, serviceName, quantity, customPrice, isActive } = updateRequest;
+      
+      // Tìm dịch vụ của phòng
+      const roomService = await this.roomServiceModel.findOne({
+        roomId,
+        serviceName
+      }).exec();
+      
+      if (!roomService) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Phòng chưa đăng ký dịch vụ này`,
+        });
+      }
+      
+      // Cập nhật thông tin
+      if (quantity !== undefined) roomService.quantity = quantity;
+      if (customPrice !== undefined) roomService.customPrice = customPrice;
+      if (isActive !== undefined) roomService.isActive = isActive;
+      
+      await roomService.save();
+      this.logger.log(`Đã cập nhật dịch vụ ${serviceName} cho phòng`);
+      
+      const service = await this.serviceModel.findOne({ name: serviceName }).exec();
+      if (!service) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Không tìm thấy dịch vụ với tên ${serviceName}`,
+        });
+      }
+      
+      return this.mapToRoomService(roomService, service);
+    } catch (error) {
+      this.logger.error(`Lỗi cập nhật dịch vụ phòng: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Lỗi cập nhật dịch vụ phòng',
+      });
+    }
+  }
+
+  /**
    * Hủy đăng ký dịch vụ cho phòng
    */
   async removeRoomService(removeRequest: Rental.RemoveRoomServiceRequest): Promise<Rental.RoomServiceResponse> {
@@ -1757,7 +1802,7 @@ export class RentalService implements OnModuleInit {
       images: room.images || [],
       depositDate: room.depositDate?.toISOString() || '',
       depositPrice: room.depositPrice,
-      maxTenants: room.maxTenant,
+      maxTenants: room.maxTenants,
       isEmpty: room.isEmpty,
       createdAt: room.createdAt.toISOString(),
       updatedAt: room.updatedAt.toISOString(),

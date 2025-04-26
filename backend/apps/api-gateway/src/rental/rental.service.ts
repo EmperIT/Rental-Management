@@ -45,6 +45,9 @@ export class RentalService implements OnModuleInit {
 
   async updateRoom(id: string, updateRoomDto: Rental.UpdateRoomDto, files?: Express.Multer.File[]) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    if (updateRoomDto.isEmpty !== undefined && typeof updateRoomDto.isEmpty === 'string') {
+      updateRoomDto.isEmpty = updateRoomDto.isEmpty === 'true';
+    }
     if (files && files.length > 0) {
       const oldRoom = await lastValueFrom(this.rentalService.findOneRoom({ id }));
       if (oldRoom && oldRoom.images && oldRoom.images.length > 0) {
@@ -92,6 +95,9 @@ export class RentalService implements OnModuleInit {
 
   updateTenant(id: string, updateTenantDto: Rental.UpdateTenantDto) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    if (updateTenantDto.isActive !== undefined && typeof updateTenantDto.isActive === 'string') {
+      updateTenantDto.isActive = updateTenantDto.isActive === 'true';
+    }
     const { id: _, ...updateData } = updateTenantDto;
     return this.rentalService.updateTenant({ id, ...updateData });
   }
@@ -115,6 +121,9 @@ export class RentalService implements OnModuleInit {
 
   updateInvoice(id: string, updateInvoiceDto: Rental.UpdateInvoiceDto) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    if (updateInvoiceDto.isPaid !== undefined && typeof updateInvoiceDto.isPaid === 'string') {
+      updateInvoiceDto.isPaid = updateInvoiceDto.isPaid === 'true';
+    }
     const { id: _, ...updateData } = updateInvoiceDto;
     return this.rentalService.updateInvoice({ id, ...updateData });
   }
@@ -162,6 +171,14 @@ export class RentalService implements OnModuleInit {
     return this.rentalService.removeRoomService(removeRoomServicesRequest);
   }
 
+  updateRoomService(id: string, updateRoomServiceDto: Rental.UpdateRoomServiceRequest) {
+    if (updateRoomServiceDto.isActive !== undefined && typeof updateRoomServiceDto.isActive === 'string') {
+      updateRoomServiceDto.isActive = updateRoomServiceDto.isActive === 'true';
+    }
+    const { id: _, ...updateData } = updateRoomServiceDto;
+    return this.rentalService.updateRoomService({ id, ...updateData });
+  }
+
   // Asset Methods
   createAsset(createAssetDto: Rental.CreateAssetDto) {
     return this.rentalService.createAsset(createAssetDto);
@@ -194,8 +211,12 @@ export class RentalService implements OnModuleInit {
     return this.rentalService.getRoomAssets(getRoomAssetsRequest);
   }
 
-  updateRoomAsset(updateRoomAssetDto: Rental.UpdateRoomAssetRequest) {
-    return this.rentalService.updateRoomAsset(updateRoomAssetDto);
+  updateRoomAsset(id: string, updateRoomAssetDto: Rental.UpdateRoomAssetRequest) {
+    if (updateRoomAssetDto.isActive !== undefined && typeof updateRoomAssetDto.isActive === 'string') {
+      updateRoomAssetDto.isActive = updateRoomAssetDto.isActive === 'true';
+    }
+    const { id: _, ...updateData } = updateRoomAssetDto;
+    return this.rentalService.updateRoomAsset({ id, ...updateData });
   }
 
   removeRoomAsset(removeRoomAssetRequest: Rental.RemoveRoomAssetRequest) {
