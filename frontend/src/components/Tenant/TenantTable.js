@@ -3,35 +3,37 @@ import React from 'react';
 const TenantTable = ({ tenants, rooms, onViewDetails, isReservationTab }) => {
   const currentDate = new Date('2025-04-25');
 
+  // Hàm lấy số phòng
   const getRoomNumber = (roomId) => {
     if (!rooms || !Array.isArray(rooms)) return 'N/A';
-    const room = rooms.find((room) => room.room_id === roomId);
-    return room ? `${room.roomName} - ${room.floor}` : 'N/A';
+    const room = rooms.find((room) => room.id === roomId); // Sử dụng room.id thay vì room.room_id
+    return room ? room.roomNumber : 'N/A'; // Sử dụng roomNumber thay vì roomName, bỏ floor
   };
 
-  // Nhóm tenants theo room_id
+  // Nhóm tenants theo roomId
   const groupedTenantsByRoom = rooms.reduce((acc, room) => {
-    const roomTenants = tenants.filter((tenant) => tenant.room_id === room.room_id);
+    const roomTenants = tenants.filter((tenant) => tenant.roomId === room.id); // Sử dụng roomId và room.id
     if (roomTenants.length > 0) {
       acc.push({ room, tenants: roomTenants });
     }
     return acc;
   }, []);
 
+  // Hàm xác định trạng thái
   const getStatus = (tenant) => {
-    // Nếu đang ở tab "Khách cọc giữ chỗ" hoặc có moveInDate (khách cọc)
-    if (isReservationTab || tenant.moveInDate) {
-      const moveInDate = tenant.moveInDate ? new Date(tenant.moveInDate) : null;
-      const isOverdue = moveInDate && moveInDate < currentDate;
+    // Nếu đang ở tab "Khách cọc giữ chỗ" hoặc tenant là khách cọc
+    if (isReservationTab || (tenant.holdingDepositPrice > 0 && tenant.startDate)) {
+      const startDate = tenant.startDate ? new Date(tenant.startDate) : null;
+      const isOverdue = startDate && startDate < currentDate;
       return {
         text: isOverdue ? 'Quá hạn' : 'Chuẩn bị chuyển vào',
         className: isOverdue ? 'text-red-500 font-semibold' : 'text-blue-500 font-semibold',
       };
     }
-    // Nếu là khách thuê (có is_active được định nghĩa)
-    if (tenant.is_active !== undefined) {
+    // Nếu là khách thuê (có isActive)
+    if (tenant.isActive === true) {
       return {
-        text: tenant.is_active ? 'Đang thuê' : 'Rời đi',
+        text: tenant.isActive ? 'Đang thuê' : 'Rời đi',
         className: '',
       };
     }
@@ -60,22 +62,22 @@ const TenantTable = ({ tenants, rooms, onViewDetails, isReservationTab }) => {
         <tbody className="divide-y divide-gray-200">
           {groupedTenantsByRoom.length > 0 ? (
             groupedTenantsByRoom.map((group, groupIndex) => (
-              <React.Fragment key={group.room.room_id}>
+              <React.Fragment key={group.room.id}>
                 {group.tenants.map((tenant, index) => (
-                  <tr key={`${group.room.room_id}-${tenant.tenant_id}`} className="hover:bg-gray-50">
+                  <tr key={`${group.room.id}-${tenant.id}`} className="hover:bg-gray-50">
                     {index === 0 && (
                       <td
                         className="px-6 py-4 whitespace-nowrap"
                         rowSpan={group.tenants.length}
                       >
-                        {getRoomNumber(group.room.room_id)}
+                        {getRoomNumber(group.room.id)}
                       </td>
                     )}
                     <td className="px-6 py-4 whitespace-nowrap">{tenant.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{tenant.phone}</td>
                     {!isReservationTab && (
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {tenant.is_lead_room ? 'Có' : 'Không'}
+                        {tenant.isLeadRoom ? 'Có' : 'Không'} {/* Sử dụng isLeadRoom */}
                       </td>
                     )}
                     <td className="px-6 py-4 whitespace-nowrap">
