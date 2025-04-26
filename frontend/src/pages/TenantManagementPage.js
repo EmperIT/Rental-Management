@@ -263,7 +263,7 @@ const TenantManagementPage = () => {
     <div className="page-container">
       <div className="page-content">
         <div className="header">
-          <h1 className="header-title">Quản lý phòng trọ</h1>
+          <h1 className="header-title">Quản lý khách thuê tọ</h1>
           <div className="header-buttons">
             <button className="btn-primary" onClick={() => setShowFormPopup(true)}>
               Thêm khách thuê
