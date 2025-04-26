@@ -5,7 +5,6 @@ import DashboardStats from '../components/dashboard/DashboardStats';
 import RoomManagement from './RoomManagement';
 import TenantManagementPage from './TenantManagementPage';
 import Contract from './Contract';
-import Templates from './Templates';
 import InvoicePage from './InvoicePage';
 import ServicePage from './ServicePage';
 import AssetPage from './AssetPage';
@@ -70,7 +69,6 @@ function HomePage({
     if (showTenants) return <TenantManagementPage />;
     if (showResidenceRegistration) return <div>Quản lý hóa đơn (Chưa triển khai)</div>;
     if (showContracts) return <Contract />;
-    if (showTemplateContracts) return <Templates />;
     if (showBills) return <div><InvoicePage /></div>;
     if (showServices) return <div><ServicePage /></div>;
     if (showAssets) return <div><AssetPage /></div>;

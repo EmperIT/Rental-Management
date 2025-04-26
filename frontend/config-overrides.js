@@ -1,10 +1,15 @@
-const { override, addWebpackModuleRule } = require('customize-cra');
+module.exports = function override(config) {
+  // Tìm tất cả các rule có dùng source-map-loader
+  config.module.rules.forEach(rule => {
+    if (
+      rule.use === 'source-map-loader' ||
+      (Array.isArray(rule.use) && rule.use.includes('source-map-loader'))
+    ) {
+      // Loại bỏ thư viện docx-preview khỏi việc load source map
+      rule.exclude = rule.exclude || [];
+      rule.exclude.push(/docx-preview/);
+    }
+  });
 
-module.exports = override(
-  addWebpackModuleRule({
-    test: /\.m?js$/,
-    enforce: 'pre',
-    use: ['source-map-loader'],
-    exclude: /node_modules/
-  })
-);
+  return config;
+};
