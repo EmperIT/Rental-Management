@@ -152,6 +152,8 @@ export class EmailService {
       };
 
       const info = await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Email sent to ${options.to}. Message ID: ${info.messageId}`);
+      this.logger.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
 
       return {
         success: true,
@@ -211,7 +213,6 @@ export class EmailService {
   ): string {
     // Xây dựng URL theo cú pháp của VietQR
     let qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-${template}.png`;
-    this.logger.log(`VietQR URL: ${qrUrl}`);
     // Thêm các tham số tùy chọn nếu có
     const params = new URLSearchParams();
     

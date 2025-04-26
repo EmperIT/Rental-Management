@@ -13,7 +13,11 @@ interface RoomDocument {
   _id: string;
   roomNumber: string;
   price: number;
-  address: string;
+  area: number;
+  images?: string[];
+  depositDate?: Date;
+  depositPrice: number;
+  maxTenant: number;
   isEmpty: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -28,7 +32,9 @@ interface TenantDocument {
   isLeadRoom: boolean;
   identityNumber: string;
   permanentAddress: string;
-  startDate: string;
+  holdingDepositPrice: number;
+  depositDate?: Date;
+  startDate: Date;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -58,9 +64,52 @@ interface InvoiceDocument {
 
 interface ServiceDocument {
   name: string;
-  value: string;
+  value: any;
   description: string;
-  lastUpdated: Date;
+  type: string;
+  unit: string;
+}
+
+interface RoomServiceDocument {
+  _id: string;
+  roomId: string;
+  serviceName: string;
+  quantity: number;
+  customPrice: number | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface AssetDocument {
+  name: string;
+  value: number;
+  unit: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface RoomAssetDocument {
+  _id: string;
+  roomId: string;
+  assetName: string;
+  quantity: number;
+  customPrice: number | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface TransactionDocument {
+  _id: string;
+  category: 'income' | 'expense';
+  type: string;
+  amount: number;
+  description: string;
+  relatedTo: string | null;
+  createdBy: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface ReadingData {
@@ -77,6 +126,10 @@ export class RentalService implements OnModuleInit {
     @InjectModel('Tenant') private readonly tenantModel: Model<TenantDocument>,
     @InjectModel('Invoice') private readonly invoiceModel: Model<InvoiceDocument>,
     @InjectModel('Service') private readonly serviceModel: Model<ServiceDocument>,
+    @InjectModel('RoomService') private readonly roomServiceModel: Model<RoomServiceDocument>,
+    @InjectModel('Asset') private readonly assetModel: Model<AssetDocument>,
+    @InjectModel('RoomAsset') private readonly roomAssetModel: Model<RoomAssetDocument>,
+    @InjectModel('Transaction') private readonly transactionModel: Model<TransactionDocument>,
     @Inject(Email.EMAIL_PACKAGE_NAME) private readonly client: ClientGrpc,
     private configService: ConfigService,
     private schedulerRegistry: SchedulerRegistry,
@@ -103,27 +156,37 @@ export class RentalService implements OnModuleInit {
         { 
           name: 'ELECTRICITY_PRICE', 
           value: 3500, 
-          description: 'Giá điện (VND/kWh)' 
+          description: 'Giá điện (VND/kWh)',
+          type: 'CONFIG',
+          unit: 'VND/kWh',
         },
         { 
           name: 'WATER_PRICE', 
           value: 15000, 
-          description: 'Giá nước (VND/m³)' 
+          description: 'Giá nước (VND/m³)',
+          type: 'CONFIG',
+          unit: 'VND/m³',
         },
         { 
           name: 'INVOICE_GENERATION_DAY', 
           value: '28', 
-          description: 'Ngày trong tháng để gửi hóa đơn (1-31)' 
+          description: 'Ngày trong tháng để gửi hóa đơn (1-31)',
+          type: 'CONFIG',
+          unit: 'day',
         },
         {
           name: 'INVOICE_DUE_DAYS',
           value: 7,
-          description: 'Số ngày để thanh toán hóa đơn sau khi gửi'
+          description: 'Số ngày để thanh toán hóa đơn sau khi gửi',
+          type: 'CONFIG',
+          unit: 'day',
         },
         {
           name: 'AUTO_SEND_INVOICE',
           value: true,
-          description: 'Tự động gửi hóa đơn khi đến ngày được cấu hình'
+          description: 'Tự động gửi hóa đơn khi đến ngày được cấu hình',
+          type: 'CONFIG',
+          unit: ''
         }
       ];
       
@@ -133,7 +196,9 @@ export class RentalService implements OnModuleInit {
           const newService = new this.serviceModel({
             name: service.name,
             value: service.value,
-            description: service.description
+            description: service.description,
+            type: service.type,
+            unit: service.unit
           });
           await newService.save();
           this.logger.log(`Đã khởi tạo dịch vụ mặc định: ${service.name} = ${service.value}`);
@@ -163,7 +228,7 @@ export class RentalService implements OnModuleInit {
    */
   async saveService(SaveServiceRequest: Rental.SaveServiceRequest): Promise<Rental.ServiceResponse> {
     try {
-      const { name, value, description } = SaveServiceRequest;
+      const { name, value, description, type, unit } = SaveServiceRequest;
       const service = await this.serviceModel.findOne({ name }).exec();
       
       if (!service) {
@@ -172,23 +237,26 @@ export class RentalService implements OnModuleInit {
           name,
           value,
           description: description || '',
-          lastUpdated: new Date()
+          type: type || 'CONFIG',
+          unit: unit
         });
         await newService.save();
-        this.logger.log(`Đã tạo mới dịch vụ ${name} với giá trị ${value}`);
+        this.logger.log(`Đã tạo mới dịch vụ ${name}`);
 
         return this.mapToService(newService);
       }
 
+      // Cập nhật service
       service.value = value;
       service.description = description || service.description;
-      service.lastUpdated = new Date();
+      if (type) service.type = type;
+      if (unit !== undefined) service.unit = unit;
       await service.save();
 
-      this.logger.log(`Đã lưu dịch vụ ${name} với giá trị ${value}`);
+      this.logger.log(`Đã lưu dịch vụ ${name}`);
       return this.mapToService(service);
     } catch (error) {
-      this.logger.error(`Lỗi lưu dịch vụ ${name}: ${error.message}`, error.stack);
+      this.logger.error(`Lỗi lưu dịch vụ ${SaveServiceRequest.name}: ${error.message}`, error.stack);
       throw new RpcException({
         statusCode: 500,
         message: `Lỗi lưu dịch vụ: ${error.message}`,
@@ -360,7 +428,6 @@ export class RentalService implements OnModuleInit {
       const { value: electricityPrice } = electricityService;
       const waterService = await this.getService('WATER_PRICE') || null;
       const { value: waterPrice } = waterService;
-
       
       // 4. Tạo thông tin hóa đơn
       // Số ngày để thanh toán sau khi nhận hóa đơn
@@ -413,6 +480,32 @@ export class RentalService implements OnModuleInit {
             amount: consumption * +waterPrice,
             reading: meterData.water,
             description: `Tiền nước: ${consumption} khối x ${waterPrice}đ = ${consumption * +waterPrice}đ`,
+            createdAt: currentDate,
+            updatedAt: currentDate
+          });
+        }
+      }
+      
+      // Lấy danh sách các dịch vụ đã đăng ký của phòng
+      const roomServices = await this.roomServiceModel.find({
+        roomId: room._id,
+        isActive: true
+      }).exec();
+      
+      // Duyệt qua các dịch vụ đã đăng ký
+      for (const roomService of roomServices) {
+        const service = await this.serviceModel.findOne({ name: roomService.serviceName }).exec();
+        
+        // Kiểm tra xem dịch vụ có phải loại FEE không
+        if (service && service.type === 'FEE') {
+          // Tính toán số tiền dựa theo số lượng và giá
+          const price = roomService.customPrice || (roomService.quantity * service.value);
+          
+          fees.push({
+            type: service.name,
+            amount: price,
+            reading: 0,
+            description: `${service.description}: ${roomService.quantity} x ${service.value}đ = ${price}đ`,
             createdAt: currentDate,
             updatedAt: currentDate
           });
@@ -541,7 +634,9 @@ export class RentalService implements OnModuleInit {
       }
 
       const room = new this.roomModel(createRoomDto);
+      room.isEmpty = true;
       await room.save();
+      console.log('tạo thành công', room);
       return this.mapToRoom(room);
     } catch (error) {
       this.logger.error(`Error creating room: ${error.message}`, error.stack);
@@ -552,12 +647,14 @@ export class RentalService implements OnModuleInit {
     }
   }
 
-  async findAllRooms(findAllRoomsDto: Rental.FindAllRoomsDto): Promise<Rental.Rooms> {
+  async findAllRoomsByFilter(findAllRoomsByFilterDto: Rental.FindAllRoomsByFilterDto): Promise<Rental.Rooms> {
     try {
-      const { page, limit } = findAllRoomsDto;
+      const { page, limit, isEmpty } = findAllRoomsByFilterDto;
       const skip = (page - 1) * limit;
       
-      const rooms = await this.roomModel.find()
+      const filter: any = {};
+      if (isEmpty) filter.isEmpty = isEmpty;
+      const rooms = await this.roomModel.find(filter)
         .skip(skip)
         .limit(limit)
         .exec();
@@ -1042,12 +1139,625 @@ export class RentalService implements OnModuleInit {
     return fees.reduce((sum, fee) => sum + (fee.amount || 0), 0);
   }
 
+  
+  // ***** ROOM SERVICE MANAGEMENT *****
+
+  /**
+   * Đăng ký dịch vụ cho phòng
+   */
+  async addRoomService(addRoomServiceRequest: Rental.AddRoomServiceRequest): Promise<Rental.RoomServiceResponse> {
+    try {
+      const { roomId, serviceName, quantity, customPrice } = addRoomServiceRequest;
+      
+      // Kiểm tra xem phòng có tồn tại không
+      const room = await this.roomModel.findById(roomId).exec();
+      if (!room) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Không tìm thấy phòng với id ${roomId}`,
+        });
+      }
+      
+      // Kiểm tra xem dịch vụ có tồn tại không
+      const service = await this.serviceModel.findOne({ name: serviceName }).exec();
+      if (!service) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Không tìm thấy dịch vụ với tên ${serviceName}`,
+        });
+      }
+      
+      // Kiểm tra xem phòng đã đăng ký dịch vụ này chưa
+      const existingRoomService = await this.roomServiceModel.findOne({
+        roomId,
+        serviceName
+      }).exec();
+      
+      if (existingRoomService) {
+        // Nếu đã đăng ký, cập nhật thông tin
+        existingRoomService.quantity = quantity !== undefined ? quantity : existingRoomService.quantity;
+        existingRoomService.customPrice = customPrice !== undefined ? customPrice : existingRoomService.customPrice;
+        existingRoomService.isActive = true;
+        
+        await existingRoomService.save();
+        this.logger.log(`Đã cập nhật dịch vụ ${serviceName} cho phòng ${room.roomNumber}`);
+        
+        return this.mapToRoomService(existingRoomService, service);
+      } else {
+        // Nếu chưa đăng ký, tạo mới
+        const newRoomService = new this.roomServiceModel({
+          roomId,
+          serviceName,
+          quantity: quantity || 1,
+          customPrice,
+          isActive: true
+        });
+        
+        await newRoomService.save();
+        this.logger.log(`Đã đăng ký dịch vụ ${serviceName} cho phòng ${room.roomNumber}`);
+        
+        return this.mapToRoomService(newRoomService, service);
+      }
+    } catch (error) {
+      this.logger.error(`Lỗi đăng ký dịch vụ cho phòng: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Lỗi đăng ký dịch vụ cho phòng',
+      });
+    }
+  }
+
+  /**
+   * Hủy đăng ký dịch vụ cho phòng
+   */
+  async removeRoomService(removeRequest: Rental.RemoveRoomServiceRequest): Promise<Rental.RoomServiceResponse> {
+    try {
+      const { roomId, serviceName } = removeRequest;
+      
+      // Tìm dịch vụ của phòng
+      const roomService = await this.roomServiceModel.findOne({
+        roomId,
+        serviceName
+      }).exec();
+      
+      if (!roomService) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Phòng chưa đăng ký dịch vụ này`,
+        });
+      }
+      
+      // Đánh dấu là không hoạt động thay vì xóa hoàn toàn
+      // để giữ lại lịch sử sử dụng dịch vụ
+      roomService.isActive = false;      
+      await roomService.save();
+      
+      const service = await this.serviceModel.findOne({ name: serviceName }).exec();
+      if (!service) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Không tìm thấy dịch vụ với tên ${serviceName}`,
+        });
+      }
+      
+      this.logger.log(`Đã hủy dịch vụ ${serviceName} cho phòng`);
+      
+      return this.mapToRoomService(roomService, service);
+    } catch (error) {
+      this.logger.error(`Lỗi hủy dịch vụ: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Lỗi hủy dịch vụ',
+      });
+    }
+  }
+
+  /**
+   * Lấy tất cả dịch vụ đăng ký cho một phòng
+   */
+  async getRoomServices(getRoomServicesRequest: Rental.GetRoomServicesRequest): Promise<Rental.RoomServicesResponse> {
+    try {
+      const { roomId } = getRoomServicesRequest;
+      
+      // Kiểm tra phòng tồn tại
+      const room = await this.roomModel.findById(roomId).exec();
+      if (!room) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Không tìm thấy phòng với id ${roomId}`,
+        });
+      }
+      
+      // Lấy tất cả dịch vụ đang hoạt động của phòng
+      const roomServices = await this.roomServiceModel.find({
+        roomId,
+        isActive: true
+      }).exec();
+      
+      // Lấy thông tin chi tiết của từng dịch vụ
+      const services: Rental.RoomServiceResponse[] = [];
+      
+      for (const roomService of roomServices) {
+        const service = await this.serviceModel.findOne({
+          name: roomService.serviceName
+        }).exec();
+        
+        if (service) {
+          services.push(this.mapToRoomService(roomService, service));
+        }
+      }
+      
+      return { services };
+    } catch (error) {
+      this.logger.error(`Lỗi lấy dịch vụ của phòng: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Lỗi lấy dịch vụ của phòng',
+      });
+    }
+  }
+
+  // ***** ASSET MANAGEMENT *****
+
+  /**
+   * Tạo mới một tài sản
+   */
+  async createAsset(createAssetDto: Rental.CreateAssetDto): Promise<Rental.Asset> {
+    try {
+      // Kiểm tra xem tài sản đã tồn tại chưa
+      const existingAsset = await this.assetModel.findOne({ name: createAssetDto.name }).exec();
+      if (existingAsset) {
+        throw new RpcException({
+          statusCode: 409,
+          message: `Tài sản với tên ${createAssetDto.name} đã tồn tại`,
+        });
+      }
+
+      const asset = new this.assetModel(createAssetDto);
+      await asset.save();
+      this.logger.log(`Đã tạo mới tài sản: ${asset.name}`);
+      
+      return this.mapToAsset(asset);
+    } catch (error) {
+      this.logger.error(`Lỗi tạo tài sản: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Lỗi tạo tài sản',
+      });
+    }
+  }
+
+  /**
+   * Lấy thông tin một tài sản theo tên
+   */
+  async getAsset(name: string): Promise<Rental.Asset> {
+    try {
+      const asset = await this.assetModel.findOne({ name }).exec();
+      if (!asset) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Không tìm thấy tài sản với tên ${name}`,
+        });
+      }
+      
+      return this.mapToAsset(asset);
+    } catch (error) {
+      this.logger.error(`Lỗi lấy tài sản: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Lỗi lấy tài sản',
+      });
+    }
+  }
+
+  /**
+   * Lấy tất cả tài sản
+   */
+  async getAllAssets(): Promise<Rental.AssetsResponse> {
+    try {
+      const assets = await this.assetModel.find().exec();
+      return {
+        assets: assets.map(this.mapToAsset),
+        total: assets.length
+      };
+    } catch (error) {
+      this.logger.error(`Lỗi lấy tất cả tài sản: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Lỗi lấy tất cả tài sản',
+      });
+    }
+  }
+
+  /**
+   * Cập nhật thông tin tài sản
+   */
+  async updateAsset(updateAssetDto: Rental.UpdateAssetDto): Promise<Rental.Asset> {
+    try {
+      const asset = await this.assetModel.findOne({ name: updateAssetDto.name }).exec();
+      if (!asset) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Không tìm thấy tài sản với tên ${updateAssetDto.name}`,
+        });
+      }
+      
+      // Cập nhật thông tin
+      asset.value = updateAssetDto.value;
+      if (updateAssetDto.unit !== undefined) {
+        asset.unit = updateAssetDto.unit;
+      }
+      
+      await asset.save();
+      this.logger.log(`Đã cập nhật tài sản: ${asset.name}`);
+      
+      return this.mapToAsset(asset);
+    } catch (error) {
+      this.logger.error(`Lỗi cập nhật tài sản: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Lỗi cập nhật tài sản',
+      });
+    }
+  }
+
+  /**
+   * Xóa tài sản
+   */
+  async removeAsset(name: string): Promise<Rental.Asset> {
+    try {
+      // Kiểm tra xem tài sản có đang được sử dụng không
+      const roomAssets = await this.roomAssetModel.findOne({ 
+        assetName: name,
+        isActive: true
+      }).exec();
+      
+      if (roomAssets) {
+        throw new RpcException({
+          statusCode: 400,
+          message: `Không thể xóa tài sản này vì đang được sử dụng trong các phòng`,
+        });
+      }
+      
+      const asset = await this.assetModel.findOneAndDelete({ name }).exec();
+      if (!asset) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Không tìm thấy tài sản với tên ${name}`,
+        });
+      }
+      
+      this.logger.log(`Đã xóa tài sản: ${name}`);
+      return this.mapToAsset(asset);
+    } catch (error) {
+      this.logger.error(`Lỗi xóa tài sản: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Lỗi xóa tài sản',
+      });
+    }
+  }
+
+  // ***** ROOM ASSET MANAGEMENT *****
+
+  /**
+   * Đăng ký tài sản cho phòng
+   */
+  async addRoomAsset(addRoomAssetRequest: Rental.AddRoomAssetRequest): Promise<Rental.RoomAssetResponse> {
+    try {
+      const { roomId, assetName, quantity, customPrice } = addRoomAssetRequest;
+      
+      // Kiểm tra xem phòng có tồn tại không
+      const room = await this.roomModel.findById(roomId).exec();
+      if (!room) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Không tìm thấy phòng với id ${roomId}`,
+        });
+      }
+      
+      // Kiểm tra xem tài sản có tồn tại không
+      const asset = await this.assetModel.findOne({ name: assetName }).exec();
+      if (!asset) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Không tìm thấy tài sản với tên ${assetName}`,
+        });
+      }
+      
+      // Kiểm tra xem phòng đã đăng ký tài sản này chưa
+      const existingRoomAsset = await this.roomAssetModel.findOne({
+        roomId,
+        assetName
+      }).exec();
+      
+      if (existingRoomAsset) {
+        // Nếu đã đăng ký, cập nhật thông tin
+        existingRoomAsset.quantity = quantity;
+        existingRoomAsset.customPrice = customPrice !== undefined ? customPrice : existingRoomAsset.customPrice;;
+        existingRoomAsset.isActive = true;
+        
+        await existingRoomAsset.save();
+        this.logger.log(`Đã cập nhật tài sản ${assetName} cho phòng ${room.roomNumber}`);
+        
+        return this.mapToRoomAsset(existingRoomAsset);
+      } else {
+        // Nếu chưa đăng ký, tạo mới
+        const newRoomAsset = new this.roomAssetModel({
+          roomId,
+          assetName,
+          quantity,
+          customPrice,
+          isActive: true
+        });
+        
+        await newRoomAsset.save();
+        this.logger.log(`Đã đăng ký tài sản ${assetName} cho phòng ${room.roomNumber}`);
+        
+        return this.mapToRoomAsset(newRoomAsset);
+      }
+    } catch (error) {
+      this.logger.error(`Lỗi đăng ký tài sản cho phòng: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Lỗi đăng ký tài sản cho phòng',
+      });
+    }
+  }
+
+  /**
+   * Lấy tất cả tài sản của một phòng
+   */
+  async getRoomAssets(getRoomAssetsRequest: Rental.GetRoomAssetsRequest): Promise<Rental.RoomAssetsResponse> {
+    try {
+      const { roomId } = getRoomAssetsRequest;
+      
+      // Kiểm tra phòng tồn tại
+      const room = await this.roomModel.findById(roomId).exec();
+      if (!room) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Không tìm thấy phòng với id ${roomId}`,
+        });
+      }
+      
+      // Lấy tất cả tài sản của phòng
+      const roomAssets = await this.roomAssetModel.find({
+        roomId,
+        isActive: true
+      }).exec();
+      
+      return { 
+        assets: roomAssets.map(this.mapToRoomAsset),
+        total: roomAssets.length
+      };
+    } catch (error) {
+      this.logger.error(`Lỗi lấy tài sản của phòng: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Lỗi lấy tài sản của phòng',
+      });
+    }
+  }
+
+  /**
+   * Cập nhật tài sản của phòng
+   */
+  async updateRoomAsset(updateRoomAssetRequest: Rental.UpdateRoomAssetRequest): Promise<Rental.RoomAssetResponse> {
+    try {
+      const { roomId, assetName, quantity, customPrice, isActive } = updateRoomAssetRequest;
+      
+      // Tìm tài sản của phòng
+      const roomAsset = await this.roomAssetModel.findOne({
+        roomId,
+        assetName
+      }).exec();
+      
+      if (!roomAsset) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Phòng chưa đăng ký tài sản này`,
+        });
+      }
+      
+      // Cập nhật thông tin
+      if (quantity !== undefined) roomAsset.quantity = quantity;
+      if (customPrice !== undefined) roomAsset.customPrice = customPrice;
+      if (isActive !== undefined) roomAsset.isActive = isActive;
+      
+      await roomAsset.save();
+      this.logger.log(`Đã cập nhật tài sản ${assetName} cho phòng`);
+      
+      return this.mapToRoomAsset(roomAsset);
+    } catch (error) {
+      this.logger.error(`Lỗi cập nhật tài sản của phòng: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Lỗi cập nhật tài sản của phòng',
+      });
+    }
+  }
+
+  /**
+   * Xóa tài sản của phòng
+   */
+  async removeRoomAsset(removeRoomAssetRequest: Rental.RemoveRoomAssetRequest): Promise<Rental.RoomAssetResponse> {
+    try {
+      const { roomId, assetName } = removeRoomAssetRequest;
+      
+      // Tìm tài sản của phòng
+      const roomAsset = await this.roomAssetModel.findOne({
+        roomId,
+        assetName
+      }).exec();
+      
+      if (!roomAsset) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Phòng chưa đăng ký tài sản này`,
+        });
+      }
+      
+      // Đánh dấu là không hoạt động thay vì xóa hoàn toàn
+      roomAsset.isActive = false;      
+      await roomAsset.save();
+      
+      this.logger.log(`Đã xóa tài sản ${assetName} khỏi phòng`);
+      
+      return this.mapToRoomAsset(roomAsset);
+    } catch (error) {
+      this.logger.error(`Lỗi xóa tài sản khỏi phòng: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Lỗi xóa tài sản khỏi phòng',
+      });
+    }
+  }
+
+  // ***** TRANSACTION MANAGEMENT *****
+  /**
+   * Tạo mới một giao dịch
+   */
+  async createTransaction(createTransactionDto: Rental.CreateTransactionDto): Promise<Rental.Transaction> {
+    try {
+      const transaction = new this.transactionModel(createTransactionDto);
+      await transaction.save();
+      this.logger.log(`Đã tạo giao dịch mới: ${transaction._id}`);
+      
+      return this.mapToTransaction(transaction);
+    } catch (error) {
+      this.logger.error(`Lỗi tạo giao dịch: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Lỗi tạo giao dịch',
+      });
+    }
+  }
+
+  /**
+   * Tìm tất cả giao dịch theo bộ lọc
+   */
+  async findAllTransactionsByFilter(findAllTransactionsByFilterDto: Rental.FindAllTransactionsByFilterDto): Promise<Rental.Transactions> {
+    try {
+      const { page, limit, category, type, startDate, endDate } = findAllTransactionsByFilterDto;
+      const skip = (page - 1) * limit;
+      
+      const filter: any = {};
+      if (category) filter.category = category;
+      if (type) filter.type = type;
+      
+      // Thêm lọc theo khoảng ngày tháng
+      if (startDate || endDate) {
+        filter.createdAt = {};
+        if (startDate) filter.createdAt.$gte = new Date(startDate);
+        if (endDate) filter.createdAt.$lte = new Date(endDate);
+      }
+      
+      const transactions = await this.transactionModel.find(filter)
+        .sort({ createdAt: -1 })  // Sắp xếp theo ngày gần nhất
+        .skip(skip)
+        .limit(limit)
+        .exec();
+      
+      const total = await this.transactionModel.countDocuments(filter).exec();
+      
+      return { 
+        transactions: transactions.map(this.mapToTransaction), 
+        total 
+      };
+    } catch (error) {
+      this.logger.error(`Lỗi tìm giao dịch: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Lỗi tìm giao dịch',
+      });
+    }
+  }
+
+  /**
+   * Tìm một giao dịch theo id
+   */
+  async findOneTransaction(findOneTransactionDto: Rental.FindOneTransactionDto): Promise<Rental.Transaction> {
+    try {
+      const transaction = await this.transactionModel.findById(findOneTransactionDto.id).exec();
+      if (!transaction) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Không tìm thấy giao dịch với id ${findOneTransactionDto.id}`,
+        });
+      }
+      
+      return this.mapToTransaction(transaction);
+    } catch (error) {
+      this.logger.error(`Lỗi tìm giao dịch: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Lỗi tìm giao dịch',
+      });
+    }
+  }
+
+  /**
+   * Cập nhật thông tin giao dịch
+   */
+  async updateTransaction(updateTransactionDto: Rental.UpdateTransactionDto): Promise<Rental.Transaction> {
+    try {
+      const transaction = await this.transactionModel.findById(updateTransactionDto.id).exec();
+      if (!transaction) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Không tìm thấy giao dịch với id ${updateTransactionDto.id}`,
+        });
+      }
+      
+      Object.assign(transaction, updateTransactionDto);
+      await transaction.save();
+      this.logger.log(`Đã cập nhật giao dịch: ${transaction._id}`);
+      
+      return this.mapToTransaction(transaction);
+    } catch (error) {
+      this.logger.error(`Lỗi cập nhật giao dịch: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Lỗi cập nhật giao dịch',
+      });
+    }
+  }
+
+  /**
+   * Xóa giao dịch
+   */
+  async removeTransaction(findOneTransactionDto: Rental.FindOneTransactionDto): Promise<Rental.Transaction> {
+    try {
+      const transaction = await this.transactionModel.findByIdAndDelete(findOneTransactionDto.id).exec();
+      if (!transaction) {
+        throw new RpcException({
+          statusCode: 404,
+          message: `Không tìm thấy giao dịch với id ${findOneTransactionDto.id}`,
+        });
+      }
+      
+      this.logger.log(`Đã xóa giao dịch: ${transaction._id}`);
+      return this.mapToTransaction(transaction);
+    } catch (error) {
+      this.logger.error(`Lỗi xóa giao dịch: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Lỗi xóa giao dịch',
+      });
+    }
+  }
+
   private mapToRoom(room: RoomDocument): Rental.Room {
     return {
       id: room._id.toString(),
       roomNumber: room.roomNumber,
       price: room.price,
-      address: room.address,
+      area: room.area,
+      images: room.images || [],
+      depositDate: room.depositDate?.toISOString() || '',
+      depositPrice: room.depositPrice,
+      maxTenants: room.maxTenant,
       isEmpty: room.isEmpty,
       createdAt: room.createdAt.toISOString(),
       updatedAt: room.updatedAt.toISOString(),
@@ -1064,7 +1774,9 @@ export class RentalService implements OnModuleInit {
       isLeadRoom: tenant.isLeadRoom,
       identityNumber: tenant.identityNumber,
       permanentAddress: tenant.permanentAddress,
-      startDate: tenant.startDate,
+      holdingDepositPrice: tenant.holdingDepositPrice,
+      depositDate: tenant.depositDate?.toISOString() || '',
+      startDate: tenant.startDate.toISOString() || '',
       isActive: tenant.isActive,
       createdAt: tenant.createdAt.toISOString(),
       updatedAt: tenant.updatedAt.toISOString(),
@@ -1098,7 +1810,58 @@ export class RentalService implements OnModuleInit {
       name: service.name,
       value: service.value,
       description: service.description,
-      lastUpdated: service.lastUpdated.toISOString(),
+      type: service.type || 'CONFIG', // Set a default value to ensure it's never undefined
+      unit: service.unit || ''
+    };
+  }
+
+  private mapToRoomService(roomService: RoomServiceDocument, service: ServiceDocument): Rental.RoomServiceResponse {
+    return {
+      id: roomService._id.toString(),
+      roomId: roomService.roomId,
+      service: this.mapToService(service),
+      quantity: roomService.quantity,
+      customPrice: roomService.customPrice || 0,
+      isActive: roomService.isActive,
+      createdAt: roomService.createdAt.toISOString(),
+      updatedAt: roomService.updatedAt.toISOString()
+    };
+  }
+
+  private mapToAsset(asset: AssetDocument): Rental.Asset {
+    return {
+      name: asset.name,
+      value: asset.value,
+      unit: asset.unit,
+      createdAt: asset.createdAt.toISOString(),
+      updatedAt: asset.updatedAt.toISOString(),
+    };
+  }
+  
+  private mapToRoomAsset(roomAsset: RoomAssetDocument): Rental.RoomAssetResponse {
+    return {
+      id: roomAsset._id.toString(),
+      roomId: roomAsset.roomId,
+      assetName: roomAsset.assetName,
+      quantity: roomAsset.quantity,
+      customPrice: roomAsset.customPrice || 0,
+      isActive: roomAsset.isActive,
+      createdAt: roomAsset.createdAt.toISOString(),
+      updatedAt: roomAsset.updatedAt.toISOString()
+    };
+  }
+  
+  private mapToTransaction(transaction: TransactionDocument): Rental.Transaction {
+    return {
+      id: transaction._id.toString(),
+      category: transaction.category,
+      type: transaction.type,
+      amount: transaction.amount,
+      description: transaction.description,
+      relatedTo: transaction.relatedTo || '',
+      createdBy: transaction.createdBy || '',
+      createdAt: transaction.createdAt.toISOString(),
+      updatedAt: transaction.updatedAt.toISOString(),
     };
   }
 }

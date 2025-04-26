@@ -23,17 +23,60 @@ export interface SaveServiceRequest {
   name: string;
   value: string;
   description?: string | undefined;
+  type?: string | undefined;
+  unit?: string | undefined;
 }
 
 export interface ServiceResponse {
   name: string;
   value: string;
   description: string;
-  lastUpdated: string;
+  type: string;
+  unit: string;
 }
 
 export interface AllServicesResponse {
   services: ServiceResponse[];
+}
+
+/** Room Service Messages */
+export interface ServiceDetails {
+  name: string;
+  value: string;
+  description: string;
+  type: string;
+  unit: string;
+}
+
+export interface AddRoomServiceRequest {
+  roomId: string;
+  serviceName: string;
+  quantity: number;
+  customPrice?: number | undefined;
+}
+
+export interface GetRoomServicesRequest {
+  roomId: string;
+}
+
+export interface RemoveRoomServiceRequest {
+  roomId: string;
+  serviceName: string;
+}
+
+export interface RoomServiceResponse {
+  id: string;
+  roomId: string;
+  service: ServiceDetails | undefined;
+  quantity: number;
+  customPrice: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RoomServicesResponse {
+  services: RoomServiceResponse[];
 }
 
 export interface InvoiceGenerationResponse {
@@ -45,21 +88,29 @@ export interface InvoiceGenerationResponse {
 export interface CreateRoomDto {
   roomNumber: string;
   price: number;
-  address: string;
-  isEmpty: boolean;
+  area: number;
+  images: string[];
+  depositDate: string;
+  depositPrice: number;
+  maxTenants: number;
 }
 
 export interface UpdateRoomDto {
   id: string;
   roomNumber: string;
   price: number;
-  address: string;
+  area: number;
+  images: string[];
+  depositDate: string;
+  depositPrice: number;
+  maxTenants: number;
   isEmpty: boolean;
 }
 
-export interface FindAllRoomsDto {
+export interface FindAllRoomsByFilterDto {
   page: number;
   limit: number;
+  isEmpty?: boolean | undefined;
 }
 
 export interface FindOneRoomDto {
@@ -70,7 +121,11 @@ export interface Room {
   id: string;
   roomNumber: string;
   price: number;
-  address: string;
+  area: number;
+  images: string[];
+  depositDate: string;
+  depositPrice: number;
+  maxTenants: number;
   isEmpty: boolean;
   createdAt: string;
   updatedAt: string;
@@ -91,6 +146,8 @@ export interface CreateTenantDto {
   identityNumber: string;
   permanentAddress: string;
   startDate: string;
+  holdingDepositPrice: number;
+  depositDate: string;
 }
 
 export interface UpdateTenantDto {
@@ -103,6 +160,8 @@ export interface UpdateTenantDto {
   identityNumber: string;
   permanentAddress: string;
   startDate: string;
+  holdingDepositPrice: number;
+  depositDate: string;
   isActive: boolean;
 }
 
@@ -127,6 +186,8 @@ export interface Tenant {
   identityNumber: string;
   permanentAddress: string;
   startDate: string;
+  holdingDepositPrice: number;
+  depositDate: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -210,6 +271,134 @@ export interface ReadingsResponse_ReadingsEntry {
   value: number;
 }
 
+/** Asset Messages */
+export interface CreateAssetDto {
+  name: string;
+  value: number;
+  unit?: string | undefined;
+}
+
+export interface UpdateAssetDto {
+  name: string;
+  value: number;
+  unit?: string | undefined;
+}
+
+export interface GetAssetRequest {
+  name: string;
+}
+
+export interface Asset {
+  name: string;
+  value: number;
+  unit: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AssetsResponse {
+  assets: Asset[];
+  total: number;
+}
+
+/** Room Asset Messages */
+export interface AddRoomAssetRequest {
+  roomId: string;
+  assetName: string;
+  quantity: number;
+  customPrice?: number | undefined;
+}
+
+export interface GetRoomAssetsRequest {
+  roomId: string;
+}
+
+export interface UpdateRoomAssetRequest {
+  roomId: string;
+  assetName: string;
+  quantity: number;
+  customPrice?: number | undefined;
+  isActive?: boolean | undefined;
+}
+
+export interface RemoveRoomAssetRequest {
+  roomId: string;
+  assetName: string;
+}
+
+export interface RoomAssetResponse {
+  id: string;
+  roomId: string;
+  assetName: string;
+  quantity: number;
+  customPrice: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RoomAssetsResponse {
+  assets: RoomAssetResponse[];
+  total: number;
+}
+
+/** Transaction Messages */
+export interface CreateTransactionDto {
+  /** 'income' hoặc 'expense' */
+  category: string;
+  type: string;
+  amount: number;
+  description?:
+    | string
+    | undefined;
+  /** Reference đến Invoice */
+  relatedTo?:
+    | string
+    | undefined;
+  /** Reference đến Auth */
+  createdBy?: string | undefined;
+}
+
+export interface UpdateTransactionDto {
+  id: string;
+  category: string;
+  type: string;
+  amount: number;
+  description?: string | undefined;
+  relatedTo?: string | undefined;
+  createdBy?: string | undefined;
+}
+
+export interface FindOneTransactionDto {
+  id: string;
+}
+
+export interface FindAllTransactionsByFilterDto {
+  page: number;
+  limit: number;
+  category?: string | undefined;
+  type?: string | undefined;
+  startDate?: string | undefined;
+  endDate?: string | undefined;
+}
+
+export interface Transaction {
+  id: string;
+  category: string;
+  type: string;
+  amount: number;
+  description: string;
+  relatedTo: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Transactions {
+  transactions: Transaction[];
+  total: number;
+}
+
 export const RENTAL_PACKAGE_NAME = "rental";
 
 export interface RentalServiceClient {
@@ -217,7 +406,7 @@ export interface RentalServiceClient {
 
   createRoom(request: CreateRoomDto): Observable<Room>;
 
-  findAllRooms(request: FindAllRoomsDto): Observable<Rooms>;
+  findAllRoomsByFilter(request: FindAllRoomsByFilterDto): Observable<Rooms>;
 
   findOneRoom(request: FindOneRoomDto): Observable<Room>;
 
@@ -263,9 +452,51 @@ export interface RentalServiceClient {
 
   removeService(request: GetServiceRequest): Observable<ServiceResponse>;
 
+  /** Room Services Management */
+
+  addRoomService(request: AddRoomServiceRequest): Observable<RoomServiceResponse>;
+
+  getRoomServices(request: GetRoomServicesRequest): Observable<RoomServicesResponse>;
+
+  removeRoomService(request: RemoveRoomServiceRequest): Observable<RoomServiceResponse>;
+
   /** Invoice Generation */
 
   triggerInvoiceGeneration(request: Empty): Observable<InvoiceGenerationResponse>;
+
+  /** Asset Management */
+
+  createAsset(request: CreateAssetDto): Observable<Asset>;
+
+  getAsset(request: GetAssetRequest): Observable<Asset>;
+
+  getAllAssets(request: Empty): Observable<AssetsResponse>;
+
+  updateAsset(request: UpdateAssetDto): Observable<Asset>;
+
+  removeAsset(request: GetAssetRequest): Observable<Asset>;
+
+  /** Room Asset Management */
+
+  addRoomAsset(request: AddRoomAssetRequest): Observable<RoomAssetResponse>;
+
+  getRoomAssets(request: GetRoomAssetsRequest): Observable<RoomAssetsResponse>;
+
+  updateRoomAsset(request: UpdateRoomAssetRequest): Observable<RoomAssetResponse>;
+
+  removeRoomAsset(request: RemoveRoomAssetRequest): Observable<RoomAssetResponse>;
+
+  /** Transaction Management */
+
+  createTransaction(request: CreateTransactionDto): Observable<Transaction>;
+
+  findAllTransactionsByFilter(request: FindAllTransactionsByFilterDto): Observable<Transactions>;
+
+  findOneTransaction(request: FindOneTransactionDto): Observable<Transaction>;
+
+  updateTransaction(request: UpdateTransactionDto): Observable<Transaction>;
+
+  removeTransaction(request: FindOneTransactionDto): Observable<Transaction>;
 }
 
 export interface RentalServiceController {
@@ -273,7 +504,7 @@ export interface RentalServiceController {
 
   createRoom(request: CreateRoomDto): Promise<Room> | Observable<Room> | Room;
 
-  findAllRooms(request: FindAllRoomsDto): Promise<Rooms> | Observable<Rooms> | Rooms;
+  findAllRoomsByFilter(request: FindAllRoomsByFilterDto): Promise<Rooms> | Observable<Rooms> | Rooms;
 
   findOneRoom(request: FindOneRoomDto): Promise<Room> | Observable<Room> | Room;
 
@@ -321,18 +552,76 @@ export interface RentalServiceController {
 
   removeService(request: GetServiceRequest): Promise<ServiceResponse> | Observable<ServiceResponse> | ServiceResponse;
 
+  /** Room Services Management */
+
+  addRoomService(
+    request: AddRoomServiceRequest,
+  ): Promise<RoomServiceResponse> | Observable<RoomServiceResponse> | RoomServiceResponse;
+
+  getRoomServices(
+    request: GetRoomServicesRequest,
+  ): Promise<RoomServicesResponse> | Observable<RoomServicesResponse> | RoomServicesResponse;
+
+  removeRoomService(
+    request: RemoveRoomServiceRequest,
+  ): Promise<RoomServiceResponse> | Observable<RoomServiceResponse> | RoomServiceResponse;
+
   /** Invoice Generation */
 
   triggerInvoiceGeneration(
     request: Empty,
   ): Promise<InvoiceGenerationResponse> | Observable<InvoiceGenerationResponse> | InvoiceGenerationResponse;
+
+  /** Asset Management */
+
+  createAsset(request: CreateAssetDto): Promise<Asset> | Observable<Asset> | Asset;
+
+  getAsset(request: GetAssetRequest): Promise<Asset> | Observable<Asset> | Asset;
+
+  getAllAssets(request: Empty): Promise<AssetsResponse> | Observable<AssetsResponse> | AssetsResponse;
+
+  updateAsset(request: UpdateAssetDto): Promise<Asset> | Observable<Asset> | Asset;
+
+  removeAsset(request: GetAssetRequest): Promise<Asset> | Observable<Asset> | Asset;
+
+  /** Room Asset Management */
+
+  addRoomAsset(
+    request: AddRoomAssetRequest,
+  ): Promise<RoomAssetResponse> | Observable<RoomAssetResponse> | RoomAssetResponse;
+
+  getRoomAssets(
+    request: GetRoomAssetsRequest,
+  ): Promise<RoomAssetsResponse> | Observable<RoomAssetsResponse> | RoomAssetsResponse;
+
+  updateRoomAsset(
+    request: UpdateRoomAssetRequest,
+  ): Promise<RoomAssetResponse> | Observable<RoomAssetResponse> | RoomAssetResponse;
+
+  removeRoomAsset(
+    request: RemoveRoomAssetRequest,
+  ): Promise<RoomAssetResponse> | Observable<RoomAssetResponse> | RoomAssetResponse;
+
+  /** Transaction Management */
+
+  createTransaction(request: CreateTransactionDto): Promise<Transaction> | Observable<Transaction> | Transaction;
+
+  findAllTransactionsByFilter(
+    request: FindAllTransactionsByFilterDto,
+  ): Promise<Transactions> | Observable<Transactions> | Transactions;
+
+  findOneTransaction(request: FindOneTransactionDto): Promise<Transaction> | Observable<Transaction> | Transaction;
+
+  updateTransaction(request: UpdateTransactionDto): Promise<Transaction> | Observable<Transaction> | Transaction;
+
+  removeTransaction(request: FindOneTransactionDto): Promise<Transaction> | Observable<Transaction> | Transaction;
 }
 
 export function RentalServiceControllerMethods() {
   return function (constructor: Function) {
     const grpcMethods: string[] = [
       "createRoom",
-      "findAllRooms",
+      "findAllRoomsByFilter",
       "findOneRoom",
       "updateRoom",
       "removeRoom",
@@ -351,7 +640,24 @@ export function RentalServiceControllerMethods() {
       "saveService",
       "getAllServices",
       "removeService",
+      "addRoomService",
+      "getRoomServices",
+      "removeRoomService",
       "triggerInvoiceGeneration",
+      "createAsset",
+      "getAsset",
+      "getAllAssets",
+      "updateAsset",
+      "removeAsset",
+      "addRoomAsset",
+      "getRoomAssets",
+      "updateRoomAsset",
+      "removeRoomAsset",
+      "createTransaction",
+      "findAllTransactionsByFilter",
+      "findOneTransaction",
+      "updateTransaction",
+      "removeTransaction",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
