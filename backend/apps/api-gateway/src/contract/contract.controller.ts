@@ -27,9 +27,6 @@ import {
   UpdateContractSwaggerDto,
   ContractSwaggerDto,
   ContractsSwaggerDto,
-  CreateContractTemplateSwaggerDto,
-  UpdateContractTemplateSwaggerDto,
-  ContractTemplateSwaggerDto,
 } from '../../dto/contract.dto';
 import { Contract } from '@app/commonn';
 
@@ -38,7 +35,6 @@ import { Contract } from '@app/commonn';
 export class ContractController {
   constructor(private readonly contractService: ContractService) {}
 
-  // ---------- CONTRACT ----------
   @Post()
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
@@ -64,13 +60,13 @@ export class ContractController {
   @ApiQuery({ name: 'status', required: false })
   @ApiResponse({ status: 200, description: 'Danh sách hợp đồng', type: ContractsSwaggerDto })
   findAll(
-    @Query('page') page: number = 0,
-    @Query('limit') limit: number = 10,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 0,
     @Query('roomId') roomId?: string,
     @Query('tenantId') tenantId?: string,
-    @Query('status') status?: string,
+    @Query('isActive') isActive?: boolean,
   ) {
-    return this.contractService.findAllContracts(page, limit).pipe(
+    return this.contractService.findAllContracts(page, limit, roomId, tenantId, isActive).pipe(
       catchError((val) => {
         throw new HttpException(val.message, val.statusCode || 400);
       }),
@@ -114,85 +110,6 @@ export class ContractController {
   @ApiResponse({ status: 200, description: 'Đã xóa hợp đồng', type: ContractSwaggerDto })
   remove(@Param('id') id: string) {
     return this.contractService.removeContract(id).pipe(
-      catchError((val) => {
-        throw new HttpException(val.message, val.statusCode || 400);
-      }),
-    );
-  }
-
-  // ---------- TEMPLATE ----------
-  @Post('template')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Tạo mẫu hợp đồng' })
-  @ApiBody({ type: CreateContractTemplateSwaggerDto })
-  @ApiResponse({ status: 201, description: 'Tạo mẫu thành công', type: ContractTemplateSwaggerDto })
-  createTemplate(@Body() dto: Contract.CreateContractTemplateDto) {
-    return this.contractService.createContractTemplate(dto).pipe(
-      catchError((val) => {
-        throw new HttpException(val.message, val.statusCode || 400);
-      }),
-    );
-  }
-
-  @Get('template')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Lấy danh sách mẫu hợp đồng' })
-  @ApiQuery({ name: 'page', required: false, example: 0 })
-  @ApiQuery({ name: 'limit', required: false, example: 10 })
-  @ApiResponse({ status: 200, description: 'Danh sách mẫu hợp đồng', type: [ContractTemplateSwaggerDto] })
-  findAllTemplates(
-    @Query('page') page: number = 0,
-    @Query('limit') limit: number = 10,
-  ) {
-    return this.contractService.findAllContractTemplates(page, limit).pipe(
-      catchError((val) => {
-        throw new HttpException(val.message, val.statusCode || 400);
-      }),
-    );
-  }
-
-  @Get('template/:id')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Lấy mẫu hợp đồng theo ID' })
-  @ApiParam({ name: 'id' })
-  @ApiResponse({ status: 200, description: 'Chi tiết mẫu hợp đồng', type: ContractTemplateSwaggerDto })
-  findOneTemplate(@Param('id') id: string) {
-    return this.contractService.findOneContractTemplate(id).pipe(
-      catchError((val) => {
-        throw new HttpException(val.message, val.statusCode || 400);
-      }),
-    );
-  }
-
-  @Patch('template/:id')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Cập nhật mẫu hợp đồng' })
-  @ApiParam({ name: 'id' })
-  @ApiBody({ type: UpdateContractTemplateSwaggerDto })
-  @ApiResponse({ status: 200, description: 'Cập nhật thành công', type: ContractTemplateSwaggerDto })
-  updateTemplate(
-    @Param('id') id: string,
-    @Body() dto: Contract.UpdateContractTemplateDto,
-  ) {
-    return this.contractService.updateContractTemplate(id, dto).pipe(
-      catchError((val) => {
-        throw new HttpException(val.message, val.statusCode || 400);
-      }),
-    );
-  }
-
-  @Delete('template/:id')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Xóa mẫu hợp đồng' })
-  @ApiParam({ name: 'id' })
-  @ApiResponse({ status: 200, description: 'Đã xóa mẫu hợp đồng', type: ContractTemplateSwaggerDto })
-  removeTemplate(@Param('id') id: string) {
-    return this.contractService.removeContractTemplate(id).pipe(
       catchError((val) => {
         throw new HttpException(val.message, val.statusCode || 400);
       }),

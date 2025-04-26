@@ -59,6 +59,15 @@ export interface GetRoomServicesRequest {
   roomId: string;
 }
 
+export interface UpdateRoomServiceRequest {
+  id: string;
+  roomId: string;
+  serviceName: string;
+  quantity: number;
+  customPrice: number;
+  isActive: boolean;
+}
+
 export interface RemoveRoomServiceRequest {
   roomId: string;
   serviceName: string;
@@ -314,11 +323,12 @@ export interface GetRoomAssetsRequest {
 }
 
 export interface UpdateRoomAssetRequest {
+  id: string;
   roomId: string;
   assetName: string;
   quantity: number;
-  customPrice?: number | undefined;
-  isActive?: boolean | undefined;
+  customPrice: number;
+  isActive: boolean;
 }
 
 export interface RemoveRoomAssetRequest {
@@ -458,6 +468,8 @@ export interface RentalServiceClient {
 
   getRoomServices(request: GetRoomServicesRequest): Observable<RoomServicesResponse>;
 
+  updateRoomService(request: UpdateRoomServiceRequest): Observable<RoomServicesResponse>;
+
   removeRoomService(request: RemoveRoomServiceRequest): Observable<RoomServiceResponse>;
 
   /** Invoice Generation */
@@ -562,6 +574,10 @@ export interface RentalServiceController {
     request: GetRoomServicesRequest,
   ): Promise<RoomServicesResponse> | Observable<RoomServicesResponse> | RoomServicesResponse;
 
+  updateRoomService(
+    request: UpdateRoomServiceRequest,
+  ): Promise<RoomServicesResponse> | Observable<RoomServicesResponse> | RoomServicesResponse;
+
   removeRoomService(
     request: RemoveRoomServiceRequest,
   ): Promise<RoomServiceResponse> | Observable<RoomServiceResponse> | RoomServiceResponse;
@@ -642,6 +658,7 @@ export function RentalServiceControllerMethods() {
       "removeService",
       "addRoomService",
       "getRoomServices",
+      "updateRoomService",
       "removeRoomService",
       "triggerInvoiceGeneration",
       "createAsset",

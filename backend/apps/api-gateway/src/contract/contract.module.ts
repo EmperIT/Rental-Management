@@ -17,7 +17,7 @@ import { Contract } from '@app/commonn';
           options: {
             url:
               configService.get<string>('CONTRACT_SERVICE_URL') ||
-              'localhost:5000',
+              'localhost:5003',
             package: Contract.CONTRACT_PACKAGE_NAME,
             protoPath: join(__dirname, '../contract.proto'),
           },
