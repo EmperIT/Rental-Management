@@ -21,6 +21,7 @@ const LoginPage = () => {
         { id: '3', username: 'tenant1', password: 'password123', fullName: 'Lê Văn Trưởng', phone: '0903456789', email: 'tenant1@example.com', role: 'tenant', roomId: 'room1', isLeadTenant: true },
         { id: '4', username: 'tenant2', password: 'password123', fullName: 'Phạm Thị Khách', phone: '0904567890', email: 'tenant2@example.com', role: 'tenant', roomId: 'room1', isLeadTenant: false },
         { id: '5', username: 'tenant3', password: 'password123', fullName: 'Hoàng Văn Trưởng 2', phone: '0905678901', email: 'tenant3@example.com', role: 'tenant', roomId: 'room2', isLeadTenant: true },
+        { id: '6', username: 'a', password: 'a', fullName: 'Nguyễn Thị Khách', phone: '0906789012', email: 'abc@gmail.com', role: 'tenant', roomId: 'room1', isLeadTenant: false },
       ];
       localStorage.setItem('accounts', JSON.stringify(mockAccounts));
     }
