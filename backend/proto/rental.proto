@@ -5,7 +5,7 @@ package rental;
 service RentalService {
   // Room
   rpc CreateRoom (CreateRoomDto) returns (Room) {}
-  rpc FindAllRooms (FindAllRoomsDto) returns (Rooms) {}
+  rpc FindAllRoomsByFilter (FindAllRoomsByFilterDto) returns (Rooms) {}
   rpc FindOneRoom (FindOneRoomDto) returns (Room) {}
   rpc UpdateRoom (UpdateRoomDto) returns (Room) {}
   rpc RemoveRoom (FindOneRoomDto) returns (Room) {}
@@ -33,8 +33,33 @@ service RentalService {
   rpc GetAllServices (Empty) returns (AllServicesResponse) {}
   rpc RemoveService (GetServiceRequest) returns (ServiceResponse) {}
 
+  // Room Services Management
+  rpc AddRoomService (AddRoomServiceRequest) returns (RoomServiceResponse) {}
+  rpc GetRoomServices (GetRoomServicesRequest) returns (RoomServicesResponse) {}
+  rpc RemoveRoomService (RemoveRoomServiceRequest) returns (RoomServiceResponse) {}
+
   // Invoice Generation
   rpc TriggerInvoiceGeneration (Empty) returns (InvoiceGenerationResponse) {}
+
+  // Asset Management
+  rpc CreateAsset (CreateAssetDto) returns (Asset) {}
+  rpc GetAsset (GetAssetRequest) returns (Asset) {}
+  rpc GetAllAssets (Empty) returns (AssetsResponse) {}
+  rpc UpdateAsset (UpdateAssetDto) returns (Asset) {}
+  rpc RemoveAsset (GetAssetRequest) returns (Asset) {}
+
+  // Room Asset Management
+  rpc AddRoomAsset (AddRoomAssetRequest) returns (RoomAssetResponse) {}
+  rpc GetRoomAssets (GetRoomAssetsRequest) returns (RoomAssetsResponse) {}
+  rpc UpdateRoomAsset (UpdateRoomAssetRequest) returns (RoomAssetResponse) {}
+  rpc RemoveRoomAsset (RemoveRoomAssetRequest) returns (RoomAssetResponse) {}
+
+  // Transaction Management
+  rpc CreateTransaction (CreateTransactionDto) returns (Transaction) {}
+  rpc FindAllTransactionsByFilter (FindAllTransactionsByFilterDto) returns (Transactions) {}
+  rpc FindOneTransaction (FindOneTransactionDto) returns (Transaction) {}
+  rpc UpdateTransaction (UpdateTransactionDto) returns (Transaction) {}
+  rpc RemoveTransaction (FindOneTransactionDto) returns (Transaction) {}
 }
 
 // Empty message for requests with no parameters
@@ -49,17 +74,60 @@ message SaveServiceRequest {
   string name = 1;
   string value = 2;
   optional string description = 3;
+  optional string type = 4;
+  optional string unit = 5;
 }
 
 message ServiceResponse {
   string name = 1;
   string value = 2;
   string description = 3;
-  string lastUpdated = 4;
+  string type = 4;
+  string unit = 5;
 }
 
 message AllServicesResponse {
   repeated ServiceResponse services = 1;
+}
+
+// Room Service Messages
+message ServiceDetails {
+  string name = 1;
+  string value = 2;
+  string description = 3;
+  string type = 4;
+  string unit = 5;
+}
+
+message AddRoomServiceRequest {
+  string roomId = 1;
+  string serviceName = 2;
+  int32 quantity = 3;
+  optional double customPrice = 4;
+}
+
+message GetRoomServicesRequest {
+  string roomId = 1;
+}
+
+message RemoveRoomServiceRequest {
+  string roomId = 1;
+  string serviceName = 2;
+}
+
+message RoomServiceResponse {
+  string id = 1;
+  string roomId = 2;
+  ServiceDetails service = 3;
+  int32 quantity = 4;
+  double customPrice = 5;
+  bool isActive = 6;
+  string createdAt = 7;
+  string updatedAt = 8;
+}
+
+message RoomServicesResponse {
+  repeated RoomServiceResponse services = 1;
 }
 
 message InvoiceGenerationResponse {
@@ -71,21 +139,29 @@ message InvoiceGenerationResponse {
 message CreateRoomDto {
   string roomNumber = 1;
   double price = 2;
-  string address = 3;
-  bool isEmpty = 4;
+  double area = 3;
+  repeated string images = 4;
+  string depositDate = 5;
+  double depositPrice = 6;
+  int32 maxTenants = 7;
 }
 
 message UpdateRoomDto {
   string id = 1;
   string roomNumber = 2;
   double price = 3;
-  string address = 4;
-  bool isEmpty = 5;
+  double area = 4;
+  repeated string images = 5;
+  string depositDate = 6;
+  double depositPrice = 7;
+  int32 maxTenants = 8;
+  bool isEmpty = 9;
 }
 
-message FindAllRoomsDto {
+message FindAllRoomsByFilterDto {
   int32 page = 1;
   int32 limit = 2;
+  optional bool isEmpty = 3;
 }
 
 message FindOneRoomDto {
@@ -96,10 +172,14 @@ message Room {
   string id = 1;
   string roomNumber = 2;
   double price = 3;
-  string address = 4;
-  bool isEmpty = 5;
-  string createdAt = 6;
-  string updatedAt = 7;
+  double area = 4;
+  repeated string images = 5;
+  string depositDate = 6;
+  double depositPrice = 7;
+  int32 maxTenants = 8;
+  bool isEmpty = 9;
+  string createdAt = 10;
+  string updatedAt = 11;
 }
 
 message Rooms {
@@ -117,6 +197,8 @@ message CreateTenantDto {
   string identityNumber = 6;
   string permanentAddress = 7;
   string startDate = 8;
+  double holdingDepositPrice = 9;
+  string depositDate = 10;
 }
 
 message UpdateTenantDto {
@@ -129,7 +211,9 @@ message UpdateTenantDto {
   string identityNumber = 7;
   string permanentAddress = 8;
   string startDate = 9;
-  bool isActive = 10;
+  double holdingDepositPrice = 10;
+  string depositDate = 11;
+  bool isActive = 12;
 }
 
 message FindOneTenantDto {
@@ -153,9 +237,11 @@ message Tenant {
   string identityNumber = 7;
   string permanentAddress = 8;
   string startDate = 9;
-  bool isActive = 10;
-  string createdAt = 11;
-  string updatedAt = 12;
+  double holdingDepositPrice = 10;
+  string depositDate = 11;
+  bool isActive = 12;
+  string createdAt = 13;
+  string updatedAt = 14;
 }
 
 message Tenants {
@@ -229,4 +315,125 @@ message FindLatestReadingsDto {
 
 message ReadingsResponse {
   map<string, double> readings = 1;
+}
+
+// Asset Messages
+message CreateAssetDto {
+  string name = 1;
+  double value = 2;
+  optional string unit = 3;
+}
+
+message UpdateAssetDto {
+  string name = 1;
+  double value = 2;
+  optional string unit = 3;
+}
+
+message GetAssetRequest {
+  string name = 1;
+}
+
+message Asset {
+  string name = 1;
+  double value = 2;
+  string unit = 3;
+  string createdAt = 4;
+  string updatedAt = 5;
+}
+
+message AssetsResponse {
+  repeated Asset assets = 1;
+  int32 total = 2;
+}
+
+// Room Asset Messages
+message AddRoomAssetRequest {
+  string roomId = 1;
+  string assetName = 2;
+  int32 quantity = 3;
+  optional double customPrice = 4;
+}
+
+message GetRoomAssetsRequest {
+  string roomId = 1;
+}
+
+message UpdateRoomAssetRequest {
+  string roomId = 1;
+  string assetName = 2;
+  int32 quantity = 3;
+  optional double customPrice = 4;
+  optional bool isActive = 5;
+}
+
+message RemoveRoomAssetRequest {
+  string roomId = 1;
+  string assetName = 2;
+}
+
+message RoomAssetResponse {
+  string id = 1;
+  string roomId = 2;
+  string assetName = 3;
+  int32 quantity = 4;
+  double customPrice = 5;
+  bool isActive = 6;
+  string createdAt = 7;
+  string updatedAt = 8;
+}
+
+message RoomAssetsResponse {
+  repeated RoomAssetResponse assets = 1;
+  int32 total = 2;
+}
+
+// Transaction Messages
+message CreateTransactionDto {
+  string category = 1; // 'income' hoặc 'expense'
+  string type = 2;
+  double amount = 3;
+  optional string description = 4;
+  optional string relatedTo = 5; // Reference đến Invoice
+  optional string createdBy = 6; // Reference đến Auth
+}
+
+message UpdateTransactionDto {
+  string id = 1;
+  string category = 2;
+  string type = 3;
+  double amount = 4;
+  optional string description = 5;
+  optional string relatedTo = 6;
+  optional string createdBy = 7;
+}
+
+message FindOneTransactionDto {
+  string id = 1;
+}
+
+message FindAllTransactionsByFilterDto {
+  int32 page = 1;
+  int32 limit = 2;
+  optional string category = 3;
+  optional string type = 4;
+  optional string startDate = 5;
+  optional string endDate = 6;
+}
+
+message Transaction {
+  string id = 1;
+  string category = 2;
+  string type = 3;
+  double amount = 4;
+  string description = 5;
+  string relatedTo = 6;
+  string createdBy = 7;
+  string createdAt = 8;
+  string updatedAt = 9;
+}
+
+message Transactions {
+  repeated Transaction transactions = 1;
+  int32 total = 2;
 }

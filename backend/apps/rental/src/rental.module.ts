@@ -7,6 +7,10 @@ import { RoomSchema } from './schemas/rooms.schema';
 import { TenantSchema } from './schemas/tenants.schema';
 import { InvoiceSchema } from './schemas/invoices.schema';
 import { ServiceSchema } from './schemas/services.schema';
+import { RoomServiceSchema } from './schemas/room-services.schema';
+import { AssetSchema } from './schemas/assets.schema';
+import { RoomAssetSchema } from './schemas/room-assets.schema';
+import { TransactionSchema } from './schemas/transaction.schema';
 import { ScheduleModule } from '@nestjs/schedule';
 import { HttpModule } from '@nestjs/axios';
 import { join } from 'path';
@@ -42,6 +46,10 @@ import { Email } from '@app/commonn';
       { name: 'Tenant', schema: TenantSchema },
       { name: 'Invoice', schema: InvoiceSchema },
       { name: 'Service', schema: ServiceSchema },
+      { name: 'RoomService', schema: RoomServiceSchema },
+      { name: 'Asset', schema: AssetSchema },
+      { name: 'RoomAsset', schema: RoomAssetSchema },
+      { name: 'Transaction', schema: TransactionSchema },
     ]),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
