@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LandingPage from '../pages/LandingPage';
 import LoginPage from '../pages/LoginPage';
 import SignUpPage from '../pages/SignUpPage';
+import CustomerDashboard from '../pages/CustomerDashboard';
 import HomePage from '../pages/HomePage';
 
 
@@ -76,6 +77,10 @@ const AppRoutes = () => {
         <Route
           path="/tenant-dashboard"
           element={<PrivateRoute element={<HomePage showTenantDashboard={true} />} />}
+        />
+        <Route
+          path="/customer-dashboard"
+          element={<PrivateRoute element={<CustomerDashboard />} />}
         />
       </Routes>
     </Router>
