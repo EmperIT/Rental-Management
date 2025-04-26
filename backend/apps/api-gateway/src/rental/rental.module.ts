@@ -6,6 +6,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RENTAL_SERVICE } from './constants';
 import { Rental } from '@app/commonn';
 import { join } from 'path';
+import { CloudinaryService } from '../../services/cloudinary.service';
+import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
   imports: [
@@ -25,8 +27,11 @@ import { join } from 'path';
         inject: [ConfigService],
       },
     ]),
+    MulterModule.register({
+      dest: './uploads',
+    }),
   ],
   controllers: [RentalController],
-  providers: [RentalService],
+  providers: [RentalService, CloudinaryService],
 })
 export class RentalModule {}

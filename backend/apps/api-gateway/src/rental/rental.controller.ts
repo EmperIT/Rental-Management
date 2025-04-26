@@ -9,12 +9,18 @@ import {
   Query,
   UseGuards,
   HttpException,
+  DefaultValuePipe,
+  ParseIntPipe,
+  Put,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import { RentalService } from './rental.service';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { Rental } from '@app/commonn';
 import { AuthGuard } from '@nestjs/passport';
-import { catchError } from 'rxjs';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { catchError, from } from 'rxjs';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiParam, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import {
   CreateRoomSwaggerDto,
   UpdateRoomSwaggerDto,
@@ -29,10 +35,26 @@ import {
   InvoiceSwaggerDto,
   InvoicesSwaggerDto,
   ReadingsResponseSwaggerDto,
-  ServiceSwaggerDto,  
+  ServiceSwaggerDto,
   SaveServiceSwaggerDto,
   AllServicesSwaggerDto,
   InvoiceGenerationResponseSwaggerDto,
+  AddRoomServiceSwaggerDto,
+  RoomServiceSwaggerDto,
+  RoomServicesResponseSwaggerDto,
+  CreateAssetSwaggerDto,
+  UpdateAssetSwaggerDto,
+  AssetSwaggerDto,
+  AssetsResponseSwaggerDto,
+  AddRoomAssetSwaggerDto,
+  UpdateRoomAssetSwaggerDto,
+  RemoveRoomAssetSwaggerDto,
+  RoomAssetResponseSwaggerDto,
+  RoomAssetsResponseSwaggerDto,
+  CreateTransactionSwaggerDto,
+  UpdateTransactionSwaggerDto,
+  TransactionSwaggerDto,
+  TransactionsResponseSwaggerDto
 } from '../../dto/rental.dto';
 
 @ApiTags('rental')
@@ -44,13 +66,25 @@ export class RentalController {
   @Post('rooms')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
+  @UseInterceptors(FilesInterceptor('images'))
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Tạo phòng mới', description: 'Yêu cầu xác thực JWT' })
   @ApiBody({ type: CreateRoomSwaggerDto })
   @ApiResponse({ status: 201, description: 'Phòng đã được tạo thành công', type: RoomSwaggerDto })
   @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ' })
   @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
-  createRoom(@Body() createRoomDto: Rental.CreateRoomDto) {
-    return this.rentalService.createRoom(createRoomDto).pipe(
+  async createRoom(@UploadedFiles() files: Express.Multer.File[], @Body() createRoomDto: Rental.CreateRoomDto) {
+    if (files && files.length > 0) {
+      const allowedExtensions = ['.webp', '.png', '.jpg', '.jpeg'];
+  
+      for (const file of files) {
+        const extension = file.originalname.match(/\.\w+$/);
+        if (!extension || !allowedExtensions.includes(extension[0])) {
+          throw new HttpException('Invalid file type', 400);
+        }
+      }
+    }
+    return from(this.rentalService.createRoom(createRoomDto, files)).pipe(
       catchError((val) => {
         throw new HttpException(val.message, val.statusCode || 400);
       }),
@@ -128,6 +162,8 @@ export class RentalController {
   @Patch('rooms/:id')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
+  @UseInterceptors(FilesInterceptor('images'))
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Cập nhật thông tin phòng', description: 'Yêu cầu xác thực JWT' })
   @ApiParam({ name: 'id', description: 'ID của phòng' })
   @ApiBody({ type: UpdateRoomSwaggerDto })
@@ -137,9 +173,20 @@ export class RentalController {
   @ApiResponse({ status: 404, description: 'Không tìm thấy phòng' })
   updateRoom(
     @Param('id') id: string, 
+    @UploadedFiles() files: Express.Multer.File[], 
     @Body() updateRoomDto: Rental.UpdateRoomDto
   ) {
-    return this.rentalService.updateRoom(id, updateRoomDto).pipe(
+    if (files && files.length > 0) {
+      const allowedExtensions = ['.webp', '.png', '.jpg', '.jpeg'];
+  
+      for (const file of files) {
+        const extension = file.originalname.match(/\.\w+$/);
+        if (!extension || !allowedExtensions.includes(extension[0])) {
+          throw new HttpException('Invalid file type', 400);
+        }
+      }
+    }
+    return from(this.rentalService.updateRoom(id, updateRoomDto, files)).pipe(
       catchError((val) => {
         throw new HttpException(val.message, val.statusCode || 400);
       }),
@@ -407,7 +454,7 @@ export class RentalController {
   @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ' })
   @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
   saveService(@Body() saveServiceDto: SaveServiceSwaggerDto) {
-    return this.rentalService.saveService(saveServiceDto.name, saveServiceDto.value, saveServiceDto.description).pipe(
+    return this.rentalService.saveService(saveServiceDto).pipe(
       catchError((val) => {
         throw new HttpException(val.message, val.statusCode || 400);
       }),
@@ -430,6 +477,56 @@ export class RentalController {
     );
   }
 
+  /* Room Service Endpoints */
+  @Post('room-services')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Đăng ký dịch vụ cho phòng', description: 'Yêu cầu xác thực JWT' })
+  @ApiBody({ type: AddRoomServiceSwaggerDto })
+  @ApiResponse({ status: 201, description: 'Dịch vụ đã được đăng ký thành công', type: RoomServiceSwaggerDto })
+  @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ' })
+  @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
+  addRoomService(@Body() addRoomServiceDto: Rental.AddRoomServiceRequest) {
+    return this.rentalService.addRoomService(addRoomServiceDto).pipe(
+      catchError((val) => {
+        throw new HttpException(val.message, val.statusCode || 400);
+      }),
+    );
+  }
+
+  @Get('room-services/:roomId')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy danh sách dịch vụ đã đăng ký của phòng', description: 'Yêu cầu xác thực JWT' })
+  @ApiParam({ name: 'roomId', description: 'ID của phòng' })
+  @ApiResponse({ status: 200, description: 'Danh sách dịch vụ của phòng', type: RoomServicesResponseSwaggerDto })
+  @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy phòng' })
+  getRoomServices(@Param('roomId') roomId: string) {
+    return this.rentalService.getRoomServices({ roomId }).pipe(
+      catchError((val) => {
+        throw new HttpException(val.message, val.statusCode || 400);
+      }),
+    );
+  }
+
+  @Delete('room-services/:roomId')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Hủy đăng ký dịch vụ cho phòng', description: 'Yêu cầu xác thực JWT' })
+  @ApiParam({ name: 'roomId', description: 'ID của phòng đăng ký dịch vụ' })
+  @ApiQuery({ name: 'serviceName', description: 'Tên dịch vụ cần gỡ bỏ', required: true })
+  @ApiResponse({ status: 200, description: 'Đã hủy đăng ký dịch vụ thành công', type: RoomServiceSwaggerDto })
+  @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy đăng ký dịch vụ' })
+  removeRoomService(@Param('roomId') roomId: string, @Query('serviceName') serviceName: string) {
+    return this.rentalService.removeRoomService({ roomId, serviceName }).pipe(
+      catchError((val) => {
+        throw new HttpException(val.message, val.statusCode || 400);
+      }),
+    );
+  }
+
   @Post('invoices/generate')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
@@ -442,5 +539,134 @@ export class RentalController {
         throw new HttpException(val.message, val.statusCode || 400);
       }),
     );
+  }
+
+  // ***** ASSET ENDPOINTS *****
+  
+  @Post('assets')
+  @ApiOperation({ summary: 'Tạo mới tài sản' })
+  @ApiResponse({ status: 201, description: 'Tài sản được tạo thành công' })
+  @ApiResponse({ status: 400, description: 'Yêu cầu không hợp lệ', type: AssetSwaggerDto })
+  @ApiResponse({ status: 409, description: 'Tài sản đã tồn tại' })
+  async createAsset(@Body() createAssetSwaggerDto: CreateAssetSwaggerDto) {
+    return this.rentalService.createAsset(createAssetSwaggerDto);
+  }
+
+  @Get('assets')
+  @ApiOperation({ summary: 'Lấy danh sách tất cả tài sản' })
+  @ApiResponse({ status: 200, description: 'Danh sách tài sản', type: AssetsResponseSwaggerDto })
+  async getAllAssets() {
+    return this.rentalService.getAllAssets();
+  }
+
+  @Get('assets/:name')
+  @ApiOperation({ summary: 'Lấy thông tin tài sản theo tên' })
+  @ApiResponse({ status: 200, description: 'Thông tin tài sản', type: AssetSwaggerDto })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy tài sản' })
+  async getAsset(@Param('name') name: string) {
+    return this.rentalService.getAsset(name);
+  }
+
+  @Put('assets/:name')
+  @ApiOperation({ summary: 'Cập nhật thông tin tài sản' })
+  @ApiResponse({ status: 200, description: 'Tài sản được cập nhật thành công', type: AssetSwaggerDto })
+  @ApiResponse({ status: 400, description: 'Yêu cầu không hợp lệ' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy tài sản' })
+  async updateAsset(@Param('name') name: string, @Body() updateAssetSwaggerDto: UpdateAssetSwaggerDto) {
+    return this.rentalService.updateAsset( name, updateAssetSwaggerDto );
+  }
+
+  @Delete('assets/:name')
+  @ApiOperation({ summary: 'Xóa tài sản' })
+  @ApiResponse({ status: 200, description: 'Tài sản đã được xóa thành công', type: AssetSwaggerDto  })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy tài sản' })
+  @ApiResponse({ status: 400, description: 'Không thể xóa tài sản đang sử dụng' })
+  async removeAsset(@Param('name') name: string) {
+    return this.rentalService.removeAsset(name);
+  }
+
+  // ***** ROOM ASSET ENDPOINTS *****
+  
+  @Post('room-assets')
+  @ApiOperation({ summary: 'Thêm tài sản cho phòng' })
+  @ApiResponse({ status: 201, description: 'Tài sản phòng được thêm thành công', type: RoomAssetResponseSwaggerDto  })
+  @ApiResponse({ status: 400, description: 'Yêu cầu không hợp lệ' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy phòng hoặc tài sản' })
+  async addRoomAsset(@Body() addRoomAssetSwaggerDto: AddRoomAssetSwaggerDto) {
+    return this.rentalService.addRoomAsset(addRoomAssetSwaggerDto);
+  }
+
+  @Get('room-assets/:roomId')
+  @ApiOperation({ summary: 'Lấy danh sách tài sản của phòng' })
+  @ApiResponse({ status: 200, description: 'Danh sách tài sản của phòng', type: RoomAssetsResponseSwaggerDto })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy phòng' })
+  async getRoomAssets(@Param('roomId') roomId: string) {
+    return this.rentalService.getRoomAssets({ roomId });
+  }
+
+  @Put('room-assets')
+  @ApiOperation({ summary: 'Cập nhật thông tin tài sản của phòng' })
+  @ApiResponse({ status: 200, description: 'Thông tin tài sản phòng được cập nhật thành công', type: RoomAssetResponseSwaggerDto })
+  @ApiResponse({ status: 400, description: 'Yêu cầu không hợp lệ' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy tài sản phòng' })
+  async updateRoomAsset(@Body() updateRoomAssetSwaggerDto: UpdateRoomAssetSwaggerDto) {
+    return this.rentalService.updateRoomAsset(updateRoomAssetSwaggerDto);
+  }
+
+  @Delete('room-assets')
+  @ApiOperation({ summary: 'Xóa tài sản khỏi phòng' })
+  @ApiResponse({ status: 200, description: 'Tài sản phòng đã được xóa thành công', type: RoomAssetResponseSwaggerDto })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy tài sản phòng' })
+  async removeRoomAsset(@Body() removeRoomAssetSwaggerDto: RemoveRoomAssetSwaggerDto) {
+    return this.rentalService.removeRoomAsset(removeRoomAssetSwaggerDto);
+  }
+
+  // ***** TRANSACTION ENDPOINTS *****
+  
+  @Post('transactions')
+  @ApiOperation({ summary: 'Tạo mới giao dịch' })
+  @ApiResponse({ status: 201, description: 'Giao dịch được tạo thành công', type: TransactionSwaggerDto })
+  @ApiResponse({ status: 400, description: 'Yêu cầu không hợp lệ' })
+  async createTransaction(@Body() createTransactionDto: CreateTransactionSwaggerDto) {
+    return this.rentalService.createTransaction(createTransactionDto);
+  }
+
+  @Get('transactions')
+  @ApiOperation({ summary: 'Lấy danh sách giao dịch theo bộ lọc' })
+  @ApiResponse({ status: 200, description: 'Danh sách giao dịch', type: TransactionsResponseSwaggerDto })
+  async findAllTransactions(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('category') category?: string,
+    @Query('type') type?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.rentalService.findAllTransactionsByFilter(page, limit, category, type, startDate, endDate);
+  }
+
+  @Get('transactions/:id')
+  @ApiOperation({ summary: 'Lấy thông tin giao dịch theo ID' })
+  @ApiResponse({ status: 200, description: 'Thông tin giao dịch', type: TransactionSwaggerDto })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy giao dịch' })
+  async findOneTransaction(@Param('id') id: string) {
+    return this.rentalService.findOneTransaction(id);
+  }
+
+  @Put('transactions/:id')
+  @ApiOperation({ summary: 'Cập nhật thông tin giao dịch' })
+  @ApiResponse({ status: 200, description: 'Giao dịch được cập nhật thành công', type: TransactionSwaggerDto })
+  @ApiResponse({ status: 400, description: 'Yêu cầu không hợp lệ' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy giao dịch' })
+  async updateTransaction(@Param('id') id: string, @Body() updateTransactionSwaggerDto: UpdateTransactionSwaggerDto) {
+    return this.rentalService.updateTransaction(id, updateTransactionSwaggerDto );
+  }
+
+  @Delete('transactions/:id')
+  @ApiOperation({ summary: 'Xóa giao dịch' })
+  @ApiResponse({ status: 200, description: 'Giao dịch đã được xóa thành công', type: TransactionSwaggerDto })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy giao dịch' })
+  async removeTransaction(@Param('id') id: string) {
+    return this.rentalService.removeTransaction(id);
   }
 }
