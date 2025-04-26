@@ -1,7 +1,7 @@
 import React from 'react';
 import '../../styles/contract/ContractTable.css';
 
-const ContractTable = ({ contracts }) => {
+const ContractTable = ({ contracts, onViewDetails, onSendEmail }) => {
   return (
     <table className="contract-table">
       <thead>
@@ -12,7 +12,7 @@ const ContractTable = ({ contracts }) => {
           <th>Trạng thái</th>
           <th>Thời hạn</th>
           <th>Số tiền</th>
-          <th></th>
+          <th>Hành động</th>
         </tr>
       </thead>
       <tbody>
@@ -36,7 +36,20 @@ const ContractTable = ({ contracts }) => {
               </div>
             </td>
             <td>{contract.amount}</td>
-            <td>...</td>
+            <td>
+              <button
+                className="action-button view-details"
+                onClick={() => onViewDetails(contract)}
+              >
+                Xem chi tiết
+              </button>
+              <button
+                className="action-button send-email"
+                onClick={() => onSendEmail(contract)}
+              >
+                Gửi email
+              </button>
+            </td>
           </tr>
         ))}
       </tbody>
@@ -61,6 +74,6 @@ const getProgressWidth = (contract) => {
 const formatDate = (dateStr) => {
   const date = new Date(dateStr);
   return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth()+1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-}
+};
 
 export default ContractTable;
