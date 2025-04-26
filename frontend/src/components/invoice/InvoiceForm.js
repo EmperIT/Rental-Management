@@ -9,7 +9,7 @@ const initialServices = [
   { name: 'Wifi', rate: 50000, unit: 'Tháng', hasIndices: false },
 ];
 
-export default function InvoiceForm({ isOpen, onClose, room, reasons, defaultBillingDay }) {
+export default function InvoiceForm({ isOpen, onClose, room, reasons, defaultBillingDay, onSave }) {
   const [reason, setReason] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -130,18 +130,37 @@ export default function InvoiceForm({ isOpen, onClose, room, reasons, defaultBil
       setEndDate(last);
       setDueDate(last);
     } else if (value === '2') {
-      // For "Thanh toán theo kỳ", set the due date to the default billing day of the current month
       const today = new Date();
       const year = today.getFullYear();
       const month = today.getMonth();
       const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
       const billingDay = Math.min(defaultBillingDay, lastDayOfMonth);
       const due = new Date(year, month, billingDay).toISOString().slice(0, 10);
-      
+
       setStartDate(new Date(year, month, 1).toISOString().slice(0, 10));
       setEndDate(new Date(year, month + 1, 0).toISOString().slice(0, 10));
       setDueDate(due);
     }
+  };
+
+  const handleSubmit = () => {
+    const invoice = {
+      id: `INV-${room.id}-${Date.now()}`, // Tạo ID hóa đơn duy nhất
+      reason: reasons.find((r) => r.id === reason).title,
+      startDate,
+      endDate,
+      dueDate,
+      services: servicesData,
+      serviceCharge,
+      rentCharge,
+      total,
+      daysUsed,
+      daysInMonth,
+      createdAt: new Date().toISOString()
+    };
+    onSave(room.id, invoice);
+    alert('Đã lập hóa đơn');
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -274,13 +293,7 @@ export default function InvoiceForm({ isOpen, onClose, room, reasons, defaultBil
 
         <div className="invoice-modal-actions">
           <button onClick={onClose}>Hủy</button>
-          <button
-            className="btn-submit"
-            onClick={() => {
-              alert('Đã lập hóa đơn');
-              onClose();
-            }}
-          >
+          <button className="btn-submit" onClick={handleSubmit}>
             Xác nhận
           </button>
         </div>

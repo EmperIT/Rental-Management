@@ -7,7 +7,7 @@ const SummaryCards = ({ rooms }) => {
   const depositedRooms = rooms.filter((room) => room.status === 'Đã cọc').length;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
       <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
         <h3 className="text-lg font-semibold text-gray-700">Tổng số phòng</h3>
         <p className="text-3xl font-bold text-gray-800 mt-2">{rooms.length}</p>
@@ -22,11 +22,6 @@ const SummaryCards = ({ rooms }) => {
         <h3 className="text-lg font-semibold text-gray-700">Phòng trống</h3>
         <p className="text-3xl font-bold text-gray-800 mt-2">{vacantRooms}</p>
         <p className="text-sm text-red-500 mt-1">+{vacantRooms} phòng</p>
-      </div>
-      <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-        <h3 className="text-lg font-semibold text-gray-700">Phòng đã đặt</h3>
-        <p className="text-3xl font-bold text-gray-800 mt-2">{bookedRooms}</p>
-        <p className="text-sm text-orange-500 mt-1">+{bookedRooms} phòng</p>
       </div>
       <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
         <h3 className="text-lg font-semibold text-gray-700">Phòng đã cọc</h3>

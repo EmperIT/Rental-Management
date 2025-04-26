@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import RoomCard from '../components/RoomCard';
 import InvoiceForm from '../components/invoice/InvoiceForm';
+import RoomDetailModal from '../components/invoice/RoomDetailModal';
 import '../styles/invoice/InvoicePage.css';
 import { FaCog } from 'react-icons/fa';
 
@@ -15,7 +16,8 @@ const ROOMS = [
     status: 'Chưa lập',
     price: 3500000,
     guests: 2,
-    floor: 1
+    floor: 1,
+    invoices: [] // Thêm danh sách hóa đơn cho phòng
   },
   {
     id: 2,
@@ -27,7 +29,8 @@ const ROOMS = [
     status: 'Đã lập',
     price: 4000000,
     guests: 3,
-    floor: 2
+    floor: 2,
+    invoices: [] // Thêm danh sách hóa đơn cho phòng
   },
 ];
 
@@ -38,18 +41,26 @@ const initialReasons = [
 ];
 
 const InvoicePage = () => {
+  const [rooms, setRooms] = useState(ROOMS); // Quản lý trạng thái ROOMS để có thể cập nhật
   const [selectedFloor, setSelectedFloor] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [modalOpen, setModalOpen] = useState(false);
+  const [roomDetailModalOpen, setRoomDetailModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [activeRoom, setActiveRoom] = useState(null);
-  const [defaultBillingDay, setDefaultBillingDay] = useState(1); // Default to the 1st of each month
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [defaultBillingDay, setDefaultBillingDay] = useState(1);
   const [reasons, setReasons] = useState(initialReasons);
   const [newReason, setNewReason] = useState('');
 
   const handleCreateInvoice = (room) => {
     setActiveRoom(room);
     setModalOpen(true);
+  };
+
+  const handleViewRoomDetails = (room) => {
+    setSelectedRoom(room);
+    setRoomDetailModalOpen(true);
   };
 
   const handleAddReason = () => {
@@ -62,16 +73,31 @@ const InvoicePage = () => {
     setNewReason('');
   };
 
-  const filteredRooms = ROOMS.filter(room =>
-    (selectedFloor === '' || room.floor === Number(selectedFloor)) &&
-    room.invoiceDate.startsWith(selectedMonth)
+  const handleSaveInvoice = (roomId, invoice) => {
+    setRooms((prevRooms) =>
+      prevRooms.map((room) =>
+        room.id === roomId
+          ? {
+              ...room,
+              invoices: [...room.invoices, invoice],
+              status: 'Đã lập'
+            }
+          : room
+      )
+    );
+  };
+
+  const filteredRooms = rooms.filter(
+    (room) =>
+      (selectedFloor === '' || room.floor === Number(selectedFloor)) &&
+      room.invoiceDate.startsWith(selectedMonth)
   );
 
   return (
     <div className="ip-invoice-page">
       <h2>Quản lý hóa đơn</h2>
       <div className="ip-filter-bar">
-        <select value={selectedFloor} onChange={e => setSelectedFloor(e.target.value)}>
+        <select value={selectedFloor} onChange={(e) => setSelectedFloor(e.target.value)}>
           <option value="">Tất cả tầng</option>
           <option value="1">Tầng 1</option>
           <option value="2">Tầng 2</option>
@@ -80,13 +106,10 @@ const InvoicePage = () => {
         <input
           type="month"
           value={selectedMonth}
-          onChange={e => setSelectedMonth(e.target.value)}
+          onChange={(e) => setSelectedMonth(e.target.value)}
         />
 
-        <button
-          className="ip-settings-button"
-          onClick={() => setSettingsModalOpen(true)}
-        >
+        <button className="ip-settings-button" onClick={() => setSettingsModalOpen(true)}>
           <FaCog /> Cài đặt
         </button>
       </div>
@@ -110,7 +133,7 @@ const InvoicePage = () => {
                   value={defaultBillingDay}
                   onChange={(e) => setDefaultBillingDay(Number(e.target.value))}
                 >
-                  {[...Array(31).keys()].map(day => (
+                  {[...Array(31).keys()].map((day) => (
                     <option key={day + 1} value={day + 1}>
                       Ngày {day + 1}
                     </option>
@@ -125,17 +148,14 @@ const InvoicePage = () => {
                   onChange={(e) => setNewReason(e.target.value)}
                   placeholder="Nhập lý do mới"
                 />
-                <button
-                  className="ip-button ip-button-add"
-                  onClick={handleAddReason}
-                >
+                <button className="ip-button ip-button-add" onClick={handleAddReason}>
                   Thêm
                 </button>
               </div>
               <div className="ip-reasons-list">
                 <h4>Danh sách lý do:</h4>
                 <ul>
-                  {reasons.map(reason => (
+                  {reasons.map((reason) => (
                     <li key={reason.id}>{reason.title}</li>
                   ))}
                 </ul>
@@ -146,11 +166,12 @@ const InvoicePage = () => {
       )}
 
       <div className="ip-room-grid">
-        {filteredRooms.map(room => (
+        {filteredRooms.map((room) => (
           <RoomCard
             key={room.id}
             room={room}
             onCreateInvoice={() => handleCreateInvoice(room)}
+            onViewDetails={() => handleViewRoomDetails(room)}
           />
         ))}
       </div>
@@ -160,7 +181,14 @@ const InvoicePage = () => {
         room={activeRoom || {}}
         reasons={reasons}
         defaultBillingDay={defaultBillingDay}
+        onSave={handleSaveInvoice}
       />
+      {roomDetailModalOpen && (
+        <RoomDetailModal
+          room={selectedRoom}
+          onClose={() => setRoomDetailModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
