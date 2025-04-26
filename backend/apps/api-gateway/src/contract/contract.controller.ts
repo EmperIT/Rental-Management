@@ -53,11 +53,11 @@ export class ContractController {
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Lấy danh sách hợp đồng' })
-  @ApiQuery({ name: 'page', required: false, example: 0 })
-  @ApiQuery({ name: 'limit', required: false, example: 10 })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, example: 0 })
   @ApiQuery({ name: 'roomId', required: false })
   @ApiQuery({ name: 'tenantId', required: false })
-  @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'isActive', required: false })
   @ApiResponse({ status: 200, description: 'Danh sách hợp đồng', type: ContractsSwaggerDto })
   findAll(
     @Query('page') page: number = 1,
