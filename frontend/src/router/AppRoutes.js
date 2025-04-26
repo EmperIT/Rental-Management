@@ -41,10 +41,10 @@ const AppRoutes = () => {
           path="/contracts"
           element={<PrivateRoute element={<HomePage showContracts={true} />} />}
         />
-        <Route
+        {/* <Route
           path="/templatecontracts"
           element={<PrivateRoute element={<HomePage showTemplateContracts={true} />} />}
-        />
+        /> */}
         <Route
           path="/bills"
           element={<PrivateRoute element={<HomePage showBills={true} />} />}

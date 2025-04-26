@@ -7,7 +7,6 @@ function Sidebar({ toggleSidebar }) {
   const location = useLocation();
   const userRole = localStorage.getItem('userRole') || 'tenant';
   const [showMessage, setShowMessage] = useState(false);
-  const [contractDropdownOpen, setContractDropdownOpen] = useState(false);
   const [accountDropdownOpen, setAccountDropdownOpen] = useState(true);
 
   const handleUnimplementedClick = () => {
@@ -15,9 +14,7 @@ function Sidebar({ toggleSidebar }) {
     setTimeout(() => setShowMessage(false), 3000);
   };
 
-  const toggleContractDropdown = () => {
-    setContractDropdownOpen(!contractDropdownOpen);
-  };
+
 
   const toggleAccountDropdown = () => {
     setAccountDropdownOpen(!accountDropdownOpen);
@@ -29,7 +26,6 @@ function Sidebar({ toggleSidebar }) {
     '/rooms': ['landlord', 'manager'],
     '/tenants': ['landlord', 'manager'],
     '/contracts': ['landlord', 'manager'],
-    '/templatecontracts': ['landlord', 'manager'],
     '/bills': ['landlord', 'manager'],
     '/services': ['landlord', 'manager'],
     '/assets': ['landlord', 'manager'],
@@ -47,7 +43,6 @@ function Sidebar({ toggleSidebar }) {
   };
 
   // Kiểm tra xem dropdown có nên hiển thị (nếu có ít nhất một mục con được phép)
-  const isContractDropdownVisible = isRouteAllowed('/contracts') || isRouteAllowed('/templatecontracts');
   const isAccountDropdownVisible =
     isRouteAllowed('/accounts/managers') ||
     isRouteAllowed('/accounts/tenants') ||
@@ -98,32 +93,13 @@ function Sidebar({ toggleSidebar }) {
             Quản lý đăng ký tạm trú
           </Link>
         )}
-        {isContractDropdownVisible && (
-          <div
-            className="nav-section"
-            onClick={toggleContractDropdown}
-            style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-          >
-            <span>QUẢN LÝ HỢP ĐỒNG</span>
-            {contractDropdownOpen ? <FaChevronUp /> : <FaChevronDown />}
-          </div>
+        {isRouteAllowed('/contracts') && (
+          <Link to="/contracts" className={`nav-item ${location.pathname === '/contracts' ? 'active' : ''}`}>
+            <span className="nav-icon"><FaFileContract /></span>
+            Quản lý hợp đồng
+          </Link>
         )}
-        {isContractDropdownVisible && contractDropdownOpen && (
-          <>
-            {isRouteAllowed('/contracts') && (
-              <Link to="/contracts" className={`nav-subitem ${location.pathname === '/contracts' ? 'active' : ''}`}>
-                <span className="nav-icon"><FaFileContract /></span>
-                Quản lý hợp đồng
-              </Link>
-            )}
-            {isRouteAllowed('/templatecontracts') && (
-              <Link to="/templatecontracts" className={`nav-subitem ${location.pathname === '/templatecontracts' ? 'active' : ''}`}>
-                <span className="nav-icon"><FaFileContract /></span>
-                Mẫu hợp đồng
-              </Link>
-            )}
-          </>
-        )}
+
         {isRouteAllowed('/bills') && (
           <Link
             to="/bills"

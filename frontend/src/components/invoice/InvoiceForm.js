@@ -2,12 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { FaCog, FaTimes } from 'react-icons/fa';
 import '../../styles/invoice/InvoiceForm.css';
 
-const reasons = [
-  { id: '1', title: 'Thu tiền tháng đầu tiên' },
-  { id: '2', title: 'Thanh toán theo kỳ' },
-  { id: '3', title: 'Dịch vụ bổ sung' },
-];
-
 const initialServices = [
   { name: 'Điện', rate: 1700, unit: 'kWh', hasIndices: true },
   { name: 'Nước', rate: 18000, unit: 'm³', hasIndices: true },
@@ -15,7 +9,7 @@ const initialServices = [
   { name: 'Wifi', rate: 50000, unit: 'Tháng', hasIndices: false },
 ];
 
-export default function InvoiceForm({ isOpen, onClose, room }) {
+export default function InvoiceForm({ isOpen, onClose, room, reasons, defaultBillingDay }) {
   const [reason, setReason] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -135,6 +129,18 @@ export default function InvoiceForm({ isOpen, onClose, room }) {
       setStartDate(isoToday);
       setEndDate(last);
       setDueDate(last);
+    } else if (value === '2') {
+      // For "Thanh toán theo kỳ", set the due date to the default billing day of the current month
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth();
+      const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+      const billingDay = Math.min(defaultBillingDay, lastDayOfMonth);
+      const due = new Date(year, month, billingDay).toISOString().slice(0, 10);
+      
+      setStartDate(new Date(year, month, 1).toISOString().slice(0, 10));
+      setEndDate(new Date(year, month + 1, 0).toISOString().slice(0, 10));
+      setDueDate(due);
     }
   };
 
