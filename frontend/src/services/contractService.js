@@ -10,7 +10,7 @@ export const createContract = async (contractData) => {
 };
 
 // Lấy danh sách hợp đồng
-export const getContracts = async (page = 0, limit = 10, roomId = '', tenantId = '', status = '') => {
+export const getContracts = async (page = 1, limit = 10, roomId = '', tenantId = '', status = '') => {
   const response = await api.get('/', {
     params: { page, limit, roomId, tenantId, status },
   });

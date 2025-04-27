@@ -12,7 +12,7 @@ const RoomCard = ({ room, onCreateInvoice, onViewDetails }) => {
       </div>
       <p><FaUser className="icon" /> Chủ: {room.owner}</p>
       <p><FaPhoneAlt className="icon" /> SĐT: {room.phone}</p>
-      <p><FaCalendarAlt className="icon" /> Hạn hợp đồng: {formatDate(room.contractEnd)}</p>
+      <p><FaCalendarAlt className={`icon ${room.contractEnd}`} /> Hạn hợp đồng: {room.contractEnd}</p>
       <p><FaCalendarAlt className="icon" /> Ngày lập: {formatDate(room.invoiceDate)}</p>
       <p className={`status ${room.status === 'Đã lập' ? 'created' : 'pending'}`}>
         {room.status}

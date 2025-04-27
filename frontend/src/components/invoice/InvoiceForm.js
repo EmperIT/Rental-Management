@@ -1,85 +1,54 @@
 import React, { useState, useEffect } from 'react';
-import { FaCog, FaTimes } from 'react-icons/fa';
+import { FaTimes } from 'react-icons/fa';
 import '../../styles/invoice/InvoiceForm.css';
 
-const initialServices = [
-  { name: 'Điện', rate: 1700, unit: 'kWh', hasIndices: true },
-  { name: 'Nước', rate: 18000, unit: 'm³', hasIndices: true },
-  { name: 'Rác', rate: 15000, unit: 'Tháng', hasIndices: false },
-  { name: 'Wifi', rate: 50000, unit: 'Tháng', hasIndices: false },
-];
-
-export default function InvoiceForm({ isOpen, onClose, room, reasons, defaultBillingDay, onSave }) {
-  const [reason, setReason] = useState('');
+export default function InvoiceForm({ isOpen, onClose, room, services, roomServices, readings, defaultBillingDay, dueDays, onSave }) {
   const [dueDate, setDueDate] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [servicesData, setServicesData] = useState(
-    initialServices.map((service) => ({
-      ...service,
-      inUse: true,
-      oldIndex: '',
-      newIndex: '',
-      fee: 0,
-    }))
-  );
-  const [serviceCharge, setServiceCharge] = useState(0);
-  const [rentCharge, setRentCharge] = useState(0);
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [servicesData, setServicesData] = useState([]);
   const [total, setTotal] = useState(0);
-  const [daysUsed, setDaysUsed] = useState(0);
-  const [daysInMonth, setDaysInMonth] = useState(30);
 
   useEffect(() => {
-    if (!isOpen) return;
-    setReason('1');
-    const today = new Date();
-    const isoToday = today.toISOString().slice(0, 10);
-    const last = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10);
+    if (!isOpen || !room.id) return;
 
-    setStartDate(isoToday);
-    setEndDate(last);
-    setDueDate(last);
-    setServicesData(
-      initialServices.map((service) => ({
-        ...service,
-        inUse: true,
-        oldIndex: '',
-        newIndex: '',
+    const initialServicesData = services.map((service) => {
+      const roomService = roomServices.find(rs => rs.service?.name === service.name);
+      let oldIndex = 0;
+      let newIndex = 0;
+
+      if (service.hasIndices) {
+        const reading = readings[service.name.toLowerCase()];
+        oldIndex = reading ? reading.lastIndex || 0 : 0;
+        newIndex = roomService ? roomService.newIndex || 0 : 0;
+      }
+
+      return {
+        name: service.name,
+        rate: service.rate,
+        unit: service.unit,
+        hasIndices: service.hasIndices,
+        inUse: roomService ? (roomService.isActive !== undefined ? roomService.isActive : roomService.active !== undefined ? roomService.active : true) : true,
+        oldIndex,
+        newIndex,
         fee: 0,
-      }))
-    );
-  }, [isOpen]);
+      };
+    });
+
+    setServicesData(initialServicesData);
+
+    const today = new Date();
+    const due = new Date(today);
+    due.setDate(today.getDate() + dueDays);
+    setDueDate(due.toISOString().slice(0, 10));
+  }, [isOpen, room.id, services, roomServices, readings, dueDays]);
 
   useEffect(() => {
-    if (!startDate || !endDate) return;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    if (start > end) {
-      setDaysUsed(0);
-      setRentCharge(0);
-      return;
-    }
-
-    const daysThisMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
-    setDaysInMonth(daysThisMonth);
-    const actualDays = (end - start) / (1000 * 60 * 60 * 24) + 1;
-    setDaysUsed(actualDays);
-    const calculatedRent = Math.round((room.price / daysThisMonth) * actualDays);
-    setRentCharge(calculatedRent);
-  }, [startDate, endDate, room.price]);
-
-  useEffect(() => {
-    const totalServiceCharge = servicesData.reduce((sum, service) => {
+    const totalFee = servicesData.reduce((sum, service) => {
       if (!service.inUse) return sum;
       return sum + (service.fee || 0);
     }, 0);
-    setServiceCharge(totalServiceCharge);
-  }, [servicesData]);
-
-  useEffect(() => {
-    setTotal(rentCharge + serviceCharge);
-  }, [rentCharge, serviceCharge]);
+    setTotal(totalFee + (room.price || 0));
+  }, [servicesData, room.price]);
 
   const calcService = () => {
     const updatedServices = servicesData.map((service) => {
@@ -115,52 +84,29 @@ export default function InvoiceForm({ isOpen, onClose, room, reasons, defaultBil
     setServicesData(updatedServices);
   };
 
-  const handleDueDateChange = (value) => {
-    setDueDate(value);
-    setEndDate(value);
-  };
-
-  const handleReasonChange = (value) => {
-    setReason(value);
-    if (value === '1') {
-      const today = new Date();
-      const isoToday = today.toISOString().slice(0, 10);
-      const last = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10);
-      setStartDate(isoToday);
-      setEndDate(last);
-      setDueDate(last);
-    } else if (value === '2') {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth();
-      const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
-      const billingDay = Math.min(defaultBillingDay, lastDayOfMonth);
-      const due = new Date(year, month, billingDay).toISOString().slice(0, 10);
-
-      setStartDate(new Date(year, month, 1).toISOString().slice(0, 10));
-      setEndDate(new Date(year, month + 1, 0).toISOString().slice(0, 10));
-      setDueDate(due);
-    }
-  };
-
   const handleSubmit = () => {
-    const invoice = {
-      id: `INV-${room.id}-${Date.now()}`, // Tạo ID hóa đơn duy nhất
-      reason: reasons.find((r) => r.id === reason).title,
-      startDate,
-      endDate,
-      dueDate,
-      services: servicesData,
-      serviceCharge,
-      rentCharge,
-      total,
-      daysUsed,
-      daysInMonth,
-      createdAt: new Date().toISOString()
+    const fees = servicesData
+      .filter(service => service.inUse)
+      .map(service => ({
+        type: service.name.toLowerCase(),
+        amount: service.fee,
+        reading: service.hasIndices ? Number(service.newIndex) - Number(service.oldIndex) : null,
+        description: `Tiền ${service.name.toLowerCase()} tháng ${month.slice(5)}`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+
+    const invoiceData = {
+      roomId: room.id,
+      month: month,
+      fees: fees,
+      total: total,
+      dueDate: dueDate,
+      isPaid: false,
     };
-    onSave(room.id, invoice);
+
+    onSave(room.id, invoiceData);
     alert('Đã lập hóa đơn');
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -174,55 +120,26 @@ export default function InvoiceForm({ isOpen, onClose, room, reasons, defaultBil
         </div>
 
         <div className="invoice-form-group">
-          <label>Lý do lập hóa đơn</label>
-          <select value={reason} onChange={(e) => handleReasonChange(e.target.value)}>
-            {reasons.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.title}
-              </option>
-            ))}
-          </select>
+          <label>Tháng hóa đơn</label>
+          <input
+            type="month"
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
+          />
         </div>
 
         <div className="invoice-form-group">
           <label>Hạn đóng tiền</label>
-          <input type="date" value={dueDate} onChange={(e) => handleDueDateChange(e.target.value)} />
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+          />
         </div>
 
-        <div className="invoice-form-group invoice-dates">
-          <div>
-            <label>Ngày bắt đầu</label>
-            <input
-              type="date"
-              value={startDate}
-              max={endDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-          <div>
-            <label>Ngày kết thúc</label>
-            <input
-              type="date"
-              value={endDate}
-              min={startDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="invoice-form-group rent-breakdown enhanced-rent-display">
-          <div className="breakdown-text">
-            <span>
-              <strong>{daysUsed}</strong> ngày
-            </span>
-            <span>x</span>
-            <span>
-              {room.price.toLocaleString()} đ / {daysInMonth} ngày
-            </span>
-          </div>
-          <div className="breakdown-total">
-            <strong>Thành tiền:</strong> {rentCharge.toLocaleString()} đ
-          </div>
+        <div className="invoice-form-group">
+          <label>Tiền thuê phòng</label>
+          <input type="number" value={room.price || 0} readOnly />
         </div>
 
         <div className="invoice-form-group">
@@ -277,13 +194,8 @@ export default function InvoiceForm({ isOpen, onClose, room, reasons, defaultBil
 
         <div className="service-actions">
           <button className="btn-calc" onClick={calcService}>
-            <FaCog /> Tính dịch vụ
+            Tính dịch vụ
           </button>
-        </div>
-
-        <div className="invoice-form-group">
-          <label>Phí dịch vụ</label>
-          <input type="number" value={serviceCharge} readOnly />
         </div>
 
         <div className="invoice-form-group">

@@ -170,6 +170,13 @@ export const getRoomServices = async (roomId) => {
   return response.data;
 };
 
+export const updateRoomService = async (roomId, serviceName, roomServiceData) => {
+  const response = await api.put(`/rental/room-services/${roomId}`, roomServiceData, {
+    params: { serviceName },
+  });
+  return response.data;
+};
+
 // Hủy đăng ký dịch vụ cho phòng
 export const removeRoomService = async (roomId, serviceName) => {
   const response = await api.delete(`/rental/room-services/${roomId}`, {

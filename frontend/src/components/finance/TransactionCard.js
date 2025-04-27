@@ -39,7 +39,7 @@ export default function TransactionCard({ transaction, onEdit, onDelete }) {
             <p className="details">Ngày lập phiếu: ${transaction.date}</p>
             <span className="payment-method">{transaction.paymentMethod}</span>
             {onDelete && (
-              <button className="btn-delete" onClick={(e) => {
+              <button className="btn-delete-transaction" onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
               }}>

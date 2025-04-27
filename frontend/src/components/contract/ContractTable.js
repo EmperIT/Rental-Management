@@ -8,7 +8,6 @@ const ContractTable = ({ contracts, onViewDetails, onSendEmail }) => {
         <tr>
           <th># Mã HĐ</th>
           <th>Phòng</th>
-          <th>Người lập HĐ</th>
           <th>Trạng thái</th>
           <th>Thời hạn</th>
           <th>Số tiền</th>
@@ -16,20 +15,21 @@ const ContractTable = ({ contracts, onViewDetails, onSendEmail }) => {
         </tr>
       </thead>
       <tbody>
-        {contracts.map(contract => (
+        {contracts.map((contract) => (
           <tr key={contract.id}>
             <td>{contract.id}</td>
             <td>{contract.room}</td>
-            <td>{contract.assignedTo}</td>
             <td>
-              <span className={`status-badge ${contract.status.replace(/\s/g, "-").toLowerCase()}`}>
+              <span className={`status-badge ${contract.status.replace(/\s/g, '-').toLowerCase()}`}>
                 {contract.status}
               </span>
             </td>
             <td>
               <div className="duration">
                 <div>{contract.duration}</div>
-                <div>{formatDate(contract.start)} - {formatDate(contract.end)}</div>
+                <div>
+                  {formatDate(contract.start)} - {formatDate(contract.end)}
+                </div>
                 <div className="progress-bar">
                   <div className="progress" style={{ width: getProgressWidth(contract) }}></div>
                 </div>
@@ -37,16 +37,10 @@ const ContractTable = ({ contracts, onViewDetails, onSendEmail }) => {
             </td>
             <td>{contract.amount}</td>
             <td>
-              <button
-                className="action-button view-details"
-                onClick={() => onViewDetails(contract)}
-              >
+              <button className="action-button view-details" onClick={() => onViewDetails(contract)}>
                 Xem chi tiết
               </button>
-              <button
-                className="action-button send-email"
-                onClick={() => onSendEmail(contract)}
-              >
+              <button className="action-button send-email" onClick={() => onSendEmail(contract)}>
                 Gửi email
               </button>
             </td>
@@ -73,7 +67,7 @@ const getProgressWidth = (contract) => {
 // Hàm format thời gian dạng dd/MM/yyyy
 const formatDate = (dateStr) => {
   const date = new Date(dateStr);
-  return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth()+1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+  return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
 };
 
 export default ContractTable;

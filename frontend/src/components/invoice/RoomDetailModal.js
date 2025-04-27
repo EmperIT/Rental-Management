@@ -12,9 +12,10 @@ const RoomDetailModal = ({ room, onClose }) => {
   };
 
   const filteredInvoices = room.invoices.filter((invoice) => {
-    const invoiceMonth = invoice.createdAt.slice(0, 7);
+    const invoiceMonth = invoice.month;
     const matchesMonth = filterMonth === '' || invoiceMonth === filterMonth;
-    const matchesStatus = filterStatus === 'all' || (filterStatus === 'due' ? new Date(invoice.dueDate) < new Date() : new Date(invoice.dueDate) >= new Date());
+    const matchesStatus = filterStatus === 'all' || 
+      (filterStatus === 'due' ? new Date(invoice.dueDate) < new Date() : new Date(invoice.dueDate) >= new Date());
     return matchesMonth && matchesStatus;
   });
 
@@ -55,7 +56,7 @@ const RoomDetailModal = ({ room, onClose }) => {
                 <thead>
                   <tr>
                     <th>Mã hóa đơn</th>
-                    <th>Lý do</th>
+                    <th>Tháng</th>
                     <th>Tổng tiền</th>
                     <th>Hạn đóng</th>
                     <th>Trạng thái</th>
@@ -66,10 +67,10 @@ const RoomDetailModal = ({ room, onClose }) => {
                   {filteredInvoices.map((invoice) => (
                     <tr key={invoice.id}>
                       <td>{invoice.id}</td>
-                      <td>{invoice.reason}</td>
+                      <td>{invoice.month}</td>
                       <td>{invoice.total.toLocaleString()} đ</td>
                       <td>{invoice.dueDate}</td>
-                      <td>{new Date(invoice.dueDate) < new Date() ? 'Đã quá hạn' : 'Chưa quá hạn'}</td>
+                      <td>{invoice.isPaid ? 'Đã thanh toán' : new Date(invoice.dueDate) < new Date() ? 'Đã quá hạn' : 'Chưa quá hạn'}</td>
                       <td>
                         <button onClick={() => handleViewInvoice(invoice)}>Xem chi tiết</button>
                       </td>

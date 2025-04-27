@@ -5,17 +5,24 @@ import '../../styles/service/RoomServiceCard.css';
 export default function RoomServiceCard({ room, services, onUpdateService }) {
   const [showDetails, setShowDetails] = useState(false);
 
-  const toggleServiceUsage = (serviceId, inUse) => {
-    let roomService = room.services.find((s) => s.id === serviceId);
-    if (!roomService) {
-      roomService = { id: serviceId, oldIndex: 0, newIndex: 0, inUse: false };
-      onUpdateService(room.id, serviceId, roomService);
-    }
-    onUpdateService(room.id, serviceId, { inUse });
+  console.log(`Room ${room.id} services in RoomServiceCard:`, room.services);
+
+  const toggleServiceUsage = (serviceId, currentInUse) => {
+    onUpdateService(room.id, serviceId, { inUse: !currentInUse });
   };
 
   const updateIndex = (serviceId, field, value) => {
-    onUpdateService(room.id, serviceId, { [field]: Number(value) });
+    const roomService = room.services.find((s) => s.id === serviceId) || {
+      id: serviceId,
+      oldIndex: 0,
+      newIndex: 0,
+      inUse: false,
+    };
+    onUpdateService(room.id, serviceId, {
+      oldIndex: field === 'oldIndex' ? Number(value) : roomService.oldIndex,
+      newIndex: field === 'newIndex' ? Number(value) : roomService.newIndex,
+      inUse: roomService.inUse,
+    });
   };
 
   const displayedServices = showDetails
@@ -54,11 +61,9 @@ export default function RoomServiceCard({ room, services, onUpdateService }) {
               ? roomService.newIndex - roomService.oldIndex
               : 0;
             const fee = roomService.inUse
-              ? service.hasIndices
-                ? usage >= 0
-                  ? usage * service.rate
-                  : 0
-                : service.rate
+              ? usage >= 0
+                ? usage * service.rate
+                : 0
               : 0;
 
             return (
@@ -73,14 +78,14 @@ export default function RoomServiceCard({ room, services, onUpdateService }) {
                         <input
                           type="checkbox"
                           checked={roomService.inUse}
-                          onChange={() => toggleServiceUsage(service.id, !roomService.inUse)}
+                          onChange={() => toggleServiceUsage(service.id, roomService.inUse)}
                         />
                         <span className="slider"></span>
                       </label>
                     </div>
                   )}
                 </div>
-                {roomService.inUse && service.hasIndices && showDetails && (
+                {roomService.inUse && showDetails && (
                   <div className="service-indices">
                     <div>
                       <label>Số cũ:</label>
@@ -102,9 +107,7 @@ export default function RoomServiceCard({ room, services, onUpdateService }) {
                 )}
                 <div className="service-status">
                   {roomService.inUse
-                    ? service.hasIndices
-                      ? `Số: [${roomService.oldIndex} - ${roomService.newIndex}] - ${fee.toLocaleString()} đ`
-                      : `1 ${service.unit} - ${fee.toLocaleString()} đ`
+                    ? `Số: [${roomService.oldIndex} - ${roomService.newIndex}] - ${fee.toLocaleString()} đ`
                     : 'Không sử dụng'}
                 </div>
               </div>
