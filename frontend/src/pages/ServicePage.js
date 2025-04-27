@@ -1,141 +1,379 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import StatsCard from '../components/StatsCard';
 import AddServiceForm from '../components/service/AddServiceForm';
 import RoomServiceCard from '../components/service/RoomServiceCard';
 import '../styles/service/ServicePage.css';
+import {
+  getAllServices,
+  saveService,
+  removeService,
+  findAllRooms,
+  getRoomServices,
+  updateRoomService,
+  addDefaultRoomService,
+} from '../services/rentalService';
 
-const initialServices = [
-    { id: 1, name: 'Điện', rate: 1700, unit: 'kWh', hasIndices: true },
-    { id: 2, name: 'Nước', rate: 18000, unit: 'm³', hasIndices: true },
-  ];
-  
-  const initialRooms = [
-    {
-      id: 1,
-      name: 'Phòng 101',
-      price: 3000000,
-      services: [
-        { id: 1, oldIndex: 50, newIndex: 68, inUse: true },
-        { id: 2, oldIndex: 20, newIndex: 28, inUse: true },
-      ],
-    },
-    {
-      id: 2,
-      name: 'Phòng 102',
-      price: 3500000,
-      services: [
-        { id: 1, oldIndex: 40, newIndex: 60, inUse: true },
-        { id: 2, oldIndex: 15, newIndex: 20, inUse: true },
-      ],
-    },
-  ];
-  
-  export default function ServicePage() {
-    const [services, setServices] = useState(initialServices);
-    const [rooms, setRooms] = useState(initialRooms);
-  
-    const addService = (newService) => {
-      const newServiceId = services.length + 1;
-      const updatedService = { id: newServiceId, ...newService };
-  
-      setServices((prev) => [...prev, updatedService]);
-  
-      setRooms((prev) =>
-        prev.map((room) => ({
+export default function ServicePage() {
+  const [services, setServices] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const normalizeRoomServices = (roomServices) => {
+    if (Array.isArray(roomServices)) {
+      return roomServices;
+    }
+    if (roomServices && typeof roomServices === 'object' && Array.isArray(roomServices.services)) {
+      return roomServices.services;
+    }
+    return [];
+  };
+
+  const validRoomServiceTypes = ['FEE'];
+
+  const validateServices = (servicesArray, context = '') => {
+    const validServices = servicesArray.filter((service) => {
+      if (!service.id || !service.name || !service.type) {
+        console.warn(`Invalid service in ${context}:`, service);
+        return false;
+      }
+      return true;
+    });
+    return validServices;
+  };
+
+  const fetchRoomServicesForAllRooms = async (mappedServices) => {
+    const updatedRooms = await Promise.all(
+      rooms.map(async (room) => {
+        const roomServices = await getRoomServices(room.id);
+        const servicesArray = normalizeRoomServices(roomServices);
+        console.log(`Room ${room.id} servicesArray from getRoomServices:`, servicesArray);
+
+        const mappedRoomServices = servicesArray
+          .filter((rs) => mappedServices.some((s) => s.name === rs.service?.name))
+          .map((rs) => {
+            const service = mappedServices.find((s) => s.name === rs.service?.name);
+            if (!service) {
+              console.warn(`Service not found in mappedServices for room ${room.id}:`, rs);
+            }
+            return {
+              id: service ? service.id : null,
+              name: rs.service?.name || null,
+              oldIndex: rs.oldIndex || 0,
+              newIndex: rs.newIndex || 0,
+              inUse: rs.isActive !== undefined ? rs.isActive : rs.active !== undefined ? rs.active : true,
+            };
+          })
+          .filter((rs) => rs.id && rs.name);
+
+        return {
           ...room,
-          services: [
-            ...room.services,
-            { id: newServiceId, oldIndex: 0, newIndex: 0, inUse: true },
-          ],
-        }))
-      );
+          services: mappedRoomServices,
+        };
+      })
+    );
+    setRooms(updatedRooms);
+    console.log('Updated rooms after fetchRoomServicesForAllRooms:', updatedRooms);
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        const serviceResponse = await getAllServices();
+        console.log('Service Response:', serviceResponse);
+        const apiServices = serviceResponse.services || [];
+
+        const mappedServices = apiServices
+          .filter((service) => validRoomServiceTypes.includes(service.type))
+          .map((service, index) => ({
+            id: index + 1,
+            name: service.name,
+            rate: parseFloat(service.value),
+            unit: service.unit,
+            type: service.type,
+            hasIndices: service.type === 'CONFIG',
+          }));
+        const validatedServices = validateServices(mappedServices, 'fetchData');
+        setServices(validatedServices);
+        console.log('Mapped services:', validatedServices);
+
+        const roomResponse = await findAllRooms(1, 0);
+        console.log('Room Response:', roomResponse);
+        const apiRooms = roomResponse.rooms || [];
+
+        await addDefaultRoomService();
+        console.log('Applied default services to all rooms on initial load');
+
+        const mappedRooms = await Promise.all(
+          apiRooms.map(async (room) => {
+            const roomServices = await getRoomServices(room.id);
+            const servicesArray = normalizeRoomServices(roomServices);
+            console.log(`Normalized Room Services for room ${room.id}:`, servicesArray);
+
+            const mappedRoomServices = servicesArray
+              .filter((rs) => validatedServices.some((s) => s.name === rs.service?.name))
+              .map((rs) => {
+                const service = validatedServices.find((s) => s.name === rs.service?.name);
+                if (!service) {
+                  console.warn(`Service not found in mappedServices for room ${room.id}:`, rs);
+                }
+                return {
+                  id: service ? service.id : null,
+                  name: rs.service?.name || null,
+                  oldIndex: rs.oldIndex || 0,
+                  newIndex: rs.newIndex || 0,
+                  inUse: rs.isActive !== undefined ? rs.isActive : rs.active !== undefined ? rs.active : true,
+                };
+              })
+              .filter((rs) => rs.id && rs.name);
+
+            return {
+              id: room.id,
+              name: room.roomNumber,
+              price: room.price || 0,
+              services: mappedRoomServices,
+            };
+          })
+        );
+
+        setRooms(mappedRooms);
+        console.log('Mapped rooms:', mappedRooms);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Không thể tải dữ liệu: ' + (err.response?.data?.message || err.message || 'Lỗi không xác định.'));
+      } finally {
+        setLoading(false);
+      }
     };
-  
-    const updateService = (serviceId, updatedFields) => {
-      setServices((prev) =>
-        prev.map((service) =>
-          service.id === serviceId ? { ...service, ...updatedFields } : service
-        )
-      );
-    };
-  
-    const deleteService = (serviceId) => {
-      setServices((prev) => prev.filter((service) => service.id !== serviceId));
-      setRooms((prev) =>
-        prev.map((room) => ({
-          ...room,
-          services: room.services.filter((s) => s.id !== serviceId),
-        }))
-      );
-    };
-  
-    const updateRoomService = (roomId, serviceId, updatedService) => {
+
+    fetchData();
+  }, []);
+
+  const addService = async (newService) => {
+    try {
+      const serviceData = {
+        name: newService.name,
+        value: newService.rate.toString(),
+        description: newService.description || '',
+        type: 'FEE',
+        unit: newService.unit,
+      };
+      console.log('Saving new service:', serviceData);
+      const saveResponse = await saveService(serviceData);
+      console.log('Save service response:', saveResponse);
+
+      const serviceResponse = await getAllServices();
+      console.log('Updated service response:', serviceResponse);
+      const apiServices = serviceResponse.services || [];
+      const mappedServices = apiServices
+        .filter((service) => validRoomServiceTypes.includes(service.type))
+        .map((service, index) => ({
+          id: index + 1,
+          name: service.name,
+          rate: parseFloat(service.value),
+          unit: service.unit,
+          type: service.type,
+          hasIndices: service.type === 'CONFIG',
+        }));
+      const validatedServices = validateServices(mappedServices, 'addService');
+      setServices(validatedServices);
+      console.log('Updated services after addService:', validatedServices);
+
+      await addDefaultRoomService();
+      console.log('Applied default services to all rooms after adding a service');
+
+      await fetchRoomServicesForAllRooms(validatedServices);
+    } catch (err) {
+      console.error('Error adding service:', err);
+      alert('Không thể thêm dịch vụ: ' + (err.response?.data?.message || 'Lỗi không xác định.'));
+    }
+  };
+
+  const updateService = async (serviceId, updatedFields) => {
+    try {
+      const service = services.find((s) => s.id === serviceId);
+      const serviceData = {
+        name: service.name,
+        value: updatedFields.rate.toString(),
+        description: updatedFields.description || '',
+        type: 'FEE',
+        unit: updatedFields.unit || service.unit,
+      };
+      console.log('Updating service:', serviceData);
+      const updateResponse = await saveService(serviceData);
+      console.log('Update service response:', updateResponse);
+
+      const serviceResponse = await getAllServices();
+      const apiServices = serviceResponse.services || [];
+      const mappedServices = apiServices
+        .filter((service) => validRoomServiceTypes.includes(service.type))
+        .map((service, index) => ({
+          id: index + 1,
+          name: service.name,
+          rate: parseFloat(service.value),
+          unit: service.unit,
+          type: service.type,
+          hasIndices: service.type === 'CONFIG',
+        }));
+      const validatedServices = validateServices(mappedServices, 'updateService');
+      setServices(validatedServices);
+      console.log('Updated services after updateService:', validatedServices);
+
+      await addDefaultRoomService();
+      console.log('Applied default services to all rooms after updating a service');
+
+      await fetchRoomServicesForAllRooms(validatedServices);
+    } catch (err) {
+      console.error('Error updating service:', err);
+      alert('Không thể cập nhật dịch vụ: ' + (err.response?.data?.message || 'Lỗi không xác định.'));
+    }
+  };
+
+  const deleteService = async (serviceId) => {
+    try {
+      const service = services.find((s) => s.id === serviceId);
+      await removeService(service.name);
+      console.log(`Deleted service ${service.name}`);
+
+      const serviceResponse = await getAllServices();
+      const apiServices = serviceResponse.services || [];
+      const mappedServices = apiServices
+        .filter((service) => validRoomServiceTypes.includes(service.type))
+        .map((service, index) => ({
+          id: index + 1,
+          name: service.name,
+          rate: parseFloat(service.value),
+          unit: service.unit,
+          type: service.type,
+          hasIndices: service.type === 'CONFIG',
+        }));
+      const validatedServices = validateServices(mappedServices, 'deleteService');
+      setServices(validatedServices);
+      console.log('Updated services after deleteService:', validatedServices);
+
+      await addDefaultRoomService();
+      console.log('Applied default services to all rooms after deleting a service');
+
+      await fetchRoomServicesForAllRooms(validatedServices);
+    } catch (err) {
+      console.error('Error deleting service:', err);
+      alert('Không thể xóa dịch vụ: ' + (err.response?.data?.message || 'Lỗi không xác định.'));
+    }
+  };
+
+  const updateRoomServiceHandler = async (roomId, serviceId, updatedService) => {
+    try {
+      if (!roomId || !serviceId) {
+        throw new Error('Room ID hoặc Service ID không hợp lệ');
+      }
+
+      const service = services.find((s) => s.id === serviceId);
+      if (!service || !service.name) {
+        throw new Error('Không tìm thấy dịch vụ với ID: ' + serviceId);
+      }
+
+      const roomServiceData = {
+        oldIndex: updatedService.oldIndex || 0,
+        newIndex: updatedService.newIndex || 0,
+        isActive: updatedService.inUse,
+      };
+
+      console.log(`Updating room service for room ${roomId}, service ${service.name}:`, roomServiceData);
+
+      const updateResponse = await updateRoomService(roomId, service.name, roomServiceData);
+      console.log(`Update room service response:`, updateResponse);
+
+      const roomServices = await getRoomServices(roomId);
+      const updatedServicesArray = normalizeRoomServices(roomServices);
+      console.log(`Updated services for room ${roomId}:`, updatedServicesArray.map(rs => ({
+        serviceName: rs.service?.name,
+        isActive: rs.isActive,
+        active: rs.active,
+        oldIndex: rs.oldIndex,
+        newIndex: rs.newIndex,
+        fullObject: rs
+      })));
+
+      const mappedRoomServices = updatedServicesArray
+        .filter((rs) => services.some((s) => s.name === rs.service?.name))
+        .map((rs) => {
+          const service = services.find((s) => s.name === rs.service?.name);
+          return {
+            id: service ? service.id : null,
+            name: rs.service?.name || null,
+            oldIndex: rs.oldIndex || 0,
+            newIndex: rs.newIndex || 0,
+            inUse: rs.isActive !== undefined ? rs.isActive : rs.active !== undefined ? rs.active : true,
+          };
+        })
+        .filter((rs) => rs.id && rs.name);
+
+      console.log(`Mapped room services for room ${roomId}:`, mappedRoomServices.map(rs => ({
+        id: rs.id,
+        serviceName: rs.name,
+        inUse: rs.inUse,
+        oldIndex: rs.oldIndex,
+        newIndex: rs.newIndex
+      })));
+
       setRooms((prev) =>
         prev.map((room) =>
-          room.id === roomId
-            ? {
-                ...room,
-                services: room.services.map((s) =>
-                  s.id === serviceId ? { ...s, ...updatedService } : s
-                ),
-              }
-            : room
+          room.id === roomId ? { ...room, services: mappedRoomServices } : room
         )
       );
-    };
-  
-    const totalElectricityCost = rooms.reduce((sum, room) => {
-      const electricityService = room.services.find((s) => s.id === 1 && s.inUse);
-      if (electricityService) {
-        const serviceData = services.find((s) => s.id === 1);
-        const usage = electricityService.newIndex - electricityService.oldIndex;
-        return sum + (usage >= 0 ? usage * serviceData.rate : 0);
-      }
-      return sum;
+      console.log('Updated rooms after updateRoomService:', rooms);
+    } catch (err) {
+      console.error('Error updating room service:', err);
+      alert('Không thể cập nhật dịch vụ của phòng: ' + (err.response?.data?.message || err.message || 'Lỗi không xác định.'));
+    }
+  };
+
+  const totalFixedFeeCost = rooms.reduce((sum, room) => {
+    const fixedFeeServices = room.services.filter((s) => {
+      const service = services.find((srv) => srv.id === s.id);
+      return service?.type === 'FEE' && s.inUse;
+    });
+    return sum + fixedFeeServices.reduce((feeSum, s) => {
+      const service = services.find((srv) => srv.id === s.id);
+      return feeSum + (service ? service.rate : 0);
     }, 0);
-  
-    const totalWaterCost = rooms.reduce((sum, room) => {
-      const waterService = room.services.find((s) => s.id === 2 && s.inUse);
-      if (waterService) {
-        const serviceData = services.find((s) => s.id === 2);
-        const usage = waterService.newIndex - waterService.oldIndex;
-        return sum + (usage >= 0 ? usage * serviceData.rate : 0);
-      }
-      return sum;
-    }, 0);
-  
-    return (
-      <div className="service-page">
-        <h2>Quản lý dịch vụ</h2>
-        <div className="stats-grid">
-          <StatsCard title="Số lượng dịch vụ" value={services.length} />
-          <StatsCard
-            title="Tổng tiền dịch vụ điện"
-            value={totalElectricityCost.toLocaleString() + ' đ'}
-          />
-          <StatsCard
-            title="Tổng tiền dịch vụ nước"
-            value={totalWaterCost.toLocaleString() + ' đ'}
-          />
-        </div>
-  
-        <AddServiceForm
-          services={services}
-          onAddService={addService}
-          onUpdateService={updateService}
-          onDeleteService={deleteService}
+  }, 0);
+
+  if (loading) return <div>Đang tải...</div>;
+  if (error) return <div>{error}</div>;
+
+  console.log('Services passed to RoomServiceCard:', services);
+
+  return (
+    <div className="service-page">
+      <h2>Quản lý dịch vụ</h2>
+      <div className="stats-grid">
+        <StatsCard title="Số lượng dịch vụ" value={services.length} />
+        <StatsCard
+          title="Tổng tiền dịch vụ phí cố định"
+          value={totalFixedFeeCost.toLocaleString() + ' đ'}
         />
-  
-        <div className="rooms-grid">
-          {rooms.map((room) => (
-            <RoomServiceCard
-              key={room.id}
-              room={room}
-              services={services}
-              onUpdateService={updateRoomService}
-            />
-          ))}
-        </div>
       </div>
-    );
-  }
+
+      <AddServiceForm
+        services={services}
+        onAddService={addService}
+        onUpdateService={updateService}
+        onDeleteService={deleteService}
+      />
+
+      <div className="rooms-grid">
+        {rooms.map((room) => (
+          <RoomServiceCard
+            key={room.id}
+            room={room}
+            services={services}
+            onUpdateService={updateRoomServiceHandler}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
