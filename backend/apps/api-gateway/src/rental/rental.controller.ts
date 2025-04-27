@@ -496,6 +496,21 @@ export class RentalController {
     );
   }
 
+  @Post('room-services/default')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Đăng ký dịch vụ mặc định cho tất cho phòng', description: 'Yêu cầu xác thực JWT' })
+  @ApiResponse({ status: 201, description: 'Các dịch vụ đã được đăng ký thành công', type: RoomServicesResponseSwaggerDto })
+  @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ' })
+  @ApiResponse({ status: 401, description: 'Không có quyền truy cập' })
+  addDefaultRoomService() {
+    return this.rentalService.addDefaultRoomService().pipe(
+      catchError((val) => {
+        throw new HttpException(val.message, val.statusCode || 400);
+      }),
+    );
+  }
+
   @Get('room-services/:roomId')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()

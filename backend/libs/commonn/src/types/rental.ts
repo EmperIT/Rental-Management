@@ -157,6 +157,8 @@ export interface CreateTenantDto {
   startDate: string;
   holdingDepositPrice: number;
   depositDate: string;
+  birthday: string;
+  gender: string;
 }
 
 export interface UpdateTenantDto {
@@ -171,6 +173,8 @@ export interface UpdateTenantDto {
   startDate: string;
   holdingDepositPrice: number;
   depositDate: string;
+  birthday: string;
+  gender: string;
   isActive: boolean;
 }
 
@@ -197,6 +201,8 @@ export interface Tenant {
   startDate: string;
   holdingDepositPrice: number;
   depositDate: string;
+  birthday: string;
+  gender: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -466,6 +472,8 @@ export interface RentalServiceClient {
 
   addRoomService(request: AddRoomServiceRequest): Observable<RoomServiceResponse>;
 
+  addDefaultRoomService(request: Empty): Observable<RoomServicesResponse>;
+
   getRoomServices(request: GetRoomServicesRequest): Observable<RoomServicesResponse>;
 
   updateRoomService(request: UpdateRoomServiceRequest): Observable<RoomServicesResponse>;
@@ -570,6 +578,10 @@ export interface RentalServiceController {
     request: AddRoomServiceRequest,
   ): Promise<RoomServiceResponse> | Observable<RoomServiceResponse> | RoomServiceResponse;
 
+  addDefaultRoomService(
+    request: Empty,
+  ): Promise<RoomServicesResponse> | Observable<RoomServicesResponse> | RoomServicesResponse;
+
   getRoomServices(
     request: GetRoomServicesRequest,
   ): Promise<RoomServicesResponse> | Observable<RoomServicesResponse> | RoomServicesResponse;
@@ -657,6 +669,7 @@ export function RentalServiceControllerMethods() {
       "getAllServices",
       "removeService",
       "addRoomService",
+      "addDefaultRoomService",
       "getRoomServices",
       "updateRoomService",
       "removeRoomService",

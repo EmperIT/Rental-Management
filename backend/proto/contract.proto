@@ -8,6 +8,13 @@ service ContractService {
   rpc FindOneContract (FindOneContractDto) returns (Contract) {}
   rpc UpdateContract (UpdateContractDto) returns (Contract) {}
   rpc RemoveContract (FindOneContractDto) returns (Contract) {}
+
+  // Stay Record services
+  rpc CreateStayRecord (CreateStayRecordDto) returns (StayRecord) {}
+  rpc FindAllStayRecords (StayRecordPaginationDto) returns (StayRecords) {}
+  rpc FindOneStayRecord (FindOneStayRecordDto) returns (StayRecord) {}
+  rpc UpdateStayRecord (UpdateStayRecordDto) returns (StayRecord) {}
+  rpc RemoveStayRecord (RemoveStayRecordDto) returns (StayRecord) {}
 }
 
 message CreateContractDto {
@@ -54,5 +61,59 @@ message Contract {
 
 message Contracts {
   repeated Contract contracts = 1;
+  int32 total = 2;
+}
+
+// Stay Record messages
+message CreateStayRecordDto {
+  string tenantId = 1;
+  string startDate = 2;
+  string endDate = 3;
+  string content = 4;
+  string createdBy = 5;
+}
+
+message StayRecordPaginationDto {
+  int32 page = 1;
+  int32 limit = 2;
+  optional string tenantId = 3;
+  optional string status = 4; // active, expired, inactive
+  optional string startDateFrom = 5;
+  optional string startDateTo = 6;
+  optional string endDateFrom = 7;
+  optional string endDateTo = 8;
+}
+
+message FindOneStayRecordDto {
+  string stayId = 1;
+}
+
+message UpdateStayRecordDto {
+  string stayId = 1;
+  string tenantId = 2;
+  string startDate = 3;
+  string endDate = 4;
+  string status = 5;
+  string content = 6;
+}
+
+message RemoveStayRecordDto {
+  string stayId = 1;
+}
+
+message StayRecord {
+  string stayId = 1;
+  string tenantId = 2;
+  string startDate = 3;
+  string endDate = 4;
+  string status = 5;
+  string content = 6;
+  string createdBy = 7;
+  string createdAt = 8;
+  string updatedAt = 9;
+}
+
+message StayRecords {
+  repeated StayRecord records = 1;
   int32 total = 2;
 }

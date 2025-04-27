@@ -293,6 +293,20 @@ export class CreateTenantSwaggerDto implements Rental.CreateTenantDto {
     required: true
   })
   startDate: string;
+
+  @ApiProperty({
+    description: 'Ngày sinh',
+    example: '2004-04-01',
+    required: true
+  })
+  birthday: string;
+
+  @ApiProperty({
+    description: 'Giới tính',
+    example: 'Nam',
+    required: true
+  })
+  gender: string;
 }
 
 export class UpdateTenantSwaggerDto implements Partial<Rental.UpdateTenantDto> {
@@ -370,6 +384,20 @@ export class UpdateTenantSwaggerDto implements Partial<Rental.UpdateTenantDto> {
     required: false
   })
   startDate?: string;
+
+  @ApiProperty({
+    description: 'Ngày sinh',
+    example: '2004-04-01',
+    required: true
+  })
+  birthday: string;
+
+  @ApiProperty({
+    description: 'Giới tính',
+    example: 'Nam',
+    required: true
+  })
+  gender: string;
 
   @ApiProperty({
     description: 'Trạng thái người thuê',
@@ -473,6 +501,20 @@ export class TenantSwaggerDto implements Rental.Tenant {
     example: '2023-04-01'
   })
   startDate: string;
+
+  @ApiProperty({
+    description: 'Ngày sinh',
+    example: '2004-04-01',
+    required: true
+  })
+  birthday: string;
+
+  @ApiProperty({
+    description: 'Giới tính',
+    example: 'Nam',
+    required: true
+  })
+  gender: string;
 
   @ApiProperty({
     description: 'Trạng thái người thuê',

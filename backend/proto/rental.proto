@@ -35,6 +35,7 @@ service RentalService {
 
   // Room Services Management
   rpc AddRoomService (AddRoomServiceRequest) returns (RoomServiceResponse) {}
+  rpc AddDefaultRoomService (Empty) returns (RoomServicesResponse) {}
   rpc GetRoomServices (GetRoomServicesRequest) returns (RoomServicesResponse) {}
   rpc UpdateRoomService (UpdateRoomServiceRequest) returns (RoomServicesResponse) {}
   rpc RemoveRoomService (RemoveRoomServiceRequest) returns (RoomServiceResponse) {}
@@ -209,6 +210,8 @@ message CreateTenantDto {
   string startDate = 8;
   double holdingDepositPrice = 9;
   string depositDate = 10;
+  string birthday = 11;
+  string gender = 12;
 }
 
 message UpdateTenantDto {
@@ -223,7 +226,9 @@ message UpdateTenantDto {
   string startDate = 9;
   double holdingDepositPrice = 10;
   string depositDate = 11;
-  bool isActive = 12;
+  string birthday = 12;
+  string gender = 13;
+  bool isActive = 14;
 }
 
 message FindOneTenantDto {
@@ -249,9 +254,11 @@ message Tenant {
   string startDate = 9;
   double holdingDepositPrice = 10;
   string depositDate = 11;
-  bool isActive = 12;
-  string createdAt = 13;
-  string updatedAt = 14;
+  string birthday = 12;
+  string gender = 13;
+  bool isActive = 14;
+  string createdAt = 15;
+  string updatedAt = 16;
 }
 
 message Tenants {

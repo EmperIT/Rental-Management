@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ContractSchema } from './schemas/contract.schema';
+import { StayRecordSchema } from './schemas/stay-record.schema';
 import { ContractService } from './contract.service';
 import { ContractController } from './contract.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -10,6 +11,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forFeature([
       { name: 'Contract', schema: ContractSchema },
+      { name: 'StayRecord', schema: StayRecordSchema },
     ]),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
