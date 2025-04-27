@@ -1,0 +1,124 @@
+version: '3.8'
+
+services:
+  # Database Service
+  mongodb:
+    image: mongo:latest
+    container_name: rental-mongodb
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-password}
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - rental-network
+
+  # API Gateway Service
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./apps/api-gateway/Dockerfile
+    container_name: rental-api-gateway
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - GATEWAY=3000
+      - AUTH_SERVICE_URL=auth:5000
+      - RENTAL_SERVICE_URL=rental:5001
+      - CONTRACT_SERVICE_URL=contract:5002
+      - EMAIL_SERVICE_URL=email:5003
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - JWT_SECRET=${JWT_SECRET:-defaultSecret}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+    depends_on:
+      - auth
+      - rental
+      - contract
+      - email
+    networks:
+      - rental-network
+
+  # Auth Service
+  auth:
+    build:
+      context: .
+      dockerfile: ./apps/auth/Dockerfile
+    container_name: rental-auth
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - AUTH_SERVICE_URL=0.0.0.0:5000
+      - MONGO_AUTH_URI=mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/auth?authSource=admin
+      - JWT_SECRET=${JWT_SECRET:-defaultSecret}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+    depends_on:
+      - mongodb
+    networks:
+      - rental-network
+
+  # Rental Service
+  rental:
+    build:
+      context: .
+      dockerfile: ./apps/rental/Dockerfile
+    container_name: rental-service
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - RENTAL_SERVICE_URL=0.0.0.0:5001
+      - MONGO_RENTAL_URI=mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/rental?authSource=admin
+      - EMAIL_SERVICE_URL=email:5003
+    depends_on:
+      - mongodb
+      - email
+    networks:
+      - rental-network
+
+  # Contract Service
+  contract:
+    build:
+      context: .
+      dockerfile: ./apps/contract/Dockerfile
+    container_name: rental-contract
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - CONTRACT_SERVICE_URL=0.0.0.0:5002
+      - MONGO_CONTRACT_URI=mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/contract?authSource=admin
+    depends_on:
+      - mongodb
+    networks:
+      - rental-network
+
+  # Email Service
+  email:
+    build:
+      context: .
+      dockerfile: ./apps/email/Dockerfile
+    container_name: rental-email
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - EMAIL_SERVICE_URL=0.0.0.0:5003
+      - EMAIL_HOST=${EMAIL_HOST:-smtp.gmail.com}
+      - EMAIL_PORT=${EMAIL_PORT:-587}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASS=${EMAIL_PASS}
+      - EMAIL_FROM=${EMAIL_FROM:-no-reply@rentalmanagement.com}
+    networks:
+      - rental-network
+
+networks:
+  rental-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local

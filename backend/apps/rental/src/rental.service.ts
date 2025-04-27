@@ -35,6 +35,8 @@ interface TenantDocument {
   holdingDepositPrice: number;
   depositDate?: Date;
   startDate: Date;
+  birthday: Date;
+  gender: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -1207,6 +1209,67 @@ export class RentalService implements OnModuleInit {
   }
 
   /**
+   * Thêm dịch vụ mặc định cho tất cả phòng
+   */
+  async addDefaultRoomService(): Promise<Rental.RoomServicesResponse> {
+    try {
+      // Tìm tất cả dịch vụ có type FEE
+      const feeServices = await this.serviceModel.find({ type: 'FEE' }).exec();
+      
+      if (feeServices.length === 0) {
+        return { services: [] };
+      }
+
+      // Lấy tất cả phòng
+      const rooms = await this.roomModel.find().exec();
+      this.logger.log(`Thêm dịch vụ mặc định cho ${rooms.length} phòng`);
+      
+      const registeredServices: Rental.RoomServiceResponse[] = [];
+      
+      // Duyệt qua từng phòng
+      for (const room of rooms) {
+        // Đăng ký từng dịch vụ cho phòng
+        for (const service of feeServices) {
+          // Kiểm tra xem phòng đã đăng ký dịch vụ này chưa
+          const existingRoomService = await this.roomServiceModel.findOne({
+            roomId: room._id.toString(),
+            serviceName: service.name
+          }).exec();
+          
+          if (existingRoomService) {
+            // Nếu đã đăng ký và bị vô hiệu hóa, giữ nguyên
+            if (!existingRoomService.isActive) {
+              continue;
+            }
+          } else {
+            // Nếu chưa đăng ký, tạo mới
+            const newRoomService = new this.roomServiceModel({
+              roomId: room._id.toString(),
+              serviceName: service.name,
+              quantity: 1,
+              customPrice: null,
+              isActive: true
+            });
+            
+            await newRoomService.save();
+            this.logger.log(`Đã đăng ký dịch vụ ${service.name} cho phòng ${room.roomNumber}`);
+            
+            registeredServices.push(this.mapToRoomService(newRoomService, service));
+          }
+        }
+      }
+      
+      return { services: registeredServices };
+    } catch (error) {
+      this.logger.error(`Lỗi đăng ký dịch vụ mặc định cho tất cả phòng: ${error.message}`, error.stack);
+      throw new RpcException({
+        statusCode: 500,
+        message: error.message || 'Lỗi đăng ký dịch vụ mặc định cho tất cả phòng',
+      });
+    }
+  }
+
+  /**
    * Chỉnh sửa dịch vụ phòng
    */
   async updateRoomService(updateRequest: Rental.UpdateRoomServiceRequest): Promise<Rental.RoomServiceResponse> {
@@ -1271,9 +1334,7 @@ export class RentalService implements OnModuleInit {
           message: `Phòng chưa đăng ký dịch vụ này`,
         });
       }
-      
-      // Đánh dấu là không hoạt động thay vì xóa hoàn toàn
-      // để giữ lại lịch sử sử dụng dịch vụ
+
       roomService.isActive = false;      
       await roomService.save();
       
@@ -1822,6 +1883,8 @@ export class RentalService implements OnModuleInit {
       holdingDepositPrice: tenant.holdingDepositPrice,
       depositDate: tenant.depositDate?.toISOString() || '',
       startDate: tenant.startDate.toISOString() || '',
+      birthday: tenant.birthday.toISOString() || '',
+      gender: tenant.gender,
       isActive: tenant.isActive,
       createdAt: tenant.createdAt.toISOString(),
       updatedAt: tenant.updatedAt.toISOString(),

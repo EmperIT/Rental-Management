@@ -148,6 +148,12 @@ export class RentalController {
     return this.rentalService.addRoomService(request);
   }
 
+  @GrpcMethod('RentalService', 'AddDefaultRoomService')
+  async addDefaultRoomService(): Promise<Rental.RoomServicesResponse> {
+    this.logger.log(`Adding default service to all room:`);
+    return this.rentalService.addDefaultRoomService();
+  }
+
   @GrpcMethod('RentalService', 'GetRoomServices')
   async getRoomServices(request: Rental.GetRoomServicesRequest): Promise<Rental.RoomServicesResponse> {
     this.logger.log(`Getting services for room: ${request.roomId}`);

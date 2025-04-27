@@ -163,6 +163,10 @@ export class RentalService implements OnModuleInit {
     return this.rentalService.addRoomService(addRoomServiceDto);
   }
 
+  addDefaultRoomService() {
+    return this.rentalService.addDefaultRoomService('');
+  }
+
   getRoomServices(getRoomServicesRequest: Rental.GetRoomServicesRequest) {
     return this.rentalService.getRoomServices(getRoomServicesRequest);
   }

@@ -57,6 +57,63 @@ export interface Contracts {
   total: number;
 }
 
+/** Stay Record messages */
+export interface CreateStayRecordDto {
+  tenantId: string;
+  startDate: string;
+  endDate: string;
+  content: string;
+  createdBy: string;
+}
+
+export interface StayRecordPaginationDto {
+  page: number;
+  limit: number;
+  tenantId?:
+    | string
+    | undefined;
+  /** active, expired, inactive */
+  status?: string | undefined;
+  startDateFrom?: string | undefined;
+  startDateTo?: string | undefined;
+  endDateFrom?: string | undefined;
+  endDateTo?: string | undefined;
+}
+
+export interface FindOneStayRecordDto {
+  stayId: string;
+}
+
+export interface UpdateStayRecordDto {
+  stayId: string;
+  tenantId: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  content: string;
+}
+
+export interface RemoveStayRecordDto {
+  stayId: string;
+}
+
+export interface StayRecord {
+  stayId: string;
+  tenantId: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  content: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StayRecords {
+  records: StayRecord[];
+  total: number;
+}
+
 export const CONTRACT_PACKAGE_NAME = "contract";
 
 export interface ContractServiceClient {
@@ -69,6 +126,18 @@ export interface ContractServiceClient {
   updateContract(request: UpdateContractDto): Observable<Contract>;
 
   removeContract(request: FindOneContractDto): Observable<Contract>;
+
+  /** Stay Record services */
+
+  createStayRecord(request: CreateStayRecordDto): Observable<StayRecord>;
+
+  findAllStayRecords(request: StayRecordPaginationDto): Observable<StayRecords>;
+
+  findOneStayRecord(request: FindOneStayRecordDto): Observable<StayRecord>;
+
+  updateStayRecord(request: UpdateStayRecordDto): Observable<StayRecord>;
+
+  removeStayRecord(request: RemoveStayRecordDto): Observable<StayRecord>;
 }
 
 export interface ContractServiceController {
@@ -81,6 +150,18 @@ export interface ContractServiceController {
   updateContract(request: UpdateContractDto): Promise<Contract> | Observable<Contract> | Contract;
 
   removeContract(request: FindOneContractDto): Promise<Contract> | Observable<Contract> | Contract;
+
+  /** Stay Record services */
+
+  createStayRecord(request: CreateStayRecordDto): Promise<StayRecord> | Observable<StayRecord> | StayRecord;
+
+  findAllStayRecords(request: StayRecordPaginationDto): Promise<StayRecords> | Observable<StayRecords> | StayRecords;
+
+  findOneStayRecord(request: FindOneStayRecordDto): Promise<StayRecord> | Observable<StayRecord> | StayRecord;
+
+  updateStayRecord(request: UpdateStayRecordDto): Promise<StayRecord> | Observable<StayRecord> | StayRecord;
+
+  removeStayRecord(request: RemoveStayRecordDto): Promise<StayRecord> | Observable<StayRecord> | StayRecord;
 }
 
 export function ContractServiceControllerMethods() {
@@ -91,6 +172,11 @@ export function ContractServiceControllerMethods() {
       "findOneContract",
       "updateContract",
       "removeContract",
+      "createStayRecord",
+      "findAllStayRecords",
+      "findOneStayRecord",
+      "updateStayRecord",
+      "removeStayRecord",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

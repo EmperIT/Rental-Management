@@ -40,4 +40,25 @@ export class ContractService implements OnModuleInit {
   removeContract(id: string) {
     return this.contractService.removeContract({ contractId: id });
   }
+
+  // Stay Record Methods
+  createStayRecord(createStayRecordDto: any) {
+    return this.contractService.createStayRecord(createStayRecordDto);
+  }
+
+  findAllStayRecords(paginationDto: any) {
+    return this.contractService.findAllStayRecords(paginationDto);
+  }
+
+  findOneStayRecord(stayId: string) {
+    return this.contractService.findOneStayRecord({ stayId });
+  }
+
+  updateStayRecord(stayId: string, updateStayRecordDto: any) {
+    return this.contractService.updateStayRecord({ stayId, ...updateStayRecordDto });
+  }
+
+  removeStayRecord(stayId: string) {
+    return this.contractService.removeStayRecord({ stayId });
+  }
 }
