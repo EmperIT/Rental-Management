@@ -36,6 +36,7 @@ services:
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
       - JWT_SECRET=${JWT_SECRET:-defaultSecret}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your-refresh-secret}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
     depends_on:
       - auth
@@ -57,6 +58,7 @@ services:
       - AUTH_SERVICE_URL=0.0.0.0:5000
       - MONGO_AUTH_URI=mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/auth?authSource=admin
       - JWT_SECRET=${JWT_SECRET:-defaultSecret}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your-refresh-secret}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
     depends_on:
       - mongodb
@@ -110,7 +112,7 @@ services:
       - EMAIL_HOST=${EMAIL_HOST:-smtp.gmail.com}
       - EMAIL_PORT=${EMAIL_PORT:-587}
       - EMAIL_USER=${EMAIL_USER}
-      - EMAIL_PASS=${EMAIL_PASS}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
       - EMAIL_FROM=${EMAIL_FROM:-no-reply@rentalmanagement.com}
     networks:
       - rental-network
