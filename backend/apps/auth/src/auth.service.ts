@@ -26,6 +26,40 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
+  async onModuleInit() {
+    await this.initializeDefaultServices();
+  }
+
+  async initializeDefaultServices() {
+    const adminUsername = 'admin';
+    const adminEmail = 'admin@example.com';
+    const adminPassword = 'admin';
+    const adminRole = 'admin';
+  
+    // Kiểm tra xem đã có tài khoản admin chưa
+    const existingAdmin = await this.userModel.findOne({ role: adminRole });
+    if (existingAdmin) {
+      console.log('Admin user already exists.');
+      return;
+    }
+  
+    // Nếu chưa, tạo mới
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+  
+    const newAdmin = new this.userModel({
+      username: adminUsername,
+      email: adminEmail,
+      password: hashedPassword,
+      role: adminRole,
+      refreshToken: '',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  
+    await newAdmin.save();
+    console.log('Admin user created successfully.');
+  }
+
   async create(createUserDto: Auth.CreateUserDto): Promise<Auth.User> {
     // Kiểm tra username trùng
     const existingUser = await this.userModel
