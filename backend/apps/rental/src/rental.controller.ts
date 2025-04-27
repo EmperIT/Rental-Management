@@ -32,7 +32,7 @@ export class RentalController {
 
   @GrpcMethod('RentalService', 'UpdateRoom')
   async updateRoom(updateRoomDto: Rental.UpdateRoomDto): Promise<Rental.Room> {
-    this.logger.log(`Updating room with id: ${updateRoomDto.isEmpty}`);
+    this.logger.log(`Updating room with id: ${updateRoomDto.id}`);
     return this.rentalService.updateRoom(updateRoomDto);
   }
 

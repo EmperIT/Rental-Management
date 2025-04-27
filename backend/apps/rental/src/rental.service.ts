@@ -1274,7 +1274,7 @@ export class RentalService implements OnModuleInit {
    */
   async updateRoomService(updateRequest: Rental.UpdateRoomServiceRequest): Promise<Rental.RoomServiceResponse> {
     try {
-      const { roomId, serviceName, quantity, customPrice, isActive } = updateRequest;
+      const { roomId, serviceName } = updateRequest;
       
       // Tìm dịch vụ của phòng
       const roomService = await this.roomServiceModel.findOne({
@@ -1289,14 +1289,6 @@ export class RentalService implements OnModuleInit {
         });
       }
       
-      // Cập nhật thông tin
-      if (quantity !== undefined) roomService.quantity = quantity;
-      if (customPrice !== undefined) roomService.customPrice = customPrice;
-      if (isActive !== undefined) roomService.isActive = isActive;
-      
-      await roomService.save();
-      this.logger.log(`Đã cập nhật dịch vụ ${serviceName} cho phòng`);
-      
       const service = await this.serviceModel.findOne({ name: serviceName }).exec();
       if (!service) {
         throw new RpcException({
@@ -1304,6 +1296,12 @@ export class RentalService implements OnModuleInit {
           message: `Không tìm thấy dịch vụ với tên ${serviceName}`,
         });
       }
+      
+      Object.assign(roomService, updateRequest)
+      roomService.updatedAt = new Date();
+      await roomService.save();
+      this.logger.log(`Đã cập nhật dịch vụ ${serviceName} cho phòng`);
+      
       
       return this.mapToRoomService(roomService, service);
     } catch (error) {

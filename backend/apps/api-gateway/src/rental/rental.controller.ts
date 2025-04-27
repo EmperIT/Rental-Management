@@ -553,7 +553,6 @@ export class RentalController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cập nhật dịch vụ phòng', description: 'Yêu cầu xác thực JWT' })
   @ApiParam({ name: 'id', description: 'ID của phòng' })
-  @ApiParam({ name: 'serviceName', description: 'Tên dịch vụ cần cập nhật' })
   @ApiBody({ type: UpdateRoomServiceSwaggerDto })
   @ApiResponse({ status: 200, description: 'Dịch vụ đã được cập nhật thành công', type: RoomServiceSwaggerDto })
   @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ' })
