@@ -170,6 +170,11 @@ export const getRoomServices = async (roomId) => {
   return response.data;
 };
 
+export const addDefaultRoomService = async () => {
+  const response = await api.post(`/rental/room-services/default`);
+  return response.data;
+}
+
 export const updateRoomService = async (roomId, serviceName, roomServiceData) => {
   const response = await api.put(`/rental/room-services/${roomId}`, roomServiceData, {
     params: { serviceName },

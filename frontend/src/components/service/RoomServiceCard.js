@@ -1,35 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { FaEye } from 'react-icons/fa';
 import '../../styles/service/RoomServiceCard.css';
+import _ from 'lodash';
 
 export default function RoomServiceCard({ room, services, onUpdateService }) {
   const [showDetails, setShowDetails] = useState(false);
 
+  // Define hooks at the top, before any early returns
+  const toggleServiceUsage = useCallback(
+    _.debounce((serviceId, currentInUse, serviceName) => {
+      if (!serviceId) {
+        console.error(`Service ID is undefined for service ${serviceName}`);
+        return;
+      }
+
+      console.log(`Toggling service ${serviceId} (${serviceName}) for room ${room.id}: ${currentInUse} -> ${!currentInUse}`);
+      onUpdateService(room.id, serviceId, {
+        inUse: !currentInUse,
+        oldIndex: 0,
+        newIndex: 0,
+      });
+    }, 300),
+    [room?.id, onUpdateService] // Use optional chaining to handle undefined room
+  );
+
+  // Now handle the early return after all hooks are called
+  if (!room || !room.id) {
+    console.error('Invalid room prop:', room);
+    return <div>Lỗi: Không tìm thấy thông tin phòng</div>;
+  }
+
   console.log(`Room ${room.id} services in RoomServiceCard:`, room.services);
 
-  const toggleServiceUsage = (serviceId, currentInUse) => {
-    onUpdateService(room.id, serviceId, { inUse: !currentInUse });
-  };
-
-  const updateIndex = (serviceId, field, value) => {
-    const roomService = room.services.find((s) => s.id === serviceId) || {
-      id: serviceId,
-      oldIndex: 0,
-      newIndex: 0,
-      inUse: false,
-    };
-    onUpdateService(room.id, serviceId, {
-      oldIndex: field === 'oldIndex' ? Number(value) : roomService.oldIndex,
-      newIndex: field === 'newIndex' ? Number(value) : roomService.newIndex,
-      inUse: roomService.inUse,
-    });
-  };
+  const feeServices = services.filter((service) => service.type === 'FEE');
+  console.log(`Fee services for room ${room.id}:`, feeServices);
 
   const displayedServices = showDetails
-    ? services
-    : services.filter((service) =>
-        room.services.some((s) => s.id === service.id && s.inUse)
+    ? feeServices
+    : feeServices.filter((service) =>
+        room.services.some((s) => s.name === service.name && s.inUse)
       );
+
+  console.log(`Displayed services for room ${room.id}:`, displayedServices);
 
   return (
     <div className="room-service-card">
@@ -51,20 +63,21 @@ export default function RoomServiceCard({ room, services, onUpdateService }) {
           <p className="no-services">Không có dịch vụ đang sử dụng</p>
         ) : (
           displayedServices.map((service) => {
-            const roomService = room.services.find((s) => s.id === service.id) || {
-              id: service.id,
-              oldIndex: 0,
-              newIndex: 0,
-              inUse: false,
-            };
-            const usage = roomService.inUse
-              ? roomService.newIndex - roomService.oldIndex
-              : 0;
-            const fee = roomService.inUse
-              ? usage >= 0
-                ? usage * service.rate
-                : 0
-              : 0;
+            if (!service.id) {
+              console.warn(`Skipping service with undefined ID for room ${room.id}:`, service);
+              return null;
+            }
+
+            const roomService = room.services.find((s) => s.name === service.name);
+            const isRegistered = !!roomService;
+            const inUse = roomService ? roomService.inUse : false;
+            const fee = inUse ? service.rate : 0;
+
+            console.log(`Service ${service.name} (ID: ${service.id}) for room ${room.id}:`, {
+              isRegistered,
+              roomService,
+              inUse,
+            });
 
             return (
               <div key={service.id} className="service-item">
@@ -74,41 +87,29 @@ export default function RoomServiceCard({ room, services, onUpdateService }) {
                   </span>
                   {showDetails && (
                     <div className="service-controls">
-                      <label className="switch">
-                        <input
-                          type="checkbox"
-                          checked={roomService.inUse}
-                          onChange={() => toggleServiceUsage(service.id, roomService.inUse)}
-                        />
-                        <span className="slider"></span>
-                      </label>
+                      {isRegistered ? (
+                        <label className="switch">
+                          <input
+                            type="checkbox"
+                            checked={inUse}
+                            onChange={() => toggleServiceUsage(service.id, inUse, service.name)}
+                          />
+                          <span className="slider"></span>
+                        </label>
+                      ) : (
+                        <span className="unregistered-service">
+                          (Chưa đăng ký)
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
-                {roomService.inUse && showDetails && (
-                  <div className="service-indices">
-                    <div>
-                      <label>Số cũ:</label>
-                      <input
-                        type="number"
-                        value={roomService.oldIndex}
-                        onChange={(e) => updateIndex(service.id, 'oldIndex', e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label>Số mới:</label>
-                      <input
-                        type="number"
-                        value={roomService.newIndex}
-                        onChange={(e) => updateIndex(service.id, 'newIndex', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                )}
                 <div className="service-status">
-                  {roomService.inUse
-                    ? `Số: [${roomService.oldIndex} - ${roomService.newIndex}] - ${fee.toLocaleString()} đ`
-                    : 'Không sử dụng'}
+                  {isRegistered
+                    ? inUse
+                      ? `Phí: ${fee.toLocaleString()} đ`
+                      : 'Không sử dụng'
+                    : 'Dịch vụ chưa được đăng ký cho phòng này'}
                 </div>
               </div>
             );

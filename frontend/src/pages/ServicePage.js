@@ -10,6 +10,7 @@ import {
   findAllRooms,
   getRoomServices,
   updateRoomService,
+  addDefaultRoomService,
 } from '../services/rentalService';
 
 export default function ServicePage() {
@@ -28,7 +29,52 @@ export default function ServicePage() {
     return [];
   };
 
-  const validRoomServiceTypes = ['CONFIG', 'FEE'];
+  const validRoomServiceTypes = ['FEE'];
+
+  const validateServices = (servicesArray, context = '') => {
+    const validServices = servicesArray.filter((service) => {
+      if (!service.id || !service.name || !service.type) {
+        console.warn(`Invalid service in ${context}:`, service);
+        return false;
+      }
+      return true;
+    });
+    return validServices;
+  };
+
+  const fetchRoomServicesForAllRooms = async (mappedServices) => {
+    const updatedRooms = await Promise.all(
+      rooms.map(async (room) => {
+        const roomServices = await getRoomServices(room.id);
+        const servicesArray = normalizeRoomServices(roomServices);
+        console.log(`Room ${room.id} servicesArray from getRoomServices:`, servicesArray);
+
+        const mappedRoomServices = servicesArray
+          .filter((rs) => mappedServices.some((s) => s.name === rs.service?.name))
+          .map((rs) => {
+            const service = mappedServices.find((s) => s.name === rs.service?.name);
+            if (!service) {
+              console.warn(`Service not found in mappedServices for room ${room.id}:`, rs);
+            }
+            return {
+              id: service ? service.id : null,
+              name: rs.service?.name || null,
+              oldIndex: rs.oldIndex || 0,
+              newIndex: rs.newIndex || 0,
+              inUse: rs.isActive !== undefined ? rs.isActive : rs.active !== undefined ? rs.active : true,
+            };
+          })
+          .filter((rs) => rs.id && rs.name);
+
+        return {
+          ...room,
+          services: mappedRoomServices,
+        };
+      })
+    );
+    setRooms(updatedRooms);
+    console.log('Updated rooms after fetchRoomServicesForAllRooms:', updatedRooms);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,14 +93,18 @@ export default function ServicePage() {
             rate: parseFloat(service.value),
             unit: service.unit,
             type: service.type,
-            hasIndices: service.type === 'CONFIG', // Infer hasIndices based on type
+            hasIndices: service.type === 'CONFIG',
           }));
-        setServices(mappedServices);
-        console.log('Mapped services:', mappedServices);
+        const validatedServices = validateServices(mappedServices, 'fetchData');
+        setServices(validatedServices);
+        console.log('Mapped services:', validatedServices);
 
-        const roomResponse = await findAllRooms(0, 0);
+        const roomResponse = await findAllRooms(1, 0);
         console.log('Room Response:', roomResponse);
         const apiRooms = roomResponse.rooms || [];
+
+        await addDefaultRoomService();
+        console.log('Applied default services to all rooms on initial load');
 
         const mappedRooms = await Promise.all(
           apiRooms.map(async (room) => {
@@ -63,17 +113,21 @@ export default function ServicePage() {
             console.log(`Normalized Room Services for room ${room.id}:`, servicesArray);
 
             const mappedRoomServices = servicesArray
-              .filter((rs) => mappedServices.some((s) => s.name === rs.service?.name))
+              .filter((rs) => validatedServices.some((s) => s.name === rs.service?.name))
               .map((rs) => {
-                const service = mappedServices.find((s) => s.name === rs.service?.name);
+                const service = validatedServices.find((s) => s.name === rs.service?.name);
+                if (!service) {
+                  console.warn(`Service not found in mappedServices for room ${room.id}:`, rs);
+                }
                 return {
                   id: service ? service.id : null,
+                  name: rs.service?.name || null,
                   oldIndex: rs.oldIndex || 0,
                   newIndex: rs.newIndex || 0,
                   inUse: rs.isActive !== undefined ? rs.isActive : rs.active !== undefined ? rs.active : true,
                 };
               })
-              .filter((rs) => rs.id);
+              .filter((rs) => rs.id && rs.name);
 
             return {
               id: room.id,
@@ -103,7 +157,7 @@ export default function ServicePage() {
         name: newService.name,
         value: newService.rate.toString(),
         description: newService.description || '',
-        type: newService.hasIndices ? 'CONFIG' : 'FEE',
+        type: 'FEE',
         unit: newService.unit,
       };
       console.log('Saving new service:', serviceData);
@@ -123,36 +177,14 @@ export default function ServicePage() {
           type: service.type,
           hasIndices: service.type === 'CONFIG',
         }));
-      setServices(mappedServices);
-      console.log('Updated services after addService:', mappedServices);
+      const validatedServices = validateServices(mappedServices, 'addService');
+      setServices(validatedServices);
+      console.log('Updated services after addService:', validatedServices);
 
-      // Since the backend automatically associates services with rooms, fetch updated room services
-      const updatedRooms = await Promise.all(
-        rooms.map(async (room) => {
-          const roomServices = await getRoomServices(room.id);
-          const servicesArray = normalizeRoomServices(roomServices);
-          const mappedRoomServices = servicesArray
-            .filter((rs) => mappedServices.some((s) => s.name === rs.service?.name))
-            .map((rs) => {
-              const service = mappedServices.find((s) => s.name === rs.service?.name);
-              return {
-                id: service ? service.id : null,
-                oldIndex: rs.oldIndex || 0,
-                newIndex: rs.newIndex || 0,
-                inUse: rs.isActive !== undefined ? rs.isActive : rs.active !== undefined ? rs.active : true,
-              };
-            })
-            .filter((rs) => rs.id);
+      await addDefaultRoomService();
+      console.log('Applied default services to all rooms after adding a service');
 
-          return {
-            ...room,
-            services: mappedRoomServices,
-          };
-        })
-      );
-
-      setRooms(updatedRooms);
-      console.log('Updated rooms after addService:', updatedRooms);
+      await fetchRoomServicesForAllRooms(validatedServices);
     } catch (err) {
       console.error('Error adding service:', err);
       alert('Không thể thêm dịch vụ: ' + (err.response?.data?.message || 'Lỗi không xác định.'));
@@ -166,7 +198,7 @@ export default function ServicePage() {
         name: service.name,
         value: updatedFields.rate.toString(),
         description: updatedFields.description || '',
-        type: service.hasIndices ? 'CONFIG' : 'FEE',
+        type: 'FEE',
         unit: updatedFields.unit || service.unit,
       };
       console.log('Updating service:', serviceData);
@@ -185,8 +217,14 @@ export default function ServicePage() {
           type: service.type,
           hasIndices: service.type === 'CONFIG',
         }));
-      setServices(mappedServices);
-      console.log('Updated services after updateService:', mappedServices);
+      const validatedServices = validateServices(mappedServices, 'updateService');
+      setServices(validatedServices);
+      console.log('Updated services after updateService:', validatedServices);
+
+      await addDefaultRoomService();
+      console.log('Applied default services to all rooms after updating a service');
+
+      await fetchRoomServicesForAllRooms(validatedServices);
     } catch (err) {
       console.error('Error updating service:', err);
       alert('Không thể cập nhật dịch vụ: ' + (err.response?.data?.message || 'Lỗi không xác định.'));
@@ -211,36 +249,14 @@ export default function ServicePage() {
           type: service.type,
           hasIndices: service.type === 'CONFIG',
         }));
-      setServices(mappedServices);
-      console.log('Updated services after deleteService:', mappedServices);
+      const validatedServices = validateServices(mappedServices, 'deleteService');
+      setServices(validatedServices);
+      console.log('Updated services after deleteService:', validatedServices);
 
-      // Since the backend automatically removes the service from rooms, fetch updated room services
-      const updatedRooms = await Promise.all(
-        rooms.map(async (room) => {
-          const roomServices = await getRoomServices(room.id);
-          const servicesArray = normalizeRoomServices(roomServices);
-          const mappedRoomServices = servicesArray
-            .filter((rs) => mappedServices.some((s) => s.name === rs.service?.name))
-            .map((rs) => {
-              const service = mappedServices.find((s) => s.name === rs.service?.name);
-              return {
-                id: service ? service.id : null,
-                oldIndex: rs.oldIndex || 0,
-                newIndex: rs.newIndex || 0,
-                inUse: rs.isActive !== undefined ? rs.isActive : rs.active !== undefined ? rs.active : true,
-              };
-            })
-            .filter((rs) => rs.id);
+      await addDefaultRoomService();
+      console.log('Applied default services to all rooms after deleting a service');
 
-          return {
-            ...room,
-            services: mappedRoomServices,
-          };
-        })
-      );
-
-      setRooms(updatedRooms);
-      console.log('Updated rooms after deleteService:', updatedRooms);
+      await fetchRoomServicesForAllRooms(validatedServices);
     } catch (err) {
       console.error('Error deleting service:', err);
       alert('Không thể xóa dịch vụ: ' + (err.response?.data?.message || 'Lỗi không xác định.'));
@@ -249,7 +265,15 @@ export default function ServicePage() {
 
   const updateRoomServiceHandler = async (roomId, serviceId, updatedService) => {
     try {
+      if (!roomId || !serviceId) {
+        throw new Error('Room ID hoặc Service ID không hợp lệ');
+      }
+
       const service = services.find((s) => s.id === serviceId);
+      if (!service || !service.name) {
+        throw new Error('Không tìm thấy dịch vụ với ID: ' + serviceId);
+      }
+
       const roomServiceData = {
         oldIndex: updatedService.oldIndex || 0,
         newIndex: updatedService.newIndex || 0,
@@ -278,16 +302,17 @@ export default function ServicePage() {
           const service = services.find((s) => s.name === rs.service?.name);
           return {
             id: service ? service.id : null,
+            name: rs.service?.name || null,
             oldIndex: rs.oldIndex || 0,
             newIndex: rs.newIndex || 0,
             inUse: rs.isActive !== undefined ? rs.isActive : rs.active !== undefined ? rs.active : true,
           };
         })
-        .filter((rs) => rs.id);
+        .filter((rs) => rs.id && rs.name);
 
       console.log(`Mapped room services for room ${roomId}:`, mappedRoomServices.map(rs => ({
         id: rs.id,
-        serviceName: services.find(s => s.id === rs.id)?.name,
+        serviceName: rs.name,
         inUse: rs.inUse,
         oldIndex: rs.oldIndex,
         newIndex: rs.newIndex
@@ -301,35 +326,9 @@ export default function ServicePage() {
       console.log('Updated rooms after updateRoomService:', rooms);
     } catch (err) {
       console.error('Error updating room service:', err);
-      alert('Không thể cập nhật dịch vụ của phòng: ' + (err.response?.data?.message || 'Lỗi không xác định.'));
+      alert('Không thể cập nhật dịch vụ của phòng: ' + (err.response?.data?.message || err.message || 'Lỗi không xác định.'));
     }
   };
-
-  const totalElectricityCost = rooms.reduce((sum, room) => {
-    const electricityService = room.services.find((s) => {
-      const service = services.find((srv) => srv.id === s.id);
-      return service?.name === 'ELECTRICITY_PRICE' && s.inUse;
-    });
-    if (electricityService) {
-      const serviceData = services.find((s) => s.name === 'ELECTRICITY_PRICE');
-      const usage = electricityService.newIndex - electricityService.oldIndex;
-      return sum + (usage >= 0 ? usage * serviceData.rate : 0);
-    }
-    return sum;
-  }, 0);
-
-  const totalWaterCost = rooms.reduce((sum, room) => {
-    const waterService = room.services.find((s) => {
-      const service = services.find((srv) => srv.id === s.id);
-      return service?.name === 'WATER_PRICE' && s.inUse;
-    });
-    if (waterService) {
-      const serviceData = services.find((s) => s.name === 'WATER_PRICE');
-      const usage = waterService.newIndex - waterService.oldIndex;
-      return sum + (usage >= 0 ? usage * serviceData.rate : 0);
-    }
-    return sum;
-  }, 0);
 
   const totalFixedFeeCost = rooms.reduce((sum, room) => {
     const fixedFeeServices = room.services.filter((s) => {
@@ -345,8 +344,7 @@ export default function ServicePage() {
   if (loading) return <div>Đang tải...</div>;
   if (error) return <div>{error}</div>;
 
-  // Filter services to pass only FEE types to AddServiceForm
-  const feeServices = services.filter((service) => service.type === 'FEE');
+  console.log('Services passed to RoomServiceCard:', services);
 
   return (
     <div className="service-page">
@@ -354,21 +352,13 @@ export default function ServicePage() {
       <div className="stats-grid">
         <StatsCard title="Số lượng dịch vụ" value={services.length} />
         <StatsCard
-          title="Tổng tiền dịch vụ điện"
-          value={totalElectricityCost.toLocaleString() + ' đ'}
-        />
-        <StatsCard
-          title="Tổng tiền dịch vụ nước"
-          value={totalWaterCost.toLocaleString() + ' đ'}
-        />
-        <StatsCard
           title="Tổng tiền dịch vụ phí cố định"
           value={totalFixedFeeCost.toLocaleString() + ' đ'}
         />
       </div>
 
       <AddServiceForm
-        services={feeServices}
+        services={services}
         onAddService={addService}
         onUpdateService={updateService}
         onDeleteService={deleteService}
