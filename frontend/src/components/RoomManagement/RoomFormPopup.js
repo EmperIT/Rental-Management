@@ -3,70 +3,67 @@ import { FaTimes } from 'react-icons/fa';
 
 const RoomFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false }) => {
   const [formData, setFormData] = useState({
-    roomName: '',
-    floor: '',
+    roomNumber: '',
     price: '',
-    deposit: '',
+    depositPrice: '',
     area: '',
-    capacity: '',
-    availableDate: '',
-    amenities: [],
-    photos: [],
-    status: 'Trống',
-    leadTenant: '',
-    createdDate: new Date().toISOString().split('T')[0],
+    depositDate: '',
+    maxTenants: '',
+    isEmpty: true,
+    images: [],
+    newImages: [],
   });
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      setFormData({
+        roomNumber: initialData.roomNumber || '',
+        price: initialData.price || '',
+        depositPrice: initialData.depositPrice || '',
+        area: initialData.area || '',
+        depositDate: initialData.depositDate ? new Date(initialData.depositDate).toISOString().split('T')[0] : '',
+        maxTenants: initialData.maxTenants || '',
+        isEmpty: initialData.isEmpty ?? true,
+        images: initialData.images || [],
+        newImages: [],
+      });
     }
   }, [initialData]);
 
-  const floorsList = [
-    'Tầng 1',
-    'Tầng 2',
-    'Tầng 3',
-    'Tầng 4',
-    'Tầng 5',
-  ];
-
-  const amenitiesList = [
-    { id: 'wifi', label: 'WiFi' },
-    { id: 'ac', label: 'Điều hòa' },
-    { id: 'heater', label: 'Máy nước nóng' },
-    { id: 'parking', label: 'Chỗ để xe' },
-  ];
-
   const handleFormChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    if (type === 'checkbox') {
+    const { name, value, type } = e.target;
+    if (type === 'file') {
       setFormData((prev) => ({
         ...prev,
-        amenities: checked
-          ? [...prev.amenities, name]
-          : prev.amenities.filter((item) => item !== name),
-      }));
-    } else if (type === 'file') {
-      setFormData((prev) => ({
-        ...prev,
-        photos: Array.from(e.target.files),
+        newImages: Array.from(e.target.files),
       }));
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({
+        ...prev,
+        [name]: name === 'isEmpty' ? value === 'true' : value,
+      }));
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const { roomName, floor, price, deposit, area, capacity, status } = formData;
+    const { roomNumber, price, depositPrice, area, maxTenants } = formData;
 
-    if (!roomName || !floor || !price || !deposit || !area || !capacity || !status) {
+    if (!roomNumber || !price || !depositPrice || !area || !maxTenants) {
       alert('Vui lòng điền đầy đủ các trường thông tin bắt buộc.');
       return;
     }
 
-    onSubmit(formData);
+    const submitData = {
+      ...formData,
+      price: Number(formData.price),
+      depositPrice: Number(formData.depositPrice),
+      area: Number(formData.area),
+      maxTenants: Number(formData.maxTenants),
+      isEmpty: formData.isEmpty === true || formData.isEmpty === 'true',
+    };
+
+    onSubmit(submitData);
   };
 
   return (
@@ -76,10 +73,7 @@ const RoomFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false }
           <h2 className="text-xl font-medium text-gray-800">
             {isEdit ? 'Sửa phòng trọ' : 'Thêm phòng trọ'}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500"
-          >
+          <button onClick={onClose} className="text-gray-500">
             <FaTimes size={20} />
           </button>
         </div>
@@ -87,67 +81,47 @@ const RoomFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false }
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-4">
               <div>
-                <label htmlFor="roomName" className="block text-sm font-medium text-gray-700 mb-1">
-                  Tên phòng <span className="text-red-500">*</span>
+                <label htmlFor="roomNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                  Số phòng <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  id="roomName"
-                  name="roomName"
-                  value={formData.roomName}
+                  id="roomNumber"
+                  name="roomNumber"
+                  value={formData.roomNumber}
                   onChange={handleFormChange}
-                  placeholder="Phòng 101"
+                  placeholder="A101"
                   required
                 />
-              </div>
-              <div>
-                <label htmlFor="floor" className="block text-sm font-medium text-gray-700 mb-1">
-                  Tầng/Khu/Dãy <span className="text-red-500">*</span>
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  id="floor"
-                  name="floor"
-                  value={formData.floor}
-                  onChange={handleFormChange}
-                  required
-                >
-                  <option value="">Chọn tầng</option>
-                  {floorsList.map((floor) => (
-                    <option key={floor} value={floor}>
-                      {floor}
-                    </option>
-                  ))}
-                </select>
               </div>
               <div>
                 <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
                   Giá phòng <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                   id="price"
                   name="price"
                   value={formData.price}
                   onChange={handleFormChange}
-                  placeholder="3,000,000"
+                  placeholder="3500000"
                   required
                 />
               </div>
               <div>
-                <label htmlFor="deposit" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="depositPrice" className="block text-sm font-medium text-gray-700 mb-1">
                   Đặt cọc <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  id="deposit"
-                  name="deposit"
-                  value={formData.deposit}
+                  id="depositPrice"
+                  name="depositPrice"
+                  value={formData.depositPrice}
                   onChange={handleFormChange}
-                  placeholder="1,500,000"
+                  placeholder="1000000"
                   required
                 />
               </div>
@@ -164,103 +138,83 @@ const RoomFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false }
                   name="area"
                   value={formData.area}
                   onChange={handleFormChange}
-                  placeholder="25"
+                  placeholder="32"
                   required
                 />
               </div>
               <div>
-                <label htmlFor="capacity" className="block text-sm font-medium text-gray-700 mb-1">
-                  Số người phù hợp <span className="text-red-500">*</span>
+                <label htmlFor="maxTenants" className="block text-sm font-medium text-gray-700 mb-1">
+                  Số người tối đa <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  id="capacity"
-                  name="capacity"
-                  value={formData.capacity}
+                  id="maxTenants"
+                  name="maxTenants"
+                  value={formData.maxTenants}
                   onChange={handleFormChange}
                   placeholder="2"
                   required
                 />
               </div>
+              {isEdit && (
+                <div>
+                  <label htmlFor="depositDate" className="block text-sm font-medium text-gray-700 mb-1">
+                    Ngày đặt cọc
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                    id="depositDate"
+                    name="depositDate"
+                    value={formData.depositDate}
+                    readOnly
+                  />
+                </div>
+              )}
               <div>
-                <label htmlFor="availableDate" className="block text-sm font-medium text-gray-700 mb-1">
-                  Ngày phòng sắp trống
-                </label>
-                <input
-                  type="date"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  id="availableDate"
-                  name="availableDate"
-                  value={formData.availableDate}
-                  onChange={handleFormChange}
-                />
-              </div>
-              <div>
-                <label htmlFor="leadTenant" className="block text-sm font-medium text-gray-700 mb-1">
-                  Trưởng phòng
-                </label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  id="leadTenant"
-                  name="leadTenant"
-                  value={formData.leadTenant}
-                  onChange={handleFormChange}
-                  placeholder="Nguyễn Văn A"
-                />
-              </div>
-              <div>
-                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="isEmpty" className="block text-sm font-medium text-gray-700 mb-1">
                   Trạng thái <span className="text-red-500">*</span>
                 </label>
                 <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  id="status"
-                  name="status"
-                  value={formData.status}
+                  id="isEmpty"
+                  name="isEmpty"
+                  value={formData.isEmpty ? 'true' : 'false'}
                   onChange={handleFormChange}
                   required
                 >
-                  <option value="Trống">Trống</option>
-                  <option value="Đang thuê">Đang thuê</option>
-                  <option value="Đã đặt">Đã đặt</option>
-                  <option value="Đã cọc">Đã cọc</option>
+                  <option value="true">Trống</option>
+                  <option value="false">Đang thuê</option>
                 </select>
               </div>
               <div>
-                <label htmlFor="photos" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="images" className="block text-sm font-medium text-gray-700 mb-1">
                   Ảnh phòng
                 </label>
+                {isEdit && formData.images.length > 0 && (
+                  <div className="mb-2">
+                    <p className="text-sm text-gray-600">Ảnh hiện tại:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {formData.images.map((image, idx) => (
+                        <img
+                          key={idx}
+                          src={image}
+                          alt={`Phòng ${formData.roomNumber}`}
+                          className="w-16 h-16 object-cover rounded"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <input
                   type="file"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  id="photos"
-                  name="photos"
+                  id="images"
+                  name="images"
                   multiple
                   onChange={handleFormChange}
                 />
               </div>
-            </div>
-          </div>
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tiện ích</label>
-            <div className="flex flex-wrap gap-3">
-              {amenitiesList.map((amenity) => (
-                <div className="flex items-center" key={amenity.id}>
-                  <input
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    type="checkbox"
-                    id={amenity.id}
-                    name={amenity.id}
-                    checked={formData.amenities.includes(amenity.id)}
-                    onChange={handleFormChange}
-                  />
-                  <label className="ml-2 text-sm text-gray-600" htmlFor={amenity.id}>
-                    {amenity.label}
-                  </label>
-                </div>
-              ))}
             </div>
           </div>
           <div className="mt-6 flex justify-end space-x-3">

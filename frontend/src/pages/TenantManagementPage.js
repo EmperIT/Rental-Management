@@ -5,6 +5,7 @@ import ReservationFormPopup from '../components/Tenant/ReservationFormPopup';
 import TenantTable from '../components/Tenant/TenantTable';
 import SummaryCards from '../components/Tenant/SummaryCards';
 import ExcelExport from '../components/Tenant/ExcelExport';
+import { createTenant, findAllRooms, findAllTenantsByFilter, updateTenant, removeTenant } from '../services/rentalService';
 import '../styles/Tenant/tenantmanagement.css';
 
 const TenantManagementPage = () => {
@@ -27,157 +28,161 @@ const TenantManagementPage = () => {
   const [activeTab, setActiveTab] = useState('current');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [floorFilter, setFloorFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  const [rooms, setRooms] = useState([
-    {
-      room_id: '1',
-      roomName: 'Phòng 101',
-      floor: 'Tầng 1',
-      price: 3000000,
-      deposit: 1500000,
-      area: 25,
-      capacity: 2,
-      availableDate: '2025-05-01',
-      status: 'Trống',
-    },
-    {
-      room_id: '2',
-      roomName: 'Phòng 102',
-      floor: 'Tầng 2',
-      price: 3500000,
-      deposit: 1750000,
-      area: 30,
-      capacity: 3,
-      availableDate: '2025-05-01',
-      status: 'Đã thuê',
-    },
-    {
-      room_id: '3',
-      roomName: 'Phòng 103',
-      floor: 'Tầng 1',
-      price: 3200000,
-      deposit: 1600000,
-      area: 28,
-      capacity: 2,
-      availableDate: '2025-05-01',
-      status: 'Trống',
-    },
-    {
-      room_id: '4',
-      roomName: 'Phòng 104',
-      floor: 'Tầng 2',
-      price: 4000000,
-      deposit: 2000000,
-      area: 35,
-      capacity: 4,
-      availableDate: '2025-05-01',
-      status: 'Đã thuê',
-    },
-    {
-      room_id: '5',
-      roomName: 'Phòng 105',
-      floor: 'Tầng 3',
-      price: 2800000,
-      deposit: 1400000,
-      area: 20,
-      capacity: 2,
-      availableDate: '2025-05-01',
-      status: 'Trống',
-    },
-  ]);
+  const [rooms, setRooms] = useState([]);
 
-  const handleAddTenant = (tenantData, account) => {
-    const newTenant = {
-      tenant_id: Date.now(),
-      room_id: tenantData.room_id,
-      name: tenantData.name,
-      email: tenantData.email,
-      phone: tenantData.phone,
-      identity_number: tenantData.identity_number,
-      province: tenantData.province,
-      district: tenantData.district,
-      ward: tenantData.ward,
-      address: tenantData.address,
-      is_lead_room: tenantData.is_lead_room,
-      is_active: true,
-      create_at: new Date().toISOString(),
-      update_at: new Date().toISOString(),
-      contract: tenantData.contract,
-    };
-    setTenants((prev) => [...prev, newTenant]);
-    setRooms((prevRooms) =>
-      prevRooms.map((room) =>
-        room.room_id === tenantData.room_id ? { ...room, status: 'Đã thuê' } : room
-      )
-    );
-    setShowFormPopup(false);
+  // Hàm làm mới danh sách khách thuê
+  const refreshTenants = async () => {
+    try {
+      const roomsData = await findAllRooms(0, 0);
+      const roomList = roomsData.rooms || [];
+      setRooms(roomList);
+
+      const tenantPromises = roomList.map((room) =>
+        findAllTenantsByFilter(room.id, undefined, 0, 0)
+      );
+      const tenantResponses = await Promise.all(tenantPromises);
+
+      let allTenants = tenantResponses.flatMap((response) => response.tenants || []);
+
+      const activeTenants = allTenants.filter((t) => t.isActive && !isReservation(t));
+      const pastTenants = allTenants.filter((t) => !t.isActive);
+      const reservationTenants = allTenants.filter((t) => isReservation(t));
+
+      setTenants(activeTenants.concat(pastTenants));
+      setReservations(reservationTenants);
+    } catch (error) {
+      console.error('Failed to refresh tenants:', error);
+      alert('Không thể làm mới danh sách khách thuê: ' + (error.response?.data?.message || 'Lỗi không xác định.'));
+    }
   };
 
-  const handleAddReservation = (reservationData) => {
-    const newReservation = {
-      tenant_id: Date.now(),
-      room_id: reservationData.room_id,
-      name: reservationData.name,
-      email: reservationData.email,
-      phone: reservationData.phone,
-      identity_number: reservationData.identity_number,
-      province: reservationData.province || '',
-      district: reservationData.district || '',
-      ward: reservationData.ward || '',
-      address: reservationData.address || '',
-      is_lead_room: false,
-      create_at: new Date().toISOString(),
-      update_at: new Date().toISOString(),
-      contract: reservationData.contract,
-      moveInDate: reservationData.moveInDate,
-    };
-    setReservations((prev) => [...prev, newReservation]);
-    setShowReservationPopup(false);
+  useEffect(() => {
+    refreshTenants();
+  }, []);
+
+  // Hàm xác định khách cọc (reservation)
+  const isReservation = (tenant) => {
+    const today = new Date();
+    const startDate = tenant.startDate ? new Date(tenant.startDate) : null;
+    return tenant.holdingDepositPrice > 0 && (!startDate || startDate > today);
   };
 
-  const handleUpdateRoom = (updatedRoom) => {
-    console.log('Cập nhật phòng:', updatedRoom);
+  // Thêm khách thuê
+  const handleAddTenant = async (tenantData) => {
+    try {
+      const newTenant = await createTenant({
+        name: tenantData.name,
+        email: tenantData.email,
+        phone: tenantData.phone,
+        roomId: tenantData.roomId,
+        isLeadRoom: tenantData.isLeadRoom || false,
+        identityNumber: tenantData.identityNumber,
+        permanentAddress: tenantData.permanentAddress || '',
+        holdingDepositPrice: tenantData.holdingDepositPrice || 0,
+        depositDate: tenantData.depositDate || null,
+        startDate: tenantData.startDate || new Date().toISOString(),
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      await refreshTenants(); // Làm mới danh sách sau khi thêm
+      setShowFormPopup(false);
+      alert('Thêm khách thuê thành công!');
+    } catch (error) {
+      console.error('Lỗi khi thêm khách thuê:', error);
+      alert('Không thể thêm khách thuê: ' + (error.response?.data?.message || 'Lỗi không xác định.'));
+    }
   };
 
-  const handleEditTenant = () => {
-    setShowDetailsPopup(false);
-    setShowFormPopup(true);
+  // Thêm khách cọc
+  const handleAddReservation = async (reservationData) => {
+    try {
+      const newReservation = {
+        name: reservationData.name,
+        email: reservationData.email,
+        phone: reservationData.phone,
+        roomId: reservationData.roomId,
+        isLeadRoom: false,
+        identityNumber: reservationData.identityNumber,
+        permanentAddress: reservationData.permanentAddress || '',
+        holdingDepositPrice: reservationData.holdingDepositPrice || 0,
+        depositDate: reservationData.depositDate || new Date().toISOString(),
+        startDate: reservationData.startDate || new Date().toISOString(),
+        isActive: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await createTenant(newReservation);
+      await refreshTenants(); // Làm mới danh sách sau khi thêm
+      setShowReservationPopup(false);
+      alert('Thêm khách cọc thành công!');
+    } catch (error) {
+      console.error('Lỗi khi thêm khách cọc:', error);
+      alert('Không thể thêm khách cọc: ' + (error.response?.data?.message || 'Lỗi không xác định.'));
+    }
   };
 
-  const handleChangeStatus = (tenant, isActive) => {
+  // Sửa khách thuê
+  const handleEditTenant = async (tenantData) => {
+    try {
+      const updatedTenant = await updateTenant(tenantData.id, {
+        ...tenantData,
+        updatedAt: new Date().toISOString(),
+      });
+
+      await refreshTenants(); // Làm mới danh sách sau khi sửa
+      setShowFormPopup(false);
+      setSelectedTenant(null);
+      alert('Cập nhật khách thuê thành công!');
+    } catch (error) {
+      console.error('Lỗi khi cập nhật khách thuê:', error);
+      alert('Không thể cập nhật khách thuê: ' + (error.response?.data?.message || 'Lỗi không xác định.'));
+    }
+  };
+
+  // Xóa khách thuê
+  const handleDeleteTenant = async (tenant) => {
+    const confirm = window.confirm('Bạn có chắc chắn muốn xóa khách thuê này?');
+    if (confirm) {
+      try {
+        await removeTenant(tenant.id);
+        await refreshTenants(); // Làm mới danh sách sau khi xóa
+        setShowDetailsPopup(false);
+        setSelectedTenant(null);
+        alert('Xóa khách thuê thành công!');
+      } catch (error) {
+        console.error('Lỗi khi xóa khách thuê:', error);
+        alert('Không thể xóa khách thuê: ' + (error.response?.data?.message || 'Lỗi không xác định.'));
+      }
+    }
+  };
+
+  const handleChangeStatus = async (tenant, isActive) => {
     const confirm = window.confirm(
       isActive
         ? 'Bạn có chắc chắn muốn cho khách thuê lại?'
         : 'Bạn có chắc chắn muốn chuyển trạng thái khách thuê thành "Rời đi"?'
     );
     if (confirm) {
-      const updatedTenant = { ...tenant, is_active: isActive, update_at: new Date().toISOString() };
-      if (isActive) {
-        setTenants((prev) => [...prev, updatedTenant]);
-        setRooms((prevRooms) =>
-          prevRooms.map((room) =>
-            room.room_id === tenant.room_id ? { ...room, status: 'Đã thuê' } : room
-          )
-        );
-      } else {
-        setTenants((prev) =>
-          prev.map((t) => (t.tenant_id === tenant.tenant_id ? updatedTenant : t))
-        );
-        const remainingTenants = tenants.filter(
-          (t) => t.room_id === tenant.room_id && t.tenant_id !== tenant.tenant_id && t.is_active
-        );
-        if (remainingTenants.length === 0) {
-          setRooms((prevRooms) =>
-            prevRooms.map((room) =>
-              room.room_id === tenant.room_id ? { ...room, status: 'Trống' } : room
-            )
-          );
-        }
+      try {
+        await updateTenant(tenant.id, {
+          ...tenant,
+          isActive: isActive,
+          updatedAt: new Date().toISOString(),
+        });
+
+        await refreshTenants(); // Làm mới danh sách sau khi thay đổi trạng thái
+        setShowDetailsPopup(false);
+        setSelectedTenant(null);
+        alert(`Cập nhật trạng thái khách thuê thành công!`);
+      } catch (error) {
+        console.error('Lỗi khi cập nhật trạng thái khách thuê:', error);
+        alert('Không thể cập nhật trạng thái: ' + (error.response?.data?.message || 'Lỗi không xác định.'));
       }
-      setShowDetailsPopup(false);
-      setSelectedTenant(null);
     }
   };
 
@@ -185,27 +190,26 @@ const TenantManagementPage = () => {
     handleChangeStatus(tenant, true);
   };
 
-  const handleConvertToTenant = (reservation) => {
+  const handleConvertToTenant = async (reservation) => {
     const confirm = window.confirm('Bạn có chắc chắn muốn chuyển khách cọc thành khách đang thuê?');
     if (confirm) {
-      const newTenant = {
-        ...reservation,
-        is_active: true,
-        is_lead_room: false,
-        create_at: new Date().toISOString(),
-        update_at: new Date().toISOString(),
-      };
-      setTenants((prev) => [...prev, newTenant]);
-      setReservations((prev) =>
-        prev.filter((r) => r.tenant_id !== reservation.tenant_id)
-      );
-      setRooms((prevRooms) =>
-        prevRooms.map((room) =>
-          room.room_id === reservation.room_id ? { ...room, status: 'Đã thuê' } : room
-        )
-      );
-      setShowDetailsPopup(false);
-      setSelectedTenant(null);
+      try {
+        await updateTenant(reservation.id, {
+          ...reservation,
+          isActive: true,
+          isLeadRoom: false,
+          startDate: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        await refreshTenants(); // Làm mới danh sách sau khi chuyển đổi
+        setShowDetailsPopup(false);
+        setSelectedTenant(null);
+        alert('Chuyển khách cọc thành khách thuê thành công!');
+      } catch (error) {
+        console.error('Lỗi khi chuyển khách cọc:', error);
+        alert('Không thể chuyển khách cọc: ' + (error.response?.data?.message || 'Lỗi không xác định.'));
+      }
     }
   };
 
@@ -213,8 +217,6 @@ const TenantManagementPage = () => {
     setSelectedTenant({ ...tenant, isReservation });
     setShowDetailsPopup(true);
   };
-
-  const floors = [...new Set(rooms.map((room) => room.floor))];
 
   const filterTenantsAndReservations = (data, isReservation = false) => {
     return data.filter((item) => {
@@ -225,31 +227,25 @@ const TenantManagementPage = () => {
 
       let statusMatch = true;
       if (statusFilter && !isReservation) {
-        statusMatch = statusFilter === 'active' ? item.is_active : !item.is_active;
+        statusMatch = statusFilter === 'active' ? item.isActive : !item.isActive;
       } else if (statusFilter && isReservation) {
         statusMatch = statusFilter === 'reservation';
       }
 
-      let floorMatch = true;
-      if (floorFilter) {
-        const room = rooms.find((r) => r.room_id === item.room_id);
-        floorMatch = room && room.floor === floorFilter;
-      }
-
       let dateMatch = true;
       if (dateFrom && dateTo) {
-        const itemDate = new Date(item.create_at);
+        const itemDate = new Date(item.createdAt);
         const fromDate = new Date(dateFrom);
         const toDate = new Date(dateTo);
         dateMatch = itemDate >= fromDate && itemDate <= toDate;
       }
 
-      return nameMatch && statusMatch && floorMatch && dateMatch;
+      return nameMatch && statusMatch && dateMatch;
     });
   };
 
   const allTenantsAndReservations = [
-    ...tenants.map((tenant) => ({ ...tenant, type: tenant.is_active ? 'active' : 'past' })),
+    ...tenants.map((tenant) => ({ ...tenant, type: tenant.isActive ? 'active' : 'past' })),
     ...reservations.map((reservation) => ({ ...reservation, type: 'reservation' })),
   ];
 
@@ -263,13 +259,10 @@ const TenantManagementPage = () => {
     <div className="page-container">
       <div className="page-content">
         <div className="header">
-          <h1 className="header-title">Quản lý khách thuê tọ</h1>
+          <h1 className="header-title">Quản lý khách thuê trọ</h1>
           <div className="header-buttons">
             <button className="btn-primary" onClick={() => setShowFormPopup(true)}>
-              Thêm khách thuê
-            </button>
-            <button className="btn-primary" onClick={() => setShowReservationPopup(true)}>
-              Thêm khách cọc
+              Thêm khách
             </button>
             <ExcelExport tenants={tenants} reservations={reservations} rooms={rooms} />
           </div>
@@ -303,20 +296,6 @@ const TenantManagementPage = () => {
                 <option value="active">Khách đang thuê</option>
                 <option value="past">Khách đã rời</option>
                 <option value="reservation">Khách cọc</option>
-              </select>
-            </div>
-            <div className="filter-select-wrapper">
-              <select
-                value={floorFilter}
-                onChange={(e) => setFloorFilter(e.target.value)}
-                className="filter-select"
-              >
-                <option value="">Tất cả tầng</option>
-                {floors.map((floor) => (
-                  <option key={floor} value={floor}>
-                    {floor}
-                  </option>
-                ))}
               </select>
             </div>
             <div className="filter-date-wrapper">
@@ -387,10 +366,12 @@ const TenantManagementPage = () => {
 
         {showFormPopup && (
           <TenantFormPopup
-            onClose={() => setShowFormPopup(false)}
-            onSubmit={handleAddTenant}
+            onClose={() => {
+              setShowFormPopup(false);
+              setSelectedTenant(null);
+            }}
+            onSubmit={selectedTenant ? handleEditTenant : handleAddTenant}
             rooms={rooms}
-            onUpdateRoom={handleUpdateRoom}
             initialData={selectedTenant}
             isEdit={!!selectedTenant}
           />
@@ -403,7 +384,11 @@ const TenantManagementPage = () => {
               setShowDetailsPopup(false);
               setSelectedTenant(null);
             }}
-            onEdit={handleEditTenant}
+            onEdit={() => {
+              setShowDetailsPopup(false);
+              setShowFormPopup(true);
+            }}
+            onDelete={handleDeleteTenant}
             onChangeStatus={handleChangeStatus}
             onReRent={handleReRent}
             onConvertToTenant={handleConvertToTenant}
