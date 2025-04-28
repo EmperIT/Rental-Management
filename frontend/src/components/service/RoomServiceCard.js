@@ -3,10 +3,9 @@ import { FaEye } from 'react-icons/fa';
 import '../../styles/service/RoomServiceCard.css';
 import _ from 'lodash';
 
-export default function RoomServiceCard({ room, services, onUpdateService }) {
+export default function RoomServiceCard({ room, services, registrationStatus, onUpdateService }) {
   const [showDetails, setShowDetails] = useState(false);
 
-  // Define hooks at the top, before any early returns
   const toggleServiceUsage = useCallback(
     _.debounce((serviceId, currentInUse, serviceName) => {
       if (!serviceId) {
@@ -21,10 +20,9 @@ export default function RoomServiceCard({ room, services, onUpdateService }) {
         newIndex: 0,
       });
     }, 300),
-    [room?.id, onUpdateService] // Use optional chaining to handle undefined room
+    [room?.id, onUpdateService]
   );
 
-  // Now handle the early return after all hooks are called
   if (!room || !room.id) {
     console.error('Invalid room prop:', room);
     return <div>Lỗi: Không tìm thấy thông tin phòng</div>;
@@ -69,7 +67,7 @@ export default function RoomServiceCard({ room, services, onUpdateService }) {
             }
 
             const roomService = room.services.find((s) => s.name === service.name);
-            const isRegistered = !!roomService;
+            const isRegistered = registrationStatus[service.name] || false;
             const inUse = roomService ? roomService.inUse : false;
             const fee = inUse ? service.rate : 0;
 

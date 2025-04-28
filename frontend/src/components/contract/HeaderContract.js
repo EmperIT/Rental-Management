@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
 import "../../styles/contract/HeaderContract.css";
 import CreateContractModal from "./CreateContractModal";
-function Header() {
+
+function HeaderContract({
+  onContractCreated,
+  createContract,
+  rooms,
+  allServices,
+  allAssets,
+  roomServicesMap,
+  roomAssetsMap,
+  fetchTenantsForRoom,
+  createTenant,
+}) {
   const [openModal, setOpenModal] = useState(false);
 
   return (
@@ -12,9 +23,21 @@ function Header() {
           Thêm hợp đồng
         </button>
       </div>
-      <CreateContractModal isOpen={openModal} onClose={() => setOpenModal(false)} />
+      <CreateContractModal
+        isOpen={openModal}
+        onClose={() => setOpenModal(false)}
+        onContractCreated={onContractCreated}
+        createContract={createContract}
+        rooms={rooms}
+        allServices={allServices}
+        allAssets={allAssets}
+        roomServicesMap={roomServicesMap}
+        roomAssetsMap={roomAssetsMap}
+        fetchTenantsForRoom={fetchTenantsForRoom}
+        createTenant={createTenant}
+      />
     </>
   );
 }
 
-export default Header;
+export default HeaderContract;
