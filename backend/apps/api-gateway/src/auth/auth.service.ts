@@ -38,13 +38,29 @@ export class AuthService implements OnModuleInit {
     return this.usersService.removeUser({ id });
   }
 
-  login(loginDto: Auth.LoginDto): Promise<Auth.LoginResponse> {
-    return lastValueFrom(this.usersService.login(loginDto)).then((response) => {
-      if (!response) {
-        throw new Error('Login response is undefined');
-      }
-      return response;
-    });
+  async login(loginDto: Auth.LoginDto): Promise<Auth.LoginResponse & { role: string }> {
+    const response = await lastValueFrom(this.usersService.login(loginDto));
+    if (!response) {
+      throw new Error('Login response is undefined');
+    }
+    
+    // Lấy thông tin người dùng từ ID trong JWT token
+    const tokenPayload = this.decodeToken(response.accessToken);
+    if (!tokenPayload || !tokenPayload.sub) {
+      throw new Error('Invalid token payload');
+    }
+    
+    // Lấy thông tin người dùng để lấy role
+    const userInfo = await lastValueFrom(this.usersService.findOneUser({ id: tokenPayload.sub }));
+    if (!userInfo) {
+      throw new Error('User not found');
+    }
+
+    // Trả về response kèm theo role
+    return {
+      ...response,
+      role: userInfo.role
+    };
   }
 
   refreshToken(
@@ -58,5 +74,15 @@ export class AuthService implements OnModuleInit {
         return response;
       },
     );
+  }
+
+  private decodeToken(token: string): any {
+    try {
+      const base64Payload = token.split('.')[1];
+      const payload = Buffer.from(base64Payload, 'base64').toString('utf-8');
+      return JSON.parse(payload);
+    } catch (error) {
+      return null;
+    }
   }
 }

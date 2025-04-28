@@ -356,14 +356,38 @@ export class RentalService implements OnModuleInit {
       this.logger.log(`Tìm thấy ${rooms.length} phòng đang có người thuê`);
       
       // 2. Duyệt qua từng phòng và tạo/gửi hóa đơn
+      let processedCount = 0;
+      let skippedCount = 0;
+      
+      // Lấy tháng hiện tại định dạng YYYY-MM
+      const currentDate = new Date();
+      const formattedMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+      
       for (const room of rooms) {
-        await this.processRoomInvoice(room);
+        // Kiểm tra phòng có hóa đơn tháng này chưa
+        const existingInvoice = await this.invoiceModel.findOne({
+          roomId: room._id.toString(),
+          month: formattedMonth
+        }).exec();
+        
+        if (existingInvoice) {
+          this.logger.log(`Phòng ${room.roomNumber} đã có hóa đơn cho tháng ${formattedMonth}. Bỏ qua và chuyển sang phòng tiếp theo.`);
+          skippedCount++;
+          continue; // Bỏ qua phòng này và chuyển sang phòng tiếp theo
+        }
+        
+        // Nếu chưa có hóa đơn, tiếp tục xử lý
+        const result = await this.processRoomInvoice(room);
+        
+        if (result && result.success) {
+          processedCount++;
+        }
       }
       
-      this.logger.log('Hoàn thành quy trình tạo và gửi hóa đơn');
+      this.logger.log(`Hoàn thành quy trình tạo và gửi hóa đơn: Đã xử lý ${processedCount} phòng, bỏ qua ${skippedCount} phòng đã có hóa đơn tháng này`);
       return {
         success: true,
-        message: `Đã xử lý hóa đơn cho ${rooms.length} phòng`
+        message: `Đã xử lý hóa đơn cho ${processedCount} phòng, bỏ qua ${skippedCount} phòng đã có hóa đơn tháng này`
       };
     } catch (error) {
       this.logger.error(`Lỗi tạo và gửi hóa đơn: ${error.message}`, error.stack);
@@ -421,7 +445,7 @@ export class RentalService implements OnModuleInit {
       const currentDate = new Date();
       const month = `${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`;
       const formattedMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-      
+
       // Lấy thông tin đồng hồ mới nhất cho phòng hiện tại
       const meterData = await this.getLatestReadingsForRoom(room.roomNumber, formattedMonth);
       
@@ -864,7 +888,7 @@ export class RentalService implements OnModuleInit {
           });
         }
         
-        if (!newRoom.isEmpty && updateTenantDto.isLeadRoom === true) {
+        if (!newRoom.isEmpty && updateTenantDto.isLeadRoom === true && tenant.isLeadRoom === false) {
           throw new RpcException({
             statusCode: 400,
             message: `Phòng ${newRoom.roomNumber} đã có người thuê`,
@@ -1274,7 +1298,7 @@ export class RentalService implements OnModuleInit {
    */
   async updateRoomService(updateRequest: Rental.UpdateRoomServiceRequest): Promise<Rental.RoomServiceResponse> {
     try {
-      const { roomId, serviceName, quantity, customPrice, isActive } = updateRequest;
+      const { roomId, serviceName } = updateRequest;
       
       // Tìm dịch vụ của phòng
       const roomService = await this.roomServiceModel.findOne({
@@ -1288,15 +1312,7 @@ export class RentalService implements OnModuleInit {
           message: `Phòng chưa đăng ký dịch vụ này`,
         });
       }
-      
-      // Cập nhật thông tin
-      if (quantity !== undefined) roomService.quantity = quantity;
-      if (customPrice !== undefined) roomService.customPrice = customPrice;
-      if (isActive !== undefined) roomService.isActive = isActive;
-      
-      await roomService.save();
-      this.logger.log(`Đã cập nhật dịch vụ ${serviceName} cho phòng`);
-      
+
       const service = await this.serviceModel.findOne({ name: serviceName }).exec();
       if (!service) {
         throw new RpcException({
@@ -1304,6 +1320,12 @@ export class RentalService implements OnModuleInit {
           message: `Không tìm thấy dịch vụ với tên ${serviceName}`,
         });
       }
+      
+      Object.assign(roomService, updateRequest)
+      roomService.updatedAt = new Date();
+      await roomService.save();
+      this.logger.log(`Đã cập nhật dịch vụ ${serviceName} cho phòng`);
+      
       
       return this.mapToRoomService(roomService, service);
     } catch (error) {
@@ -1871,6 +1893,23 @@ export class RentalService implements OnModuleInit {
   }
 
   private mapToTenant(tenant: TenantDocument): Rental.Tenant {
+    // Xử lý các trường ngày tháng để đảm bảo đều là đối tượng Date trước khi gọi toISOString
+    let birthdayStr = '';
+    if (tenant.birthday) {
+      if (tenant.birthday instanceof Date) {
+        birthdayStr = tenant.birthday.toISOString();
+      } else {
+        try {
+          // Nếu birthday là chuỗi, chuyển đổi thành Date trước khi gọi toISOString
+          const birthdayDate = new Date(tenant.birthday);
+          birthdayStr = birthdayDate.toISOString();
+        } catch (error) {
+          this.logger.error(`Error converting birthday to Date: ${error.message}`);
+          birthdayStr = String(tenant.birthday); // Fallback nếu không thể chuyển đổi
+        }
+      }
+    }
+
     return {
       id: tenant._id.toString(),
       name: tenant.name,
@@ -1883,7 +1922,7 @@ export class RentalService implements OnModuleInit {
       holdingDepositPrice: tenant.holdingDepositPrice,
       depositDate: tenant.depositDate?.toISOString() || '',
       startDate: tenant.startDate?.toISOString() || '',
-      birthday: tenant.birthday?.toISOString() || '',
+      birthday: birthdayStr,
       gender: tenant.gender,
       isActive: tenant.isActive,
       createdAt: tenant.createdAt.toISOString(),

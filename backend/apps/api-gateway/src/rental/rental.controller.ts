@@ -58,6 +58,7 @@ import {
   TransactionsResponseSwaggerDto
 } from '../../dto/rental.dto';
 import { UpdateRoomAssetRequest } from 'proto/rental';
+import { Roles } from '../decorators/roles.decorator';
 
 @ApiTags('rental')
 @Controller('rental')
@@ -95,16 +96,16 @@ export class RentalController {
 
   // Dữ liệu mẫu
   private readonly meterData = [
-    { roomNumber: '001', month: '2025-03', electricity: 120, water: 20 },
-    { roomNumber: '001', month: '2025-04', electricity: 125, water: 21 },
-    { roomNumber: '002', month: '2025-03', electricity: 100, water: 18 },
-    { roomNumber: '002', month: '2025-04', electricity: 110, water: 20 },
-    { roomNumber: '003', month: '2025-03', electricity: 90, water: 17 },
-    { roomNumber: '003', month: '2025-04', electricity: 95, water: 18 },
-    { roomNumber: '004', month: '2025-03', electricity: 130, water: 22 },
-    { roomNumber: '004', month: '2025-04', electricity: 135, water: 23 },
-    { roomNumber: '005', month: '2025-03', electricity: 85, water: 15 },
-    { roomNumber: '005', month: '2025-04', electricity: 88, water: 16 },
+    { roomNumber: 'P101', month: '2025-03', electricity: 120, water: 20 },
+    { roomNumber: 'P101', month: '2025-04', electricity: 125, water: 21 },
+    { roomNumber: 'P102', month: '2025-03', electricity: 100, water: 18 },
+    { roomNumber: 'P102', month: '2025-04', electricity: 110, water: 20 },
+    { roomNumber: 'P103', month: '2025-03', electricity: 90, water: 17 },
+    { roomNumber: 'P103', month: '2025-04', electricity: 95, water: 18 },
+    { roomNumber: 'P104', month: '2025-03', electricity: 130, water: 22 },
+    { roomNumber: 'P104', month: '2025-04', electricity: 135, water: 23 },
+    { roomNumber: 'P105', month: '2025-03', electricity: 85, water: 15 },
+    { roomNumber: 'P105', month: '2025-04', electricity: 88, water: 16 },
   ];
   // API mẫu cho việc lấy dữ liệu điện nước
   @Get("meters")
@@ -549,7 +550,6 @@ export class RentalController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cập nhật dịch vụ phòng', description: 'Yêu cầu xác thực JWT' })
   @ApiParam({ name: 'id', description: 'ID của phòng' })
-  @ApiParam({ name: 'serviceName', description: 'Tên dịch vụ cần cập nhật' })
   @ApiBody({ type: UpdateRoomServiceSwaggerDto })
   @ApiResponse({ status: 200, description: 'Dịch vụ đã được cập nhật thành công', type: RoomServiceSwaggerDto })
   @ApiResponse({ status: 400, description: 'Dữ liệu đầu vào không hợp lệ' })
@@ -583,6 +583,8 @@ export class RentalController {
   // ***** ASSET ENDPOINTS *****
   
   @Post('assets')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Tạo mới tài sản' })
   @ApiResponse({ status: 201, description: 'Tài sản được tạo thành công' })
   @ApiResponse({ status: 400, description: 'Yêu cầu không hợp lệ', type: AssetSwaggerDto })
@@ -592,6 +594,8 @@ export class RentalController {
   }
 
   @Get('assets')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Lấy danh sách tất cả tài sản' })
   @ApiResponse({ status: 200, description: 'Danh sách tài sản', type: AssetsResponseSwaggerDto })
   async getAllAssets() {
@@ -599,6 +603,8 @@ export class RentalController {
   }
 
   @Get('assets/:name')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Lấy thông tin tài sản theo tên' })
   @ApiResponse({ status: 200, description: 'Thông tin tài sản', type: AssetSwaggerDto })
   @ApiResponse({ status: 404, description: 'Không tìm thấy tài sản' })
@@ -607,6 +613,8 @@ export class RentalController {
   }
 
   @Put('assets/:name')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Cập nhật thông tin tài sản' })
   @ApiResponse({ status: 200, description: 'Tài sản được cập nhật thành công', type: AssetSwaggerDto })
   @ApiResponse({ status: 400, description: 'Yêu cầu không hợp lệ' })
@@ -616,6 +624,8 @@ export class RentalController {
   }
 
   @Delete('assets/:name')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Xóa tài sản' })
   @ApiResponse({ status: 200, description: 'Tài sản đã được xóa thành công', type: AssetSwaggerDto  })
   @ApiResponse({ status: 404, description: 'Không tìm thấy tài sản' })
@@ -627,6 +637,8 @@ export class RentalController {
   // ***** ROOM ASSET ENDPOINTS *****
   
   @Post('room-assets')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Thêm tài sản cho phòng' })
   @ApiResponse({ status: 201, description: 'Tài sản phòng được thêm thành công', type: RoomAssetResponseSwaggerDto  })
   @ApiResponse({ status: 400, description: 'Yêu cầu không hợp lệ' })
@@ -636,6 +648,8 @@ export class RentalController {
   }
 
   @Get('room-assets/:roomId')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Lấy danh sách tài sản của phòng' })
   @ApiResponse({ status: 200, description: 'Danh sách tài sản của phòng', type: RoomAssetsResponseSwaggerDto })
   @ApiResponse({ status: 404, description: 'Không tìm thấy phòng' })
@@ -644,6 +658,8 @@ export class RentalController {
   }
 
   @Put('room-assets/:id')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Cập nhật thông tin tài sản của phòng' })
   @ApiResponse({ status: 200, description: 'Thông tin tài sản phòng được cập nhật thành công', type: RoomAssetResponseSwaggerDto })
   @ApiResponse({ status: 400, description: 'Yêu cầu không hợp lệ' })
@@ -657,6 +673,8 @@ export class RentalController {
   }
 
   @Delete('room-assets')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Xóa tài sản khỏi phòng' })
   @ApiResponse({ status: 200, description: 'Tài sản phòng đã được xóa thành công', type: RoomAssetResponseSwaggerDto })
   @ApiResponse({ status: 404, description: 'Không tìm thấy tài sản phòng' })
@@ -667,6 +685,8 @@ export class RentalController {
   // ***** TRANSACTION ENDPOINTS *****
   
   @Post('transactions')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Tạo mới giao dịch' })
   @ApiResponse({ status: 201, description: 'Giao dịch được tạo thành công', type: TransactionSwaggerDto })
   @ApiResponse({ status: 400, description: 'Yêu cầu không hợp lệ' })
@@ -675,11 +695,19 @@ export class RentalController {
   }
 
   @Get('transactions')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Lấy danh sách giao dịch theo bộ lọc' })
+  @ApiQuery({ name: 'page', description: 'Số trang', type: Number, example: 0, required: false })
+  @ApiQuery({ name: 'limit', description: 'Số lượng kết quả trên mỗi trang', type: Number, example: 0, required: false })
+  @ApiQuery({ name: 'category', description: 'Doanh mục', type: Number, example: 0, required: false })
+  @ApiQuery({ name: 'type', description: 'Loại', type: Number, example: 0, required: false })
+  @ApiQuery({ name: 'startDate', description: 'Ngày bắt đầu', type: Number, example: 0, required: false })
+  @ApiQuery({ name: 'endDate', description: 'Ngày kết thúc', type: Number, example: 0, required: false })
   @ApiResponse({ status: 200, description: 'Danh sách giao dịch', type: TransactionsResponseSwaggerDto })
   async findAllTransactions(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 0,
     @Query('category') category?: string,
     @Query('type') type?: string,
     @Query('startDate') startDate?: string,
@@ -689,6 +717,8 @@ export class RentalController {
   }
 
   @Get('transactions/:id')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Lấy thông tin giao dịch theo ID' })
   @ApiResponse({ status: 200, description: 'Thông tin giao dịch', type: TransactionSwaggerDto })
   @ApiResponse({ status: 404, description: 'Không tìm thấy giao dịch' })
@@ -697,6 +727,8 @@ export class RentalController {
   }
 
   @Put('transactions/:id')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Cập nhật thông tin giao dịch' })
   @ApiResponse({ status: 200, description: 'Giao dịch được cập nhật thành công', type: TransactionSwaggerDto })
   @ApiResponse({ status: 400, description: 'Yêu cầu không hợp lệ' })
@@ -706,6 +738,8 @@ export class RentalController {
   }
 
   @Delete('transactions/:id')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Xóa giao dịch' })
   @ApiResponse({ status: 200, description: 'Giao dịch đã được xóa thành công', type: TransactionSwaggerDto })
   @ApiResponse({ status: 404, description: 'Không tìm thấy giao dịch' })

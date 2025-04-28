@@ -10,11 +10,12 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const gateway = configService.get<number>('GATEWAY') || 3000;
   
-  // Enable CORS
+  // Enable CORS - Cập nhật để chấp nhận tất cả các origin trong môi trường Docker
   app.enableCors({
-    origin: 'http://localhost:5173',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    origin: true, // Cho phép tất cả các origin
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    allowedHeaders: 'Content-Type,Accept,Authorization',
   });
 
   // Setup Swagger

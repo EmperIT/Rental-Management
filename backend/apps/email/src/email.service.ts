@@ -84,27 +84,40 @@ export class EmailService {
         const port = this.configService.get<number>('EMAIL_PORT');
         const secure = this.configService.get<boolean>('EMAIL_SECURE') || false;
         const user = this.configService.get<string>('EMAIL_USER');
-        
+        const requireTLS = this.configService.get<boolean>('EMAIL_REQUIRE_TLS') || true;
         this.logger.log(`Connecting to SMTP server: ${host}:${port} (secure: ${secure})`);
         
         this.transporter = nodemailer.createTransport({
           host,
           port,
-          secure,
+          secure: false, // Thay đổi secure thành false để không sử dụng SSL/TLS từ đầu
           auth: {
             user,
             pass: this.configService.get<string>('EMAIL_PASSWORD'),
           },
+          // Các tùy chọn bảo mật TLS
+          tls: {
+            // Không xác minh chứng chỉ SSL
+            rejectUnauthorized: false,
+            // Cố gắng nâng cấp kết nối lên TLS sau khi kết nối nếu có thể
+            secureProtocol: "TLSv1_2_method"
+          },
           // Thêm timeout dài hơn để xử lý kết nối chậm
-          connectionTimeout: 10000, // 10 giây
-          greetingTimeout: 10000,
-          socketTimeout: 15000,
+          connectionTimeout: 20000, // 20 giây
+          greetingTimeout: 20000,
+          socketTimeout: 25000,
         });
         
-        // Kiểm tra kết nối trước khi sử dụng
-        this.logger.log('Verifying SMTP connection...');
-        await this.transporter.verify();
-        this.logger.log('SMTP connection verified successfully');
+        try {
+          // Kiểm tra kết nối trước khi sử dụng
+          this.logger.log('Verifying SMTP connection...');
+          await this.transporter.verify();
+          this.logger.log('SMTP connection verified successfully');
+        } catch (error) {
+          // Log lỗi nhưng không throw exception để tránh crash service
+          this.logger.warn(`SMTP verification failed: ${error.message}. Email service may not work correctly.`);
+          this.logger.warn('Will attempt to send emails anyway when needed.');
+        }
       } else {
         // Sử dụng nodemailer ethereal (for development/testing)
         this.logger.log('Using Ethereal test account for emails...');

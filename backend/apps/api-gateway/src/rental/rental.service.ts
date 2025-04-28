@@ -175,12 +175,12 @@ export class RentalService implements OnModuleInit {
     return this.rentalService.removeRoomService(removeRoomServicesRequest);
   }
 
-  updateRoomService(id: string, updateRoomServiceDto: Rental.UpdateRoomServiceRequest) {
+  updateRoomService(roomId: string, updateRoomServiceDto: Rental.UpdateRoomServiceRequest) {
     if (updateRoomServiceDto.isActive !== undefined && typeof updateRoomServiceDto.isActive === 'string') {
       updateRoomServiceDto.isActive = updateRoomServiceDto.isActive === 'true';
     }
-    const { id: _, ...updateData } = updateRoomServiceDto;
-    return this.rentalService.updateRoomService({ id, ...updateData });
+    const { roomId: _, ...updateData } = updateRoomServiceDto;
+    return this.rentalService.updateRoomService({ roomId, ...updateData });
   }
 
   // Asset Methods

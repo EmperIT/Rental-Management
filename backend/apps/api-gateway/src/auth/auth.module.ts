@@ -6,9 +6,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AUTH_SERVICE } from './constants';
 import { Auth } from '@app/commonn';
 import { join } from 'path';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from '../../strategy/jwt.strategy';
+import { APP_GUARD } from '@nestjs/core';
+import { RolesGuard } from '../guards/roles.guard';
+import { Reflector } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -40,7 +43,17 @@ import { JwtStrategy } from '../../strategy/jwt.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [
+    AuthService, 
+    JwtStrategy,
+    {
+      provide: APP_GUARD,
+      useFactory: (reflector, jwtService) => {
+        return new RolesGuard(reflector, jwtService);
+      },
+      inject: [Reflector, JwtService],
+    }
+  ],
   exports: [JwtModule, PassportModule],
 })
 export class AuthModule {}

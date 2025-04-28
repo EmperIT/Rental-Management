@@ -1,6 +1,19 @@
 version: '3.8'
 
 services:
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rental-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - rental-network
+
   # Database Service
   mongodb:
     image: mongo:latest
@@ -19,7 +32,7 @@ services:
   # API Gateway Service
   api-gateway:
     build:
-      context: .
+      context: ./backend
       dockerfile: ./apps/api-gateway/Dockerfile
     container_name: rental-api-gateway
     restart: always
@@ -49,7 +62,7 @@ services:
   # Auth Service
   auth:
     build:
-      context: .
+      context: ./backend
       dockerfile: ./apps/auth/Dockerfile
     container_name: rental-auth
     restart: always
@@ -68,7 +81,7 @@ services:
   # Rental Service
   rental:
     build:
-      context: .
+      context: ./backend
       dockerfile: ./apps/rental/Dockerfile
     container_name: rental-service
     restart: always
@@ -86,7 +99,7 @@ services:
   # Contract Service
   contract:
     build:
-      context: .
+      context: ./backend
       dockerfile: ./apps/contract/Dockerfile
     container_name: rental-contract
     restart: always
@@ -102,7 +115,7 @@ services:
   # Email Service
   email:
     build:
-      context: .
+      context: ./backend
       dockerfile: ./apps/email/Dockerfile
     container_name: rental-email
     restart: always
@@ -111,9 +124,12 @@ services:
       - EMAIL_SERVICE_URL=0.0.0.0:5003
       - EMAIL_HOST=${EMAIL_HOST:-smtp.gmail.com}
       - EMAIL_PORT=${EMAIL_PORT:-587}
+      - EMAIL_USE_SMTP=true
+      - EMAIL_SECURE=false
+      - MAIL_REQUIRE_TLS=true
       - EMAIL_USER=${EMAIL_USER}
       - EMAIL_PASSWORD=${EMAIL_PASSWORD}
-      - EMAIL_FROM=${EMAIL_FROM:-no-reply@rentalmanagement.com}
+      - EMAIL_FROM_ADDRESS=${EMAIL_FROM_ADDRESS:-no-reply@rentalmanagement.com}
     networks:
       - rental-network
 

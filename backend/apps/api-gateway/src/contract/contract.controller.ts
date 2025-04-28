@@ -36,15 +36,17 @@ import {
   StayRecordPaginationSwaggerDto,
 } from '../../dto/contract.dto';
 import { Contract } from '@app/commonn';
+import { Roles } from '../decorators/roles.decorator';
 
 @ApiTags('contract')
 @Controller('contract')
+@UseGuards(AuthGuard('jwt'))
+@Roles('admin') // Chỉ cho phép admin truy cập toàn bộ contract controller
+@ApiBearerAuth()
 export class ContractController {
   constructor(private readonly contractService: ContractService) {}
 
   @Post('contracts')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Tạo hợp đồng mới' })
   @ApiBody({ type: CreateContractSwaggerDto })
   @ApiResponse({ status: 201, description: 'Tạo hợp đồng thành công', type: ContractSwaggerDto })
@@ -57,8 +59,6 @@ export class ContractController {
   }
 
   @Get('contracts')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Lấy danh sách hợp đồng' })
   @ApiQuery({ name: 'page', required: false, example: 1 })
   @ApiQuery({ name: 'limit', required: false, example: 0 })
@@ -81,8 +81,6 @@ export class ContractController {
   }
 
   @Get('contracts/:id')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Lấy thông tin hợp đồng theo ID' })
   @ApiParam({ name: 'id' })
   @ApiResponse({ status: 200, description: 'Chi tiết hợp đồng', type: ContractSwaggerDto })
@@ -94,9 +92,7 @@ export class ContractController {
     );
   }
 
-  @Patch('contract/:id')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
+  @Patch('contracts/:id')
   @ApiOperation({ summary: 'Cập nhật hợp đồng' })
   @ApiParam({ name: 'id' })
   @ApiBody({ type: UpdateContractSwaggerDto })
@@ -109,9 +105,7 @@ export class ContractController {
     );
   }
 
-  @Delete('contract/:id')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
+  @Delete('contracts/:id')
   @ApiOperation({ summary: 'Xóa hợp đồng' })
   @ApiParam({ name: 'id' })
   @ApiResponse({ status: 200, description: 'Đã xóa hợp đồng', type: ContractSwaggerDto })
@@ -124,8 +118,6 @@ export class ContractController {
   }
 
   @Post('stay-records')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Tạo bản ghi tạm trú mới' })
   @ApiBody({ type: CreateStayRecordSwaggerDto })
   @ApiResponse({ status: 201, description: 'Tạo bản ghi tạm trú thành công', type: StayRecordSwaggerDto })
@@ -138,8 +130,6 @@ export class ContractController {
   }
 
   @Get('stay-records')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Lấy danh sách bản ghi tạm trú với bộ lọc' })
   @ApiQuery({ name: 'page', required: false, example: 1 })
   @ApiQuery({ name: 'limit', required: false, example: 10 })
@@ -179,8 +169,6 @@ export class ContractController {
   }
 
   @Get('stay-records/:id')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Lấy chi tiết bản ghi tạm trú theo ID' })
   @ApiParam({ name: 'id', description: 'ID bản ghi tạm trú' })
   @ApiResponse({ status: 200, description: 'Chi tiết bản ghi tạm trú', type: StayRecordSwaggerDto })
@@ -193,8 +181,6 @@ export class ContractController {
   }
 
   @Patch('stay-records/:id')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Cập nhật thông tin bản ghi tạm trú' })
   @ApiParam({ name: 'id', description: 'ID bản ghi tạm trú' })
   @ApiBody({ type: UpdateStayRecordSwaggerDto })
@@ -208,8 +194,6 @@ export class ContractController {
   }
 
   @Delete('stay-records/:id')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Xóa bản ghi tạm trú' })
   @ApiParam({ name: 'id', description: 'ID bản ghi tạm trú' })
   @ApiResponse({ status: 200, description: 'Xóa bản ghi tạm trú thành công', type: StayRecordSwaggerDto })
