@@ -22,7 +22,7 @@ const TenantTable = ({ tenants, rooms, onViewDetails, isReservationTab }) => {
   // Hàm xác định trạng thái
   const getStatus = (tenant) => {
     // Nếu đang ở tab "Khách cọc giữ chỗ" hoặc tenant là khách cọc
-    if (isReservationTab || (tenant.holdingDepositPrice > 0 && tenant.startDate)) {
+    if (isReservationTab) {
       const startDate = tenant.startDate ? new Date(tenant.startDate) : null;
       const isOverdue = startDate && startDate < currentDate;
       return {
@@ -31,7 +31,7 @@ const TenantTable = ({ tenants, rooms, onViewDetails, isReservationTab }) => {
       };
     }
     // Nếu là khách thuê (có isActive)
-    if (tenant.isActive === true) {
+    else if (tenant.isActive === true) {
       return {
         text: tenant.isActive ? 'Đang thuê' : 'Rời đi',
         className: '',

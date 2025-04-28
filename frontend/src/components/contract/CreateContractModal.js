@@ -10,22 +10,19 @@ const DURATION_OPTIONS = [
   { label: 'Tùy chỉnh', months: 0 },
 ];
 
-const FAKE_ROOMS = ['Phòng 101', 'Phòng 102', 'Phòng 203'];
-const FAKE_SERVICES = [
-  { name: 'Điện', price: '3.500đ/kWh' },
-  { name: 'Nước', price: '20.000đ/m³' },
-  { name: 'Internet', price: '100.000đ/tháng' },
-];
-const FAKE_ASSETS = ['Giường', 'Tủ lạnh', 'Máy giặt', 'Bàn học'];
-
-// Danh sách dịch vụ và tài sản có thể chọn thêm
-const ADDITIONAL_SERVICES = [
-  { name: 'Vệ sinh', price: '50.000đ/lần' },
-  { name: 'Giữ xe', price: '80.000đ/tháng' },
-];
-const ADDITIONAL_ASSETS = ['Bếp điện', 'Điều hòa', 'Tivi'];
-
-const CreateContractModal = ({ isOpen, onClose }) => {
+const CreateContractModal = ({
+  isOpen,
+  onClose,
+  onContractCreated,
+  createContract,
+  rooms,
+  allServices,
+  allAssets,
+  roomServicesMap,
+  roomAssetsMap,
+  fetchTenantsForRoom,
+  createTenant,
+}) => {
   const [duration, setDuration] = useState(12);
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(null);
@@ -33,23 +30,80 @@ const CreateContractModal = ({ isOpen, onClose }) => {
   const [guests, setGuests] = useState([{ name: '', phone: '', email: '' }]);
 
   // Thông tin hợp đồng
-  const [selectedRoom, setSelectedRoom] = useState('');
+  const [selectedRoomId, setSelectedRoomId] = useState('');
   const [rentPrice, setRentPrice] = useState('');
   const [deposit, setDeposit] = useState('');
 
   // Chu kỳ thu tiền
   const [paymentCycle, setPaymentCycle] = useState('1 tháng');
-  const [paymentDate, setPaymentDate] = useState(1); // ngày trong tháng
+  const [paymentDate, setPaymentDate] = useState(1);
 
   // State cho dịch vụ và tài sản
-  const [selectedServices, setSelectedServices] = useState(FAKE_SERVICES);
-  const [selectedAssets, setSelectedAssets] = useState(FAKE_ASSETS);
+  const [roomServices, setRoomServices] = useState([]);
+  const [selectedServices, setSelectedServices] = useState([]);
+  const [roomAssets, setRoomAssets] = useState([]);
+  const [selectedAssets, setSelectedAssets] = useState([]);
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
-  const [tempServices, setTempServices] = useState(FAKE_SERVICES);
-  const [tempAssets, setTempAssets] = useState(FAKE_ASSETS);
+  const [tempServices, setTempServices] = useState([]);
+  const [tempAssets, setTempAssets] = useState([]);
   const [selectAllServices, setSelectAllServices] = useState(false);
   const [selectAllAssets, setSelectAllAssets] = useState(false);
+  const [tenantsForRoom, setTenantsForRoom] = useState([]);
+  // State for loading and error handling
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Update room-specific services, assets, rental price, deposit, and tenants when a room is selected
+  useEffect(() => {
+    if (!selectedRoomId) {
+      setRoomServices([]);
+      setRoomAssets([]);
+      setSelectedServices([]);
+      setSelectedAssets([]);
+      setRentPrice('');
+      setDeposit('');
+      setGuests([{ name: '', phone: '', email: '' }]);
+      setTenantsForRoom([]);
+      return;
+    }
+    let isMounted = true;
+    // Get room-specific services and assets
+    const servicesForRoom = roomServicesMap[selectedRoomId] || [];
+    const assetsForRoom = roomAssetsMap[selectedRoomId] || [];
+
+    setRoomServices(servicesForRoom);
+    setSelectedServices(servicesForRoom);
+    setTempServices(servicesForRoom);
+
+    setRoomAssets(assetsForRoom);
+    setSelectedAssets(assetsForRoom);
+    setTempAssets(assetsForRoom);
+
+    // Get rental price and deposit
+    const selectedRoom = rooms.find((room) => room.id === selectedRoomId);
+    if (selectedRoom) {
+      setRentPrice(selectedRoom.price ? selectedRoom.price.toString() : '');
+      setDeposit(selectedRoom.depositPrice ? selectedRoom.depositPrice.toString() : '');
+    }
+
+    // Get tenants for the selected room
+    // Fetch tenants for the selected room
+    const fetchTenants = async () => {
+      const fetchedTenants = await fetchTenantsForRoom(selectedRoomId);      setTenantsForRoom(fetchedTenants);
+      if (tenantsForRoom.length > 0) {
+        const mappedGuests = tenantsForRoom.map((tenant) => ({
+          name: tenant.name || '',
+          phone: tenant.phone || '',
+          email: tenant.email || '',
+        }));
+        setGuests(mappedGuests);
+      } else {
+        setGuests([{ name: '', phone: '', email: '' }]);
+      }
+    };
+    fetchTenants();
+  }, [selectedRoomId, roomServicesMap, roomAssetsMap, fetchTenantsForRoom, rooms]);
 
   useEffect(() => {
     if (duration > 0) {
@@ -61,54 +115,65 @@ const CreateContractModal = ({ isOpen, onClose }) => {
     }
   }, [duration, startDate, customEndDate]);
 
-  // Cập nhật trạng thái chọn tất cả dịch vụ
   useEffect(() => {
-    const allServices = [...FAKE_SERVICES, ...ADDITIONAL_SERVICES];
     setSelectAllServices(tempServices.length === allServices.length);
-  }, [tempServices]);
+  }, [tempServices, allServices]);
 
-  // Cập nhật trạng thái chọn tất cả tài sản
   useEffect(() => {
-    const allAssets = [...FAKE_ASSETS, ...ADDITIONAL_ASSETS];
     setSelectAllAssets(tempAssets.length === allAssets.length);
-  }, [tempAssets]);
+  }, [tempAssets, allAssets]);
 
   const handleAddGuest = () => {
     setGuests([...guests, { name: '', phone: '', email: '' }]);
+    setTenantsForRoom((prev) => prev.length > 0 ? [] : prev);
+    
   };
 
   const handleRemoveGuest = (index) => {
     const updated = guests.filter((_, idx) => idx !== index);
     setGuests(updated);
+    if(updated.length === 0 || index < tenantsForRoom.length) {
+      setTenantsForRoom([]);
+    }
   };
 
   const handleChangeGuest = (index, field, value) => {
     const updatedGuests = [...guests];
     updatedGuests[index][field] = value;
     setGuests(updatedGuests);
+    if (tenantsForRoom && index < tenantsForRoom.length) {
+      const originalTenanta = tenantsForRoom[index];
+      const modifiedTenant = updatedGuests[index];
+      if(
+        originalTenanta.name !== modifiedTenant.name || 
+        originalTenanta.phone !== modifiedTenant.phone ||
+        originalTenanta.email !== modifiedTenant.email
+      ){
+        setTenantsForRoom((prev) => {prev.slice(0, index)});
+      }
+    } else if(!tenantsForRoom){
+      console.warn('tenantsForRoom is undefined in handleChangeGuest:', { index, field, value, guests });
+    }
   };
 
-  // Xử lý chọn tất cả dịch vụ
   const handleSelectAllServices = () => {
     if (selectAllServices) {
       setTempServices([]);
     } else {
-      setTempServices([...FAKE_SERVICES, ...ADDITIONAL_SERVICES]);
+      setTempServices(allServices);
     }
     setSelectAllServices(!selectAllServices);
   };
 
-  // Xử lý chọn tất cả tài sản
   const handleSelectAllAssets = () => {
     if (selectAllAssets) {
       setTempAssets([]);
     } else {
-      setTempAssets([...FAKE_ASSETS, ...ADDITIONAL_ASSETS]);
+      setTempAssets(allAssets);
     }
     setSelectAllAssets(!selectAllAssets);
   };
 
-  // Xử lý chọn dịch vụ
   const handleServiceChange = (service) => {
     const isSelected = tempServices.some((s) => s.name === service.name);
     if (isSelected) {
@@ -118,7 +183,6 @@ const CreateContractModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // Xử lý chọn tài sản
   const handleAssetChange = (asset) => {
     const isSelected = tempAssets.includes(asset);
     if (isSelected) {
@@ -128,16 +192,149 @@ const CreateContractModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // Áp dụng dịch vụ
   const applyServices = () => {
     setSelectedServices(tempServices);
     setIsServiceModalOpen(false);
   };
 
-  // Áp dụng tài sản
   const applyAssets = () => {
     setSelectedAssets(tempAssets);
     setIsAssetModalOpen(false);
+  };
+
+  const handleCreateContract = async () => {
+    if (!selectedRoomId) {
+      alert('Vui lòng chọn phòng!');
+      return;
+    }
+
+    if (guests.length === 0 || !guests[0].name) {
+      alert('Vui lòng thêm ít nhất một khách thuê và nhập tên!');
+      return;
+    }
+
+    if (!startDate || !endDate) {
+      alert('Vui lòng chọn ngày bắt đầu và ngày kết thúc!');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+
+    try {
+      let tenantId;
+      // Use existing tenantId if available and not modified, otherwise create a new tenant
+      if (tenantsForRoom.length > 0 && guests[0].name === tenantsForRoom[0].name && guests[0].phone === tenantsForRoom[0].phone && guests[0].email === tenantsForRoom[0].email) {
+        tenantId = tenantsForRoom[0].id; // Use existing tenantId
+      } else {
+        const primaryGuest = guests[0];
+        const tenantData = {
+          name: primaryGuest.name,
+          phone: primaryGuest.phone,
+          email: primaryGuest.email,
+          roomId: selectedRoomId,
+          isLeadRoom: true,
+        };
+        tenantId = await createTenant(tenantData);
+      }
+      const formattedStartDate = startDate.toISOString().split('T')[0];
+      const formattedEndDate = endDate.toISOString().split('T')[0];
+
+      const contractData = {
+        roomId: selectedRoomId,
+        tenantId: tenantId,
+        startDate: formattedStartDate,
+        endDate: formattedEndDate,
+        content: generateContractContent(),
+      };
+
+      console.log('Creating contract with data:', contractData);
+
+      const response = await createContract(contractData);
+      console.log('Create contract response:', response);
+
+      alert('Tạo hợp đồng thành công!');
+
+      onContractCreated();
+
+      onClose();
+
+      resetForm();
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || err.message || 'Lỗi không xác định.';
+      setError('Không thể tạo hợp đồng: ' + errorMessage);
+      alert('Không thể tạo hợp đồng: ' + errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setDuration(12);
+    setStartDate(new Date());
+    setEndDate(null);
+    setCustomEndDate(null);
+    setGuests([{ name: '', phone: '', email: '' }]);
+    setTenantsForRoom([]);
+    setSelectedRoomId('');
+    setRentPrice('');
+    setDeposit('');
+    setPaymentCycle('1 tháng');
+    setPaymentDate(1);
+    setSelectedServices([]);
+    setSelectedAssets([]);
+    setTempServices([]);
+    setTempAssets([]);
+    setSelectAllServices(false);
+    setSelectAllAssets(false);
+  };
+
+  const generateContractContent = () => {
+    const room = rooms.find((r) => r.id === selectedRoomId)?.roomNumber || 'N/A';
+    const tenantName = guests[0].name || 'N/A';
+    const formattedStartDate = startDate.toLocaleDateString('vi-VN');
+    const formattedEndDate = endDate.toLocaleDateString('vi-VN');
+
+    return `
+CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+Độc lập - Tự do - Hạnh phúc
+------***------
+HỢP ĐỒNG THUÊ PHÒNG TRỌ
+
+Hôm nay, ngày ${new Date().toLocaleDateString('vi-VN')}, chúng tôi gồm:
+
+BÊN CHO THUÊ (BÊN A):
+- Họ và tên: [Tên chủ nhà]
+- Địa chỉ: [Địa chỉ chủ nhà]
+
+BÊN THUÊ (BÊN B):
+- Họ và tên: ${tenantName}
+- Số điện thoại: ${guests[0].phone || 'N/A'}
+- Email: ${guests[0].email || 'N/A'}
+
+Đã thỏa thuận và ký kết hợp đồng thuê phòng trọ với các điều khoản sau:
+
+Điều 1: Đối tượng hợp đồng
+- Bên A đồng ý cho Bên B thuê phòng số ${room}.
+- Giá thuê: ${Number(rentPrice).toLocaleString('vi-VN')} VNĐ/tháng.
+- Tiền cọc: ${Number(deposit).toLocaleString('vi-VN')} VNĐ.
+
+Điều 2: Thời hạn thuê
+- Thời gian thuê: từ ngày ${formattedStartDate} đến ngày ${formattedEndDate}.
+- Chu kỳ thu tiền: ${paymentCycle}, ngày thu tiền mỗi kỳ: ngày ${paymentDate}.
+
+Điều 3: Dịch vụ áp dụng
+${selectedServices.map((s) => `- ${s.name}: ${s.price || 'N/A'}`).join('\n')}
+
+Điều 4: Tài sản trong phòng
+${selectedAssets.map((a) => `- ${a}`).join('\n')}
+
+Điều 5: Điều khoản khác
+- Các bên cam kết thực hiện đúng các điều khoản trong hợp đồng.
+- Hợp đồng có hiệu lực từ ngày ký.
+
+ĐẠI DIỆN BÊN A                ĐẠI DIỆN BÊN B
+(Ký, ghi rõ họ tên)          (Ký, ghi rõ họ tên)
+    `;
   };
 
   if (!isOpen) return null;
@@ -146,6 +343,9 @@ const CreateContractModal = ({ isOpen, onClose }) => {
     <div className="ccm-modal-overlay">
       <div className="ccm-modal">
         <h2>Thêm hợp đồng</h2>
+
+        {error && <div className="ccm-error">{error}</div>}
+        {loading && <div className="ccm-loading">Đang tạo hợp đồng...</div>}
 
         {/* Thời hạn */}
         <label>Thời hạn hợp đồng</label>
@@ -185,10 +385,15 @@ const CreateContractModal = ({ isOpen, onClose }) => {
         <div className="ccm-contract-info-row">
           <div className="ccm-contract-field">
             <label>Phòng thuê</label>
-            <select value={selectedRoom} onChange={(e) => setSelectedRoom(e.target.value)}>
+            <select
+              value={selectedRoomId}
+              onChange={(e) => setSelectedRoomId(e.target.value)}
+            >
               <option value="">Chọn phòng</option>
-              {FAKE_ROOMS.map((room) => (
-                <option key={room} value={room}>{room}</option>
+              {rooms.map((room) => (
+                <option key={room.id} value={room.id}>
+                  Phòng {room.roomNumber}
+                </option>
               ))}
             </select>
           </div>
@@ -264,9 +469,7 @@ const CreateContractModal = ({ isOpen, onClose }) => {
         <button
           onClick={() => {
             setTempServices(selectedServices);
-            setSelectAllServices(
-              selectedServices.length === [...FAKE_SERVICES, ...ADDITIONAL_SERVICES].length
-            );
+            setSelectAllServices(selectedServices.length === allServices.length);
             setIsServiceModalOpen(true);
           }}
           className="ccm-add-item-btn"
@@ -277,7 +480,7 @@ const CreateContractModal = ({ isOpen, onClose }) => {
           {selectedServices.map((service, idx) => (
             <div key={idx} className="ccm-service-card">
               <span className="ccm-service-name">{service.name}</span>
-              <span className="ccm-service-price">{service.price}</span>
+              <span className="ccm-service-price">{service.price || 'N/A'}</span>
             </div>
           ))}
         </div>
@@ -295,7 +498,7 @@ const CreateContractModal = ({ isOpen, onClose }) => {
                 />
                 <label>Chọn tất cả</label>
               </div>
-              {[...FAKE_SERVICES, ...ADDITIONAL_SERVICES].map((service, idx) => (
+              {allServices.map((service, idx) => (
                 <div key={idx} className="ccm-checkbox-item">
                   <input
                     type="checkbox"
@@ -303,7 +506,7 @@ const CreateContractModal = ({ isOpen, onClose }) => {
                     onChange={() => handleServiceChange(service)}
                   />
                   <label>
-                    {service.name} - {service.price}
+                    {service.name} - {service.price || 'N/A'}
                   </label>
                 </div>
               ))}
@@ -320,9 +523,7 @@ const CreateContractModal = ({ isOpen, onClose }) => {
         <button
           onClick={() => {
             setTempAssets(selectedAssets);
-            setSelectAllAssets(
-              selectedAssets.length === [...FAKE_ASSETS, ...ADDITIONAL_ASSETS].length
-            );
+            setSelectAllAssets(selectedAssets.length === allAssets.length);
             setIsAssetModalOpen(true);
           }}
           className="ccm-add-item-btn"
@@ -350,7 +551,7 @@ const CreateContractModal = ({ isOpen, onClose }) => {
                 />
                 <label>Chọn tất cả</label>
               </div>
-              {[...FAKE_ASSETS, ...ADDITIONAL_ASSETS].map((asset, idx) => (
+              {allAssets.map((asset, idx) => (
                 <div key={idx} className="ccm-checkbox-item">
                   <input
                     type="checkbox"
@@ -370,8 +571,10 @@ const CreateContractModal = ({ isOpen, onClose }) => {
 
         {/* Action */}
         <div className="ccm-modal-actions">
-          <button onClick={onClose}>Đóng</button>
-          <button className="ccm-primary">Tạo hợp đồng</button>
+          <button onClick={onClose} disabled={loading}>Đóng</button>
+          <button className="ccm-primary" onClick={handleCreateContract} disabled={loading}>
+            Tạo hợp đồng
+          </button>
         </div>
       </div>
     </div>

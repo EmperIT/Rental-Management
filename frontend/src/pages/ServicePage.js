@@ -55,20 +55,31 @@ export default function ServicePage() {
             const service = mappedServices.find((s) => s.name === rs.service?.name);
             if (!service) {
               console.warn(`Service not found in mappedServices for room ${room.id}:`, rs);
+              return null;
             }
             return {
-              id: service ? service.id : null,
-              name: rs.service?.name || null,
+              id: service.id,
+              name: rs.service?.name,
               oldIndex: rs.oldIndex || 0,
               newIndex: rs.newIndex || 0,
-              inUse: rs.isActive !== undefined ? rs.isActive : rs.active !== undefined ? rs.active : true,
+              inUse: rs.isActive !== undefined ? rs.isActive : rs.active !== undefined ? rs.active : false,
             };
           })
-          .filter((rs) => rs.id && rs.name);
+          .filter((rs) => rs && rs.id && rs.name);
+
+        // Calculate registration status for this room
+        const registrationStatus = {};
+        const feeServices = mappedServices.filter((service) => service.type === 'FEE');
+        for (const service of feeServices) {
+          const isRegistered = servicesArray.some((rs) => rs.service?.name === service.name);
+          registrationStatus[service.name] = isRegistered;
+        }
+        console.log(`Registration status for room ${room.id}:`, registrationStatus);
 
         return {
           ...room,
           services: mappedRoomServices,
+          registrationStatus, // Add registrationStatus to the room object
         };
       })
     );
@@ -118,22 +129,33 @@ export default function ServicePage() {
                 const service = validatedServices.find((s) => s.name === rs.service?.name);
                 if (!service) {
                   console.warn(`Service not found in mappedServices for room ${room.id}:`, rs);
+                  return null;
                 }
                 return {
-                  id: service ? service.id : null,
-                  name: rs.service?.name || null,
+                  id: service.id,
+                  name: rs.service?.name,
                   oldIndex: rs.oldIndex || 0,
                   newIndex: rs.newIndex || 0,
-                  inUse: rs.isActive !== undefined ? rs.isActive : rs.active !== undefined ? rs.active : true,
+                  inUse: rs.isActive !== undefined ? rs.isActive : rs.active !== undefined ? rs.active : false,
                 };
               })
-              .filter((rs) => rs.id && rs.name);
+              .filter((rs) => rs && rs.id && rs.name);
+
+            // Calculate registration status for this room
+            const registrationStatus = {};
+            const feeServices = validatedServices.filter((service) => service.type === 'FEE');
+            for (const service of feeServices) {
+              const isRegistered = servicesArray.some((rs) => rs.service?.name === service.name);
+              registrationStatus[service.name] = isRegistered;
+            }
+            console.log(`Registration status for room ${room.id}:`, registrationStatus);
 
             return {
               id: room.id,
               name: room.roomNumber,
               price: room.price || 0,
               services: mappedRoomServices,
+              registrationStatus, // Add registrationStatus to the room object
             };
           })
         );
@@ -278,6 +300,8 @@ export default function ServicePage() {
         oldIndex: updatedService.oldIndex || 0,
         newIndex: updatedService.newIndex || 0,
         isActive: updatedService.inUse,
+        quantity: 1,
+        customPrice: service.rate,
       };
 
       console.log(`Updating room service for room ${roomId}, service ${service.name}:`, roomServiceData);
@@ -305,10 +329,10 @@ export default function ServicePage() {
             name: rs.service?.name || null,
             oldIndex: rs.oldIndex || 0,
             newIndex: rs.newIndex || 0,
-            inUse: rs.isActive !== undefined ? rs.isActive : rs.active !== undefined ? rs.active : true,
+            inUse: rs.isActive !== undefined ? rs.isActive : rs.active !== undefined ? rs.active : false,
           };
         })
-        .filter((rs) => rs.id && rs.name);
+        .filter((rs) => rs && rs.id && rs.name);
 
       console.log(`Mapped room services for room ${roomId}:`, mappedRoomServices.map(rs => ({
         id: rs.id,
@@ -318,15 +342,25 @@ export default function ServicePage() {
         newIndex: rs.newIndex
       })));
 
+      // Recalculate registration status after update
+      const registrationStatus = {};
+      const feeServices = services.filter((service) => service.type === 'FEE');
+      for (const service of feeServices) {
+        const isRegistered = updatedServicesArray.some((rs) => rs.service?.name === service.name);
+        registrationStatus[service.name] = isRegistered;
+      }
+      console.log(`Updated registration status for room ${roomId}:`, registrationStatus);
+
       setRooms((prev) =>
         prev.map((room) =>
-          room.id === roomId ? { ...room, services: mappedRoomServices } : room
+          room.id === roomId
+            ? { ...room, services: mappedRoomServices, registrationStatus }
+            : room
         )
       );
       console.log('Updated rooms after updateRoomService:', rooms);
     } catch (err) {
       console.error('Error updating room service:', err);
-      alert('Không thể cập nhật dịch vụ của phòng: ' + (err.response?.data?.message || err.message || 'Lỗi không xác định.'));
     }
   };
 
@@ -370,6 +404,7 @@ export default function ServicePage() {
             key={room.id}
             room={room}
             services={services}
+            registrationStatus={room.registrationStatus || {}} // Pass registrationStatus as a prop
             onUpdateService={updateRoomServiceHandler}
           />
         ))}
