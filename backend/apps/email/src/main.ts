@@ -9,7 +9,7 @@ async function bootstrap() {
     const appContext = await NestFactory.createApplicationContext(EmailModule);
     const configService = appContext.get(ConfigService);
     const grpcPort =
-      configService.get<number>('EMAIL_SERVICE_URL') || 'localhost:5001';
+      configService.get<number>('EMAIL_SERVICE_URL') || 'localhost:5004';
     console.log('Running  Emailrvice on port: ', grpcPort);
     await appContext.close(); // Đóng context tạm thời
   

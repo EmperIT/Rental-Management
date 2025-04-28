@@ -124,9 +124,12 @@ services:
       - EMAIL_SERVICE_URL=0.0.0.0:5003
       - EMAIL_HOST=${EMAIL_HOST:-smtp.gmail.com}
       - EMAIL_PORT=${EMAIL_PORT:-587}
+      - EMAIL_USE_SMTP=true
+      - EMAIL_SECURE=false
+      - MAIL_REQUIRE_TLS=true
       - EMAIL_USER=${EMAIL_USER}
       - EMAIL_PASSWORD=${EMAIL_PASSWORD}
-      - EMAIL_FROM=${EMAIL_FROM:-no-reply@rentalmanagement.com}
+      - EMAIL_FROM_ADDRESS=${EMAIL_FROM_ADDRESS:-no-reply@rentalmanagement.com}
     networks:
       - rental-network
 

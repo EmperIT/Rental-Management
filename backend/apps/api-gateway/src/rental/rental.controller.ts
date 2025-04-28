@@ -62,9 +62,6 @@ import { Roles } from '../decorators/roles.decorator';
 
 @ApiTags('rental')
 @Controller('rental')
-@UseGuards(AuthGuard('jwt'))
-@Roles('admin', 'manager') // Cho phép cả admin và manager truy cập
-@ApiBearerAuth()
 export class RentalController {
   constructor(private readonly rentalService: RentalService) {}
 
@@ -99,16 +96,16 @@ export class RentalController {
 
   // Dữ liệu mẫu
   private readonly meterData = [
-    { roomNumber: '001', month: '2025-03', electricity: 120, water: 20 },
-    { roomNumber: '001', month: '2025-04', electricity: 125, water: 21 },
-    { roomNumber: '002', month: '2025-03', electricity: 100, water: 18 },
-    { roomNumber: '002', month: '2025-04', electricity: 110, water: 20 },
-    { roomNumber: '003', month: '2025-03', electricity: 90, water: 17 },
-    { roomNumber: '003', month: '2025-04', electricity: 95, water: 18 },
-    { roomNumber: '004', month: '2025-03', electricity: 130, water: 22 },
-    { roomNumber: '004', month: '2025-04', electricity: 135, water: 23 },
-    { roomNumber: '005', month: '2025-03', electricity: 85, water: 15 },
-    { roomNumber: '005', month: '2025-04', electricity: 88, water: 16 },
+    { roomNumber: 'P101', month: '2025-03', electricity: 120, water: 20 },
+    { roomNumber: 'P101', month: '2025-04', electricity: 125, water: 21 },
+    { roomNumber: 'P102', month: '2025-03', electricity: 100, water: 18 },
+    { roomNumber: 'P102', month: '2025-04', electricity: 110, water: 20 },
+    { roomNumber: 'P103', month: '2025-03', electricity: 90, water: 17 },
+    { roomNumber: 'P103', month: '2025-04', electricity: 95, water: 18 },
+    { roomNumber: 'P104', month: '2025-03', electricity: 130, water: 22 },
+    { roomNumber: 'P104', month: '2025-04', electricity: 135, water: 23 },
+    { roomNumber: 'P105', month: '2025-03', electricity: 85, water: 15 },
+    { roomNumber: 'P105', month: '2025-04', electricity: 88, water: 16 },
   ];
   // API mẫu cho việc lấy dữ liệu điện nước
   @Get("meters")
