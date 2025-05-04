@@ -11,6 +11,8 @@ export const TenantSchema = new Schema({
   holdingDepositPrice: { type: Number, required: true },
   depositDate: { type: Date, default: null },
   startDate: { type: Date, default: null },
+  birthday: { type: Date, default: null },
+  gender: { type: String, default: "Nam" },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

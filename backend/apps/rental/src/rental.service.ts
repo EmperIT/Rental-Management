@@ -8,6 +8,7 @@ import { Cron, SchedulerRegistry } from '@nestjs/schedule';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom } from 'rxjs';
+import { console } from 'inspector';
 
 interface RoomDocument {
   _id: string;
@@ -810,10 +811,10 @@ export class RentalService implements OnModuleInit {
 
       const tenant = new this.tenantModel(createTenantDto);
       await tenant.save();
-
+      console.log('Tenant created:', tenant);
       // Cập nhật trạng thái phòng thành đã có người thuê
-      room.isEmpty = false;
-      await room.save();
+      //room.isEmpty = false;
+      //await room.save();
 
       return this.mapToTenant(tenant);
     } catch (error) {
@@ -858,6 +859,7 @@ export class RentalService implements OnModuleInit {
           message: `Không tìm thấy người thuê với id ${findOneTenantDto.id}`,
         });
       }
+      console.log('Tenant found:', tenant);
       return this.mapToTenant(tenant);
     } catch (error) {
       this.logger.error(`Error finding tenant: ${error.message}`, error.stack);
@@ -1922,7 +1924,7 @@ export class RentalService implements OnModuleInit {
       holdingDepositPrice: tenant.holdingDepositPrice,
       depositDate: tenant.depositDate?.toISOString() || '',
       startDate: tenant.startDate?.toISOString() || '',
-      birthday: birthdayStr,
+      birthday: tenant.birthday?.toISOString() || '',
       gender: tenant.gender,
       isActive: tenant.isActive,
       createdAt: tenant.createdAt.toISOString(),
