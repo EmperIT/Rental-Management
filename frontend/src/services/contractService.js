@@ -4,25 +4,36 @@ import api from './api';
 // ---------- CONTRACT API ----------
 
 // Tạo hợp đồng mới
+
 export const createContract = async (contractData) => {
-  const response = await api.post('/contract/contracts', contractData);
+  try {
+    console.log('Sending contract data to /contract/contracts:', JSON.stringify(contractData, null, 2));
+    const response = await api.post('/contract/contracts', contractData);
+    console.log('Create contract response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Create contract error:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      headers: error.response?.headers,
+    });
+    throw error.response?.data || error;
+  }
+};
+
+export const getContracts = async (page, limit, roomId, tenantId, isActive) => {
+  const params = { page, limit, roomId, tenantId, isActive };
+  console.log('Fetching contracts with params:', params);
+  const response = await api.get('/contract/contracts', { params });
   return response.data;
 };
 
-// Lấy danh sách hợp đồng
-export const getContracts = async (page = 1, limit = 0, roomId = '', tenantId = '', isActive = '') => {
-  const response = await api.get('/contract/contracts', {
-    params: { page, limit, roomId, tenantId, isActive },
-  });
+export const getContractById = async (contractId) => {
+  console.log('Fetching contract by ID:', contractId);
+  const response = await api.get(`/contract/contracts/${contractId}`);
   return response.data;
 };
-
-// Lấy thông tin hợp đồng theo ID
-export const getContractById = async (id) => {
-  const response = await api.get(`/contract/contracts/${id}`);
-  return response.data;
-};
-
 // Cập nhật hợp đồng
 export const updateContract = async (id, contractData) => {
   const response = await api.patch(`/contract/contract/${id}`, contractData);

@@ -173,21 +173,6 @@ const RoomFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false }
                 </div>
               )}
               <div>
-                <label htmlFor="isEmpty" className="block text-sm font-medium text-gray-700 mb-1">
-                  Trạng thái <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="isEmpty"
-                  name="isEmpty"
-                  value={formData.isEmpty ? 'true' : 'false'}
-                  onChange={handleFormChange}
-                  required
-                >
-                  <option value="true">Trống</option>
-                  <option value="false">Đang thuê</option>
-                </select>
-              </div>
-              <div>
                 <label htmlFor="images" className="block text-sm font-medium text-gray-700 mb-1">
                   Ảnh phòng
                 </label>

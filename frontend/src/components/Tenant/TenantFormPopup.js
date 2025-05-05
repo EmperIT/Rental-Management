@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes } from 'react-icons/fa';
-import { updateRoom } from '../../services/rentalService';
+import { updateRoom, findAllTenantsByFilter } from '../../services/rentalService';
 import '../../styles/Tenant/TenantFormPopup.css';
 
 const TenantFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false, rooms }) => {
@@ -12,31 +12,30 @@ const TenantFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false
     phone: initialData ? initialData.phone : '',
     identityNumber: initialData ? initialData.identityNumber : '',
     permanentAddress: initialData ? initialData.permanentAddress : '',
-    isLeadRoom: initialData ? initialData.isLeadRoom : false,
-    isActive: initialData ? initialData.isActive : true,
     holdingDepositPrice: initialData ? initialData.holdingDepositPrice : 0,
     depositDate: initialData ? initialData.depositDate : '',
     startDate: initialData ? initialData.startDate : '',
+    gender: initialData ? initialData.gender : '',
+    birthday: initialData ? (initialData.birthday || initialData.birthDate) : '',
     createdAt: initialData ? initialData.createdAt : new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });
 
   useEffect(() => {
     if (initialData) {
+      console.log('Initial data for TenantFormPopup:', initialData); // Debug
       setFormData({
         ...initialData,
+        gender: initialData.gender || '',
+        birthday: initialData.birthday || initialData.birthDate || '',
         updatedAt: new Date().toISOString(),
       });
     }
   }, [initialData]);
 
   const handleFormChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    if (type === 'checkbox') {
-      setFormData((prev) => ({ ...prev, [name]: checked }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleRoomChange = (e) => {
@@ -49,35 +48,68 @@ const TenantFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { name, phone, identityNumber, roomId, depositDate } = formData;
+    const { name, phone, identityNumber, roomId, depositDate, startDate, birthday, gender } = formData;
 
+    // Debug: Log formData
+    console.log('Tenant formData on submit:', formData);
+
+    // Validate required fields
     if (!name || !phone || !identityNumber || !roomId) {
       alert('Vui lòng điền đầy đủ các trường thông tin bắt buộc.');
       return;
     }
 
-    const tenantData = {
-      ...formData,
-      updatedAt: new Date().toISOString(),
-    };
-
-    // Cập nhật depositDate của phòng nếu có depositDate từ khách thuê
-    if (depositDate) {
-      const selectedRoom = rooms.find((room) => room.id === roomId);
-      if (selectedRoom) {
-        try {
-          await updateRoom(roomId, {
-            ...selectedRoom,
-            depositDate: depositDate,
-            updatedAt: new Date().toISOString(),
-          });
-        } catch (error) {
-          console.error('Lỗi khi cập nhật depositDate của phòng:', error);
-          alert('Không thể cập nhật ngày đặt cọc của phòng: ' + (error.response?.data?.message || 'Lỗi không xác định.'));
-          return;
-        }
+    // Validate date consistency for depositDate and startDate
+    if (depositDate && startDate) {
+      const deposit = new Date(depositDate);
+      const start = new Date(startDate);
+      if (deposit > start) {
+        alert('Ngày bắt đầu thuê không thể sớm hơn ngày đặt cọc.');
+        return;
       }
     }
+
+    // Validate birthday (must be in the past)
+    if (birthday) {
+      const birth = new Date(birthday);
+      const currentDate = new Date();
+      if (birth > currentDate) {
+        alert('Ngày sinh không thể là một ngày trong tương lai.');
+        return;
+      }
+    }
+
+    // Determine isActive based on startDate
+    const currentDate = new Date();
+    const start = startDate ? new Date(startDate) : null;
+    const isActive = start ? start <= currentDate : false;
+
+    // Determine isLeadRoom: Check if the room has any existing tenants
+    let isLeadRoom = false;
+    if (!isEdit) {
+      try {
+        const response = await findAllTenantsByFilter(roomId, undefined, 1, 1);
+        const existingTenants = response.tenants || [];
+        isLeadRoom = existingTenants.length === 0;
+      } catch (error) {
+        console.error('Lỗi khi kiểm tra khách thuê hiện có:', error);
+        alert('Không thể kiểm tra trạng thái phòng: ' + (error.response?.data?.message || 'Lỗi không xác định.'));
+        return;
+      }
+    } else {
+      isLeadRoom = initialData.isLeadRoom;
+    }
+
+    // Prepare tenant data
+    const tenantData = {
+      ...formData,
+      isActive,
+      isLeadRoom,
+      startDate: startDate || null,
+      birthday: birthday || null,
+      gender: gender || null,
+      updatedAt: new Date().toISOString(),
+    };
 
     onSubmit(tenantData);
   };
@@ -159,6 +191,19 @@ const TenantFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false
                   required
                 />
               </div>
+              <div>
+                <label htmlFor="birthday" className="popup-label">
+                  Ngày sinh
+                </label>
+                <input
+                  type="date"
+                  className="popup-input"
+                  id="birthday"
+                  name="birthday"
+                  value={formData.birthday ? formData.birthday.split('T')[0] : ''}
+                  onChange={handleFormChange}
+                />
+              </div>
             </div>
             <div className="popup-form-section">
               <div>
@@ -185,6 +230,23 @@ const TenantFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false
                       Không có phòng nào
                     </option>
                   )}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="gender" className="popup-label">
+                  Giới tính
+                </label>
+                <select
+                  className="popup-select"
+                  id="gender"
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleFormChange}
+                >
+                  <option value="">Chọn giới tính</option>
+                  <option value="Nam">Nam</option>
+                  <option value="Nữ">Nữ</option>
+                  <option value="Khác">Khác</option>
                 </select>
               </div>
               <div>
@@ -239,32 +301,6 @@ const TenantFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false
                   name="startDate"
                   value={formData.startDate ? formData.startDate.split('T')[0] : ''}
                   onChange={handleFormChange}
-                />
-              </div>
-              <div>
-                <label htmlFor="isLeadRoom" className="popup-label">
-                  Là trưởng phòng
-                </label>
-                <input
-                  type="checkbox"
-                  id="isLeadRoom"
-                  name="isLeadRoom"
-                  checked={formData.isLeadRoom}
-                  onChange={handleFormChange}
-                  className="popup-checkbox"
-                />
-              </div>
-              <div>
-                <label htmlFor="isActive" className="popup-label">
-                  Trạng thái hoạt động
-                </label>
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  name="isActive"
-                  checked={formData.isActive}
-                  onChange={handleFormChange}
-                  className="popup-checkbox"
                 />
               </div>
             </div>

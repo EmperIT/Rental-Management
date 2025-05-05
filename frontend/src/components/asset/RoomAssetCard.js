@@ -2,23 +2,25 @@ import React, { useState } from 'react';
 import { FaEye } from 'react-icons/fa';
 import '../../styles/asset/RoomAssetCard.css';
 
-export default function RoomAssetCard({ room, assets, onUpdateAsset }) {
+export default function RoomAssetCard({ room, assets, onUpdateAsset, loading, error }) {
   const [showDetails, setShowDetails] = useState(false);
 
   const toggleAssetUsage = (assetId, inUse) => {
-    let roomAsset = room.assets.find((a) => a.id === assetId);
-    if (!roomAsset) {
-      roomAsset = { id: assetId, inUse: false };
-      onUpdateAsset(room.id, assetId, roomAsset);
-    }
+    const roomAsset = (room.assets || []).find((a) => a.id === assetId) || {
+      id: assetId,
+      inUse: false,
+    };
     onUpdateAsset(room.id, assetId, { inUse });
   };
 
   const displayedAssets = showDetails
-    ? assets
+    ? assets.filter((asset) => (room.assets || []).some((a) => a.id === asset.id))
     : assets.filter((asset) =>
-        room.assets.some((a) => a.id === asset.id && a.inUse)
+        (room.assets || []).some((a) => a.id === asset.id && a.inUse)
       );
+
+  if (loading) return <div className="room-asset-card loading">Đang tải...</div>;
+  if (error) return <div className="room-asset-card error">{error}</div>;
 
   return (
     <div className="room-asset-card">
@@ -32,6 +34,7 @@ export default function RoomAssetCard({ room, assets, onUpdateAsset }) {
           <button
             className="btn-details"
             onClick={() => setShowDetails(!showDetails)}
+            aria-label={showDetails ? 'Ẩn chi tiết tài sản' : 'Xem chi tiết tài sản'}
           >
             <FaEye /> {showDetails ? 'Ẩn chi tiết' : 'Chi tiết'}
           </button>
@@ -40,7 +43,7 @@ export default function RoomAssetCard({ room, assets, onUpdateAsset }) {
           <p className="no-assets">Không có tài sản đang sử dụng</p>
         ) : (
           displayedAssets.map((asset) => {
-            const roomAsset = room.assets.find((a) => a.id === asset.id) || {
+            const roomAsset = (room.assets || []).find((a) => a.id === asset.id) || {
               id: asset.id,
               inUse: false,
             };
@@ -54,7 +57,7 @@ export default function RoomAssetCard({ room, assets, onUpdateAsset }) {
                   </span>
                   {showDetails && (
                     <div className="asset-controls">
-                      <label className="switch">
+                      <label className="switch" aria-label={`Bật/tắt ${asset.name}`}>
                         <input
                           type="checkbox"
                           checked={roomAsset.inUse}

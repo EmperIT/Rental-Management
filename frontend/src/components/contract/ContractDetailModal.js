@@ -2,7 +2,8 @@ import React from 'react';
 import '../../styles/contract/ContractDetailModal.css';
 
 const ContractDetailModal = ({ contractContent, onClose, onExport }) => {
-  // contractContent contains { id, html, contract }
+  console.log('ContractContent in ContractDetailModal:', contractContent); // Debug
+
   const contract = contractContent?.contract || {};
 
   return (
@@ -40,7 +41,7 @@ const ContractDetailModal = ({ contractContent, onClose, onExport }) => {
               </div>
               <div className="info-item">
                 <span className="info-label">Tiền cọc:</span>
-                <span className="info-value">{contract.deposit ? `${contract.deposit.toLocaleString('en-US')} VND` : 'N/A'}</span>
+                <span className="info-value">{contract.deposit ? `${contract.deposit.toLocaleString('vi-VN')} VNĐ` : 'N/A'}</span>
               </div>
             </div>
           </div>
@@ -66,8 +67,13 @@ const ContractDetailModal = ({ contractContent, onClose, onExport }) => {
 // Hàm format thời gian dạng dd/MM/yyyy
 const formatDate = (dateStr) => {
   if (!dateStr) return 'N/A';
-  const date = new Date(dateStr);
-  return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'N/A';
+    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+  } catch {
+    return 'N/A';
+  }
 };
 
 export default ContractDetailModal;

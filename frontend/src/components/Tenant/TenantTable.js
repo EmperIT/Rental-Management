@@ -1,18 +1,18 @@
 import React from 'react';
 
 const TenantTable = ({ tenants, rooms, onViewDetails, isReservationTab }) => {
-  const currentDate = new Date('2025-04-25');
+  const currentDate = new Date();
 
   // Hàm lấy số phòng
   const getRoomNumber = (roomId) => {
     if (!rooms || !Array.isArray(rooms)) return 'N/A';
-    const room = rooms.find((room) => room.id === roomId); // Sử dụng room.id thay vì room.room_id
-    return room ? room.roomNumber : 'N/A'; // Sử dụng roomNumber thay vì roomName, bỏ floor
+    const room = rooms.find((room) => room.id === roomId);
+    return room ? room.roomNumber : 'N/A';
   };
 
   // Nhóm tenants theo roomId
   const groupedTenantsByRoom = rooms.reduce((acc, room) => {
-    const roomTenants = tenants.filter((tenant) => tenant.roomId === room.id); // Sử dụng roomId và room.id
+    const roomTenants = tenants.filter((tenant) => tenant.roomId === room.id);
     if (roomTenants.length > 0) {
       acc.push({ room, tenants: roomTenants });
     }
@@ -21,27 +21,42 @@ const TenantTable = ({ tenants, rooms, onViewDetails, isReservationTab }) => {
 
   // Hàm xác định trạng thái
   const getStatus = (tenant) => {
-    // Nếu đang ở tab "Khách cọc giữ chỗ" hoặc tenant là khách cọc
+    const startDate = tenant.startDate ? new Date(tenant.startDate) : null;
+    const depositDate = tenant.depositDate ? new Date(tenant.depositDate) : null;
+
     if (isReservationTab) {
-      const startDate = tenant.startDate ? new Date(tenant.startDate) : null;
       const isOverdue = startDate && startDate < currentDate;
       return {
-        text: isOverdue ? 'Quá hạn' : 'Chuẩn bị chuyển vào',
+        text: isOverdue ? 'Quá hạn' : 'Khách cọc',
         className: isOverdue ? 'text-red-500 font-semibold' : 'text-blue-500 font-semibold',
       };
-    }
-    // Nếu là khách thuê (có isActive)
-    else if (tenant.isActive === true) {
+    } else {
+      if (!tenant.isActive) {
+        return {
+          text: 'Đã rời',
+          className: 'text-gray-500 font-semibold',
+        };
+      } else if (!depositDate) {
+        return {
+          text: 'Sắp chuyển đến',
+          className: 'text-yellow-500 font-semibold',
+        };
+      } else if (depositDate && !startDate) {
+        return {
+          text: 'Đã cọc',
+          className: 'text-green-500 font-semibold',
+        };
+      } else if (startDate && startDate <= currentDate) {
+        return {
+          text: 'Đang thuê',
+          className: 'text-blue-500 font-semibold',
+        };
+      }
       return {
-        text: tenant.isActive ? 'Đang thuê' : 'Rời đi',
+        text: 'Không xác định',
         className: '',
       };
     }
-    // Trường hợp không xác định
-    return {
-      text: 'Không xác định',
-      className: '',
-    };
   };
 
   return (
@@ -77,7 +92,7 @@ const TenantTable = ({ tenants, rooms, onViewDetails, isReservationTab }) => {
                     <td className="px-6 py-4 whitespace-nowrap">{tenant.phone}</td>
                     {!isReservationTab && (
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {tenant.isLeadRoom ? 'Có' : 'Không'} {/* Sử dụng isLeadRoom */}
+                        {tenant.isLeadRoom ? 'Có' : 'Không'}
                       </td>
                     )}
                     <td className="px-6 py-4 whitespace-nowrap">

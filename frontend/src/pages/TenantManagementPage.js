@@ -32,7 +32,6 @@ const TenantManagementPage = () => {
   const [dateTo, setDateTo] = useState('');
   const [rooms, setRooms] = useState([]);
 
-  // Hàm làm mới danh sách khách thuê
   const refreshTenants = async () => {
     try {
       const roomsData = await findAllRooms(0, 0);
@@ -40,18 +39,22 @@ const TenantManagementPage = () => {
       setRooms(roomList);
 
       const tenantPromises = roomList.map((room) =>
-        findAllTenantsByFilter(room.id, undefined, 0, 0)
+        findAllTenantsByFilter(room.id, undefined, 1, 0)
       );
       const tenantResponses = await Promise.all(tenantPromises);
 
       let allTenants = tenantResponses.flatMap((response) => response.tenants || []);
 
-      const activeTenants = allTenants.filter((t) => t.isActive && !isReservation(t));
+      const activeTenants = allTenants.filter((t) => t.isActive && !isReservation(t) && getTenantStatus(t) === 'Đang thuê');
+      const aboutToMoveInTenants = allTenants.filter((t) => t.isActive && getTenantStatus(t) === 'Sắp chuyển đến');
+      const depositedTenants = allTenants.filter((t) => t.isActive && getTenantStatus(t) === 'Đã cọc');
       const pastTenants = allTenants.filter((t) => !t.isActive);
       const reservationTenants = allTenants.filter((t) => isReservation(t));
 
-      setTenants(activeTenants.concat(pastTenants));
+      setTenants(activeTenants.concat(aboutToMoveInTenants, depositedTenants, pastTenants));
       setReservations(reservationTenants);
+
+      console.log('Refreshed tenants:', allTenants);
     } catch (error) {
       console.error('Failed to refresh tenants:', error);
       alert('Không thể làm mới danh sách khách thuê: ' + (error.response?.data?.message || 'Lỗi không xác định.'));
@@ -62,19 +65,34 @@ const TenantManagementPage = () => {
     refreshTenants();
   }, []);
 
-  // Hàm xác định khách cọc (reservation)
+  const getTenantStatus = (tenant) => {
+    const today = new Date();
+    const startDate = tenant.startDate ? new Date(tenant.startDate) : null;
+    const depositDate = tenant.depositDate ? new Date(tenant.depositDate) : null;
+
+    if (!depositDate) {
+      return 'Sắp chuyển đến';
+    } else if (depositDate && !startDate) {
+      return 'Đã cọc';
+    } else if (startDate && startDate <= today) {
+      return 'Đang thuê';
+    }
+    return 'Sắp chuyển đến';
+  };
+
   const isReservation = (tenant) => {
     const today = new Date();
     const startDate = tenant.startDate ? new Date(tenant.startDate) : null;
     return tenant.holdingDepositPrice > 0 && (!startDate || startDate > today);
   };
 
-  // Thêm khách thuê
   const handleAddTenant = async (tenantData) => {
     try {
+      console.log('Adding tenant data:', tenantData);
+      console.log('Gender and birthday:', { gender: tenantData.gender, birthday: tenantData.birthday });
       const newTenant = await createTenant({
         name: tenantData.name,
-        email: tenantData.email,
+        email: tenantData.email || '',
         phone: tenantData.phone,
         roomId: tenantData.roomId,
         isLeadRoom: tenantData.isLeadRoom || false,
@@ -82,13 +100,16 @@ const TenantManagementPage = () => {
         permanentAddress: tenantData.permanentAddress || '',
         holdingDepositPrice: tenantData.holdingDepositPrice || 0,
         depositDate: tenantData.depositDate || null,
-        startDate: tenantData.startDate || new Date().toISOString(),
+        startDate: tenantData.startDate || null,
+        gender: tenantData.gender || null,
+        birthday: tenantData.birthday || null,
         isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
 
-      await refreshTenants(); // Làm mới danh sách sau khi thêm
+      console.log('Created tenant response:', newTenant);
+      await refreshTenants();
       setShowFormPopup(false);
       alert('Thêm khách thuê thành công!');
     } catch (error) {
@@ -97,27 +118,31 @@ const TenantManagementPage = () => {
     }
   };
 
-  // Thêm khách cọc
   const handleAddReservation = async (reservationData) => {
     try {
+      console.log('Adding reservation data:', reservationData);
+      console.log('Gender and birthday:', { gender: reservationData.gender, birthday: reservationData.birthday });
       const newReservation = {
         name: reservationData.name,
-        email: reservationData.email,
+        email: reservationData.email || '',
         phone: reservationData.phone,
         roomId: reservationData.roomId,
         isLeadRoom: false,
         identityNumber: reservationData.identityNumber,
         permanentAddress: reservationData.permanentAddress || '',
         holdingDepositPrice: reservationData.holdingDepositPrice || 0,
-        depositDate: reservationData.depositDate || new Date().toISOString(),
-        startDate: reservationData.startDate || new Date().toISOString(),
+        depositDate: reservationData.depositDate || null,
+        startDate: reservationData.startDate || null,
+        gender: reservationData.gender || null,
+        birthday: reservationData.birthday || null,
         isActive: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
-      await createTenant(newReservation);
-      await refreshTenants(); // Làm mới danh sách sau khi thêm
+      const response = await createTenant(newReservation);
+      console.log('Created reservation response:', response);
+      await refreshTenants();
       setShowReservationPopup(false);
       alert('Thêm khách cọc thành công!');
     } catch (error) {
@@ -126,15 +151,19 @@ const TenantManagementPage = () => {
     }
   };
 
-  // Sửa khách thuê
   const handleEditTenant = async (tenantData) => {
     try {
+      console.log('Editing tenant data:', tenantData);
+      console.log('Gender and birthday:', { gender: tenantData.gender, birthday: tenantData.birthday });
       const updatedTenant = await updateTenant(tenantData.id, {
         ...tenantData,
+        birthday: tenantData.birthday || null,
+        gender: tenantData.gender || null,
         updatedAt: new Date().toISOString(),
       });
 
-      await refreshTenants(); // Làm mới danh sách sau khi sửa
+      console.log('Updated tenant response:', updatedTenant);
+      await refreshTenants();
       setShowFormPopup(false);
       setSelectedTenant(null);
       alert('Cập nhật khách thuê thành công!');
@@ -144,13 +173,12 @@ const TenantManagementPage = () => {
     }
   };
 
-  // Xóa khách thuê
   const handleDeleteTenant = async (tenant) => {
     const confirm = window.confirm('Bạn có chắc chắn muốn xóa khách thuê này?');
     if (confirm) {
       try {
         await removeTenant(tenant.id);
-        await refreshTenants(); // Làm mới danh sách sau khi xóa
+        await refreshTenants();
         setShowDetailsPopup(false);
         setSelectedTenant(null);
         alert('Xóa khách thuê thành công!');
@@ -175,7 +203,7 @@ const TenantManagementPage = () => {
           updatedAt: new Date().toISOString(),
         });
 
-        await refreshTenants(); // Làm mới danh sách sau khi thay đổi trạng thái
+        await refreshTenants();
         setShowDetailsPopup(false);
         setSelectedTenant(null);
         alert(`Cập nhật trạng thái khách thuê thành công!`);
@@ -198,11 +226,11 @@ const TenantManagementPage = () => {
           ...reservation,
           isActive: true,
           isLeadRoom: false,
-          startDate: new Date().toISOString(),
+          startDate: reservation.startDate || new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
 
-        await refreshTenants(); // Làm mới danh sách sau khi chuyển đổi
+        await refreshTenants();
         setShowDetailsPopup(false);
         setSelectedTenant(null);
         alert('Chuyển khách cọc thành khách thuê thành công!');
@@ -226,10 +254,17 @@ const TenantManagementPage = () => {
       }
 
       let statusMatch = true;
-      if (statusFilter && !isReservation) {
-        statusMatch = statusFilter === 'active' ? item.isActive : !item.isActive;
-      } else if (statusFilter && isReservation) {
-        statusMatch = statusFilter === 'reservation';
+      if (statusFilter) {
+        if (isReservation) {
+          statusMatch = statusFilter === 'reservation';
+        } else {
+          const tenantStatus = getTenantStatus(item);
+          statusMatch =
+            (statusFilter === 'current' && tenantStatus === 'Đang thuê') ||
+            (statusFilter === 'aboutToMoveIn' && tenantStatus === 'Sắp chuyển đến') ||
+            (statusFilter === 'deposited' && tenantStatus === 'Đã cọc') ||
+            (statusFilter === 'past' && !item.isActive);
+        }
       }
 
       let dateMatch = true;
@@ -245,13 +280,15 @@ const TenantManagementPage = () => {
   };
 
   const allTenantsAndReservations = [
-    ...tenants.map((tenant) => ({ ...tenant, type: tenant.isActive ? 'active' : 'past' })),
+    ...tenants.map((tenant) => ({ ...tenant, type: getTenantStatus(tenant) })),
     ...reservations.map((reservation) => ({ ...reservation, type: 'reservation' })),
   ];
 
   const filteredData = filterTenantsAndReservations(allTenantsAndReservations);
 
-  const filteredCurrentTenants = filteredData.filter((item) => item.type === 'active');
+  const filteredCurrentTenants = filteredData.filter((item) => item.type === 'Đang thuê');
+  const filteredAboutToMoveInTenants = filteredData.filter((item) => item.type === 'Sắp chuyển đến');
+  const filteredDepositedTenants = filteredData.filter((item) => item.type === 'Đã cọc');
   const filteredPastTenants = filteredData.filter((item) => item.type === 'past');
   const filteredReservations = filteredData.filter((item) => item.type === 'reservation');
 
@@ -270,6 +307,8 @@ const TenantManagementPage = () => {
 
         <SummaryCards
           currentTenants={filteredCurrentTenants}
+          aboutToMoveInTenants={filteredAboutToMoveInTenants}
+          depositedTenants={filteredDepositedTenants}
           pastTenants={filteredPastTenants}
           reservations={filteredReservations}
         />
@@ -293,8 +332,10 @@ const TenantManagementPage = () => {
                 className="filter-select"
               >
                 <option value="">Tất cả</option>
-                <option value="active">Khách đang thuê</option>
-                <option value="past">Khách đã rời</option>
+                <option value="current">Đang thuê</option>
+                <option value="aboutToMoveIn">Sắp chuyển đến</option>
+                <option value="deposited">Đã cọc</option>
+                <option value="past">Đã rời</option>
                 <option value="reservation">Khách cọc</option>
               </select>
             </div>
@@ -323,25 +364,53 @@ const TenantManagementPage = () => {
             className={`tab ${activeTab === 'current' ? 'active' : ''}`}
             onClick={() => setActiveTab('current')}
           >
-            Khách đang thuê ({filteredCurrentTenants.length})
+            Đang thuê ({filteredCurrentTenants.length})
+          </button>
+          <button
+            className={`tab ${activeTab === 'aboutToMoveIn' ? 'active' : ''}`}
+            onClick={() => setActiveTab('aboutToMoveIn')}
+          >
+            Sắp chuyển đến ({filteredAboutToMoveInTenants.length})
+          </button>
+          <button
+            className={`tab ${activeTab === 'deposited' ? 'active' : ''}`}
+            onClick={() => setActiveTab('deposited')}
+          >
+            Đã cọc ({filteredDepositedTenants.length})
           </button>
           <button
             className={`tab ${activeTab === 'past' ? 'active' : ''}`}
             onClick={() => setActiveTab('past')}
           >
-            Khách đã rời ({filteredPastTenants.length})
+            Đã rời ({filteredPastTenants.length})
           </button>
           <button
             className={`tab ${activeTab === 'reservation' ? 'active' : ''}`}
             onClick={() => setActiveTab('reservation')}
           >
-            Khách cọc giữ chỗ ({filteredReservations.length})
+            Khách cọc ({filteredReservations.length})
           </button>
         </div>
 
         {activeTab === 'current' && (
           <TenantTable
             tenants={filteredCurrentTenants}
+            rooms={rooms}
+            onViewDetails={(tenant) => openDetailsPopup(tenant, false)}
+            isReservationTab={false}
+          />
+        )}
+        {activeTab === 'aboutToMoveIn' && (
+          <TenantTable
+            tenants={filteredAboutToMoveInTenants}
+            rooms={rooms}
+            onViewDetails={(tenant) => openDetailsPopup(tenant, false)}
+            isReservationTab={false}
+          />
+        )}
+        {activeTab === 'deposited' && (
+          <TenantTable
+            tenants={filteredDepositedTenants}
             rooms={rooms}
             onViewDetails={(tenant) => openDetailsPopup(tenant, false)}
             isReservationTab={false}

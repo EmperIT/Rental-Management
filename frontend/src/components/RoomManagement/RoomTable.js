@@ -2,8 +2,17 @@ import React from 'react';
 import { FaEdit, FaTrash, FaBuilding, FaMoneyBill, FaCalendarAlt, FaRuler, FaUser, FaCalendarPlus } from 'react-icons/fa';
 
 const RoomTable = ({ rooms, onEdit, onDelete }) => {
-  const getStatusColor = (isEmpty) => {
-    return isEmpty ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'; // Trống hoặc Đang thuê
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Trống':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'Đã cọc':
+        return 'bg-orange-100 text-orange-700';
+      case 'Đang thuê':
+        return 'bg-green-100 text-green-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
   };
 
   return (
@@ -22,9 +31,9 @@ const RoomTable = ({ rooms, onEdit, onDelete }) => {
                 </div>
                 <div className="ml-auto">
                   <span
-                    className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(room.isEmpty)}`}
+                    className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(room.status)}`}
                   >
-                    {room.isEmpty ? 'Trống' : 'Đang thuê'}
+                    {room.status || 'Không xác định'}
                   </span>
                 </div>
               </div>

@@ -5,6 +5,7 @@ import _ from 'lodash';
 
 export default function RoomServiceCard({ room, services, registrationStatus, onUpdateService }) {
   const [showDetails, setShowDetails] = useState(false);
+  const [toggling, setToggling] = useState(false);
 
   const toggleServiceUsage = useCallback(
     _.debounce((serviceId, currentInUse, serviceName) => {
@@ -12,15 +13,21 @@ export default function RoomServiceCard({ room, services, registrationStatus, on
         console.error(`Service ID is undefined for service ${serviceName}`);
         return;
       }
+      if (toggling) {
+        console.warn(`Toggle in progress for service ${serviceName}, ignoring`);
+        return;
+      }
 
-      console.log(`Toggling service ${serviceId} (${serviceName}) for room ${room.id}: ${currentInUse} -> ${!currentInUse}`);
+      console.log(`Attempting to toggle service ${serviceId} (${serviceName}) for room ${room.id}: ${currentInUse} -> ${!currentInUse}`);
+      setToggling(true);
       onUpdateService(room.id, serviceId, {
         inUse: !currentInUse,
-        oldIndex: 0,
-        newIndex: 0,
+      }).finally(() => {
+        console.log(`Toggle completed for service ${serviceName}`);
+        setToggling(false);
       });
     }, 300),
-    [room?.id, onUpdateService]
+    [room?.id, onUpdateService, toggling]
   );
 
   if (!room || !room.id) {
@@ -29,13 +36,11 @@ export default function RoomServiceCard({ room, services, registrationStatus, on
   }
 
   console.log(`Room ${room.id} services in RoomServiceCard:`, room.services);
-
-  const feeServices = services.filter((service) => service.type === 'FEE');
-  console.log(`Fee services for room ${room.id}:`, feeServices);
+  console.log(`All services for room ${room.id}:`, services);
 
   const displayedServices = showDetails
-    ? feeServices
-    : feeServices.filter((service) =>
+    ? services
+    : services.filter((service) =>
         room.services.some((s) => s.name === service.name && s.inUse)
       );
 
@@ -71,43 +76,36 @@ export default function RoomServiceCard({ room, services, registrationStatus, on
             const inUse = roomService ? roomService.inUse : false;
             const fee = inUse ? service.rate : 0;
 
-            console.log(`Service ${service.name} (ID: ${service.id}) for room ${room.id}:`, {
+            console.log(`Service ${service.name} (ID: ${service.id}, Type: ${service.type}) for room ${room.id}:`, {
               isRegistered,
               roomService,
               inUse,
+              hasIndices: service.hasIndices,
             });
 
             return (
-              <div key={service.id} className="service-item">
+              <div key={service.id} className={`service-item ${isRegistered ? '' : 'unregistered'}`}>
                 <div className="service-header">
                   <span>
-                    {service.name} ({service.rate.toLocaleString()} đ/1{service.unit})
+                    {service.name} ({service.rate.toLocaleString()} đ/1{service.unit}, {service.type})
+                    {service.hasIndices && ' (Có chỉ số)'}
                   </span>
                   {showDetails && (
                     <div className="service-controls">
-                      {isRegistered ? (
-                        <label className="switch">
-                          <input
-                            type="checkbox"
-                            checked={inUse}
-                            onChange={() => toggleServiceUsage(service.id, inUse, service.name)}
-                          />
-                          <span className="slider"></span>
-                        </label>
-                      ) : (
-                        <span className="unregistered-service">
-                          (Chưa đăng ký)
-                        </span>
-                      )}
+                      <label className="switch">
+                        <input
+                          type="checkbox"
+                          checked={inUse}
+                          disabled={!isRegistered || toggling}
+                          onChange={() => isRegistered && toggleServiceUsage(service.id, inUse, service.name)}
+                        />
+                        <span className="slider"></span>
+                      </label>
                     </div>
                   )}
                 </div>
                 <div className="service-status">
-                  {isRegistered
-                    ? inUse
-                      ? `Phí: ${fee.toLocaleString()} đ`
-                      : 'Không sử dụng'
-                    : 'Dịch vụ chưa được đăng ký cho phòng này'}
+                  {inUse ? `Phí: ${fee.toLocaleString()} đ` : 'Không sử dụng'}
                 </div>
               </div>
             );
