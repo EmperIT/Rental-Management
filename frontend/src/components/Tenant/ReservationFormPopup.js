@@ -5,17 +5,19 @@ import '../../styles/Tenant/ReservationFormPopup.css';
 const ReservationFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = false, rooms }) => {
   const [formData, setFormData] = useState({
     tenant_id: initialData ? initialData.tenant_id : Date.now(),
-    room_id: '',
-    name: '',
-    email: '',
-    phone: '',
-    identity_number: '',
-    province: '',
-    district: '',
-    ward: '',
-    address: '',
-    is_lead_room: false,
-    is_active: false,
+    room_id: initialData ? initialData.room_id : '',
+    name: initialData ? initialData.name : '',
+    email: initialData ? initialData.email : '',
+    phone: initialData ? initialData.phone : '',
+    identity_number: initialData ? initialData.identity_number : '',
+    province: initialData ? initialData.province : '',
+    district: initialData ? initialData.district : '',
+    ward: initialData ? initialData.ward : '',
+    address: initialData ? initialData.address : '',
+    gender: initialData ? initialData.gender : '', // Added gender
+    birthday: initialData ? (initialData.birthday || initialData.birthDate) : '', // Added birthday
+    is_lead_room: initialData ? initialData.is_lead_room : false,
+    is_active: initialData ? initialData.is_active : false,
     create_at: initialData ? initialData.create_at : new Date().toISOString(),
     update_at: new Date().toISOString(),
     contract: initialData?.contract || null,
@@ -25,7 +27,12 @@ const ReservationFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = 
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      setFormData({
+        ...initialData,
+        gender: initialData.gender || '',
+        birthday: initialData.birthday || initialData.birthDate || '',
+        update_at: new Date().toISOString(),
+      });
     }
   }, [initialData]);
 
@@ -70,14 +77,31 @@ const ReservationFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = 
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const { name, phone, identity_number, room_id, moveInDate, contract } = formData;
+    const { name, phone, identity_number, room_id, moveInDate, contract, gender, birthday } = formData;
+
+    // Debug: Log formData
+    console.log('Reservation formData on submit:', formData);
 
     if (!name || !phone || !identity_number || !room_id || !moveInDate || !contract?.deposit) {
       alert('Vui lòng điền đầy đủ các trường thông tin bắt buộc.');
       return;
     }
 
-    onSubmit(formData);
+    // Validate birthday
+    if (birthday) {
+      const birth = new Date(birthday);
+      const currentDate = new Date();
+      if (birth > currentDate) {
+        alert('Ngày sinh không thể là một ngày trong tương lai.');
+        return;
+      }
+    }
+
+    onSubmit({
+      ...formData,
+      gender: formData.gender || null,
+      birthday: formData.birthday || null,
+    });
   };
 
   const formatPrice = (price) => {
@@ -155,6 +179,19 @@ const ReservationFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = 
                   required
                 />
               </div>
+              <div>
+                <label htmlFor="birthday" className="popup-label">
+                  Ngày sinh
+                </label>
+                <input
+                  type="date"
+                  className="popup-input"
+                  id="birthday"
+                  name="birthday"
+                  value={formData.birthday ? formData.birthday.split('T')[0] : ''}
+                  onChange={handleFormChange}
+                />
+              </div>
             </div>
             <div className="popup-form-section">
               <div>
@@ -181,6 +218,23 @@ const ReservationFormPopup = ({ onClose, onSubmit, initialData = null, isEdit = 
                       Không có phòng nào
                     </option>
                   )}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="gender" className="popup-label">
+                  Giới tính
+                </label>
+                <select
+                  className="popup-select"
+                  id="gender"
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleFormChange}
+                >
+                  <option value="">Chọn giới tính</option>
+                  <option value="Nam">Nam</option>
+                  <option value="Nữ">Nữ</option>
+                  <option value="Khác">Khác</option>
                 </select>
               </div>
               <div>

@@ -5,7 +5,7 @@ import RoomTable from '../components/RoomManagement/RoomTable';
 import RoomFormPopup from '../components/RoomManagement/RoomFormPopup';
 import ExcelUpload from '../components/RoomManagement/ExcelUpload';
 import '../styles/roomanagement/roomanagement.css';
-import { findAllRooms, createRoom, updateRoom, removeRoom } from '../services/rentalService';
+import { findAllRooms, createRoom, updateRoom, removeRoom, findAllTenantsByFilter } from '../services/rentalService';
 
 const RoomManagementPage = () => {
   const [activeTab, setActiveTab] = useState('manual');
@@ -22,7 +22,22 @@ const RoomManagementPage = () => {
     const fetchRooms = async () => {
       try {
         const response = await findAllRooms();
-        setRooms(response.rooms || []);
+        const fetchedRooms = response.rooms || [];
+        const updatedRooms = await Promise.all(
+          fetchedRooms.map(async (room) => {
+            const startDate = room.depositDate ? await getStartDate(room.id) : null;
+            const { isEmpty, status } = computeStatus(room.depositDate, startDate);
+            if(isEmpty != room.isEmpty){
+              const updateFormData = new FormData();
+              updateFormData.append('isEmpty', isEmpty);
+              await updateRoom(room.id, updateFormData);
+              room.isEmpty = isEmpty;
+            }
+            console.log(`Room ${room.roomNumber}: status=${status}`)
+            return{...room, status};
+          })
+        );
+        setRooms(updatedRooms);
       } catch (error) {
         console.error('Lỗi khi lấy danh sách phòng:', error);
         alert('Không thể lấy danh sách phòng. Vui lòng thử lại.');
@@ -33,7 +48,20 @@ const RoomManagementPage = () => {
 
   const handleExcelUpload = async (newRooms) => {
     try {
-      setRooms((prev) => [...prev, ...newRooms]);
+      const updatedNewRooms = await Promise.all(
+        newRooms.map(async (room) => {
+          const startDate = room.depositDate ? await getStartDate(room.id) : null;
+          const { isEmpty, status } = computeStatus(room.depositDate, await startDate);
+          if(isEmpty != room.isEmpty){
+            const updateFormData = new FormData();
+            updateFormData.append('isEmpty', isEmpty);
+            await updateRoom(room.id, updateFormData);
+            room.isEmpty = isEmpty;
+          }
+          return {...room, status};
+        })
+      )
+      setRooms((prev) => [...prev, ...updatedNewRooms]);
     } catch (error) {
       console.error('Lỗi khi upload file Excel:', error);
       alert('Không thể upload file Excel. Vui lòng thử lại.');
@@ -43,6 +71,8 @@ const RoomManagementPage = () => {
   const handleAddRoom = async (roomData) => {
     try {
       const formData = new FormData();
+      formData.append('isEmpty', true);
+
       Object.keys(roomData).forEach((key) => {
         if (key !== 'images' && key !== 'newImages' && key !== 'createdAt' && key !== 'updatedAt') {
           formData.append(key, roomData[key]);
@@ -55,6 +85,15 @@ const RoomManagementPage = () => {
       }
 
       const newRoom = await createRoom(formData);
+      const startDate = newRoom.depositDate ? await getStartDate(newRoom.id) : null;
+      const { isEmpty, status } = computeStatus(newRoom.depositDate, startDate);
+      if (isEmpty !== newRoom.isEmpty) {
+        const updateFormData = new FormData();
+        updateFormData.append('isEmpty', isEmpty);
+        await updateRoom(newRoom.id, updateFormData);
+        newRoom.isEmpty = isEmpty;
+      }
+      newRoom.status = status;
       setRooms((prev) => [...prev, newRoom]);
       setShowAddPopup(false);
       alert('Thêm phòng thành công!');
@@ -84,6 +123,15 @@ const RoomManagementPage = () => {
       // Nếu không có ảnh mới => KHÔNG append 'images' gì hết
   
       const updatedRoomData = await updateRoom(roomId, formData);
+      const startDate = updatedRoom.depositDate ? await getStartDate(roomId) : null;
+      const { isEmpty, status } = computeStatus(updatedRoom.depositDate, startDate);
+      if (isEmpty !== updatedRoomData.isEmpty) {
+        const updateFormData = new FormData();
+        updateFormData.append('isEmpty', isEmpty);
+        await updateRoom(roomId, updateFormData);
+        updatedRoomData.isEmpty = isEmpty;
+      }
+      updatedRoomData.status = status;
       setRooms((prev) =>
         prev.map((room, i) => (i === index ? updatedRoomData : room))
       );
@@ -109,7 +157,7 @@ const RoomManagementPage = () => {
 
   const filteredRooms = rooms.filter((room) => {
     const matchesSearch = room.roomNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    const roomStatus = room.isEmpty ? 'Trống' : 'Đang thuê';
+    const roomStatus = room.status || (room.isEmpty ? 'Trống' : 'Đang thuê');
     const matchesStatus = statusFilter === 'Tất cả' || roomStatus === statusFilter;
     let matchesDateFrom = true;
     let matchesDateTo = true;
@@ -126,6 +174,47 @@ const RoomManagementPage = () => {
     return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo;
   });
 
+  const computeStatus = (depositDate, startDate) => {
+    const currentDate = new Date();
+    if(!depositDate){
+      return { isEmpty: true, status: 'Trống' };
+    }
+
+    const deposit = new Date(depositDate);
+    if(isNaN(deposit)){
+      return { isEmpty: true, status: 'Trống' };
+    }
+
+    if(!startDate){
+      return { isEmpty: true, status: 'Đã cọc' };
+    }
+
+    const start = new Date(startDate);
+    if(isNaN(start)){
+      return { isEmpty: true, status: 'Đã cọc' };
+    }
+    if(start <= currentDate){
+      return { isEmpty: false, status: 'Đang thuê' };
+    }
+    else{
+      return { isEmpty: true, status: 'Đã cọc' };
+    }
+  }
+
+  const getStartDate = async(roomId) => {
+    try{
+      const res = await findAllTenantsByFilter(roomId, true, 0, 0);
+      if(res && res.tenants && res.tenants.length > 0){
+        return res.tenants[0].startDate;
+      }
+      else{
+        return null;
+      }
+    } catch(error){
+      console.error('Lỗi khi lấy ngày bắt đầu:', error);
+      return null;
+    }
+  }
   return (
     <div className="min-h-screen bg-gray-100 py-10">
       <div className="container mx-auto px-4">

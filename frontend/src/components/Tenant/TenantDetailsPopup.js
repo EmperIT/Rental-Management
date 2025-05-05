@@ -3,7 +3,10 @@ import { FaTimes } from 'react-icons/fa';
 import '../../styles/Tenant/TenantDetailsPopup.css';
 
 const TenantDetailsPopup = ({ tenant, onClose, onEdit, onDelete, onChangeStatus, onReRent, onConvertToTenant, isReservation, rooms }) => {
+  console.log('Tenant data in TenantDetailsPopup:', tenant); // Debug
+
   const selectedRoom = rooms.find((room) => room.id === tenant.roomId);
+  const currentDate = new Date();
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0);
@@ -11,6 +14,46 @@ const TenantDetailsPopup = ({ tenant, onClose, onEdit, onDelete, onChangeStatus,
 
   const formatDate = (date) => {
     return date ? new Date(date).toLocaleDateString('vi-VN') : 'N/A';
+  };
+
+  // Hàm xác định trạng thái
+  const getStatus = (tenant) => {
+    const startDate = tenant.startDate ? new Date(tenant.startDate) : null;
+    const depositDate = tenant.depositDate ? new Date(tenant.depositDate) : null;
+
+    if (isReservation) {
+      const isOverdue = startDate && startDate < currentDate;
+      return isOverdue ? 'Quá hạn' : 'Khách cọc';
+    } else {
+      if (!tenant.isActive) {
+        return 'Đã rời';
+      } else if (!depositDate) {
+        return 'Sắp chuyển đến';
+      } else if (depositDate && !startDate) {
+        return 'Đã cọc';
+      } else if (startDate && startDate <= currentDate) {
+        return 'Đang thuê';
+      }
+      return 'Không xác định';
+    }
+  };
+
+  // Hàm ánh xạ giới tính
+  const getGenderDisplay = (gender) => {
+    if (!gender) return 'N/A';
+    switch (gender) {
+      case 'Nam':
+      case 'Male':
+        return 'Nam';
+      case 'Nữ':
+      case 'Female':
+        return 'Nữ';
+      case 'Khác':
+      case 'Other':
+        return 'Khác';
+      default:
+        return 'N/A';
+    }
   };
 
   const handleChangeStatus = () => {
@@ -45,7 +88,7 @@ const TenantDetailsPopup = ({ tenant, onClose, onEdit, onDelete, onChangeStatus,
       <div className="popup-container">
         <div className="popup-header">
           <h2 className="popup-title">
-            {isReservation ? 'Chi tiết cọc giữ chỗ' : tenant.isActive ? 'Chi tiết khách đang thuê' : 'Chi tiết khách đã rời'}
+            {isReservation ? 'Chi tiết cọc giữ chỗ' : `Chi tiết khách - ${getStatus(tenant)}`}
           </h2>
           <button onClick={onClose} className="popup-close-btn">
             <FaTimes size={20} />
@@ -72,6 +115,14 @@ const TenantDetailsPopup = ({ tenant, onClose, onEdit, onDelete, onChangeStatus,
                 <span className="info-label">CMTND/CCCD:</span>
                 <span className="info-value">{tenant.identityNumber || 'N/A'}</span>
               </div>
+              <div className="info-item">
+                <span className="info-label">Giới tính:</span>
+                <span className="info-value">{getGenderDisplay(tenant.gender)}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Ngày sinh:</span>
+                <span className="info-value">{formatDate(tenant.birthday || tenant.birthDate)}</span>
+              </div>
               {isReservation && (
                 <>
                   <div className="info-item">
@@ -96,7 +147,15 @@ const TenantDetailsPopup = ({ tenant, onClose, onEdit, onDelete, onChangeStatus,
                   </div>
                   <div className="info-item">
                     <span className="info-label">Trạng thái:</span>
-                    <span className="info-value">{tenant.isActive ? 'Đang thuê' : 'Rời đi'}</span>
+                    <span className="info-value">{getStatus(tenant)}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Ngày đặt cọc:</span>
+                    <span className="info-value">{formatDate(tenant.depositDate)}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Ngày bắt đầu thuê:</span>
+                    <span className="info-value">{formatDate(tenant.startDate)}</span>
                   </div>
                   <div className="info-item">
                     <span className="info-label">Là trưởng phòng:</span>

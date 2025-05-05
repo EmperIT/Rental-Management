@@ -43,6 +43,7 @@ const InvoicePage = () => {
         const serviceResponse = await getAllServices();
         const apiServices = serviceResponse.services || [];
 
+        // Extract billing settings
         const billingDayService = apiServices.find(s => s.name === 'INVOICE_GENERATION_DAY');
         const dueDaysService = apiServices.find(s => s.name === 'INVOICE_DUE_DAYS');
         const autoSendService = apiServices.find(s => s.name === 'AUTO_SEND_INVOICE');
@@ -51,15 +52,18 @@ const InvoicePage = () => {
         setDueDays(dueDaysService ? Number(dueDaysService.value) : 7);
         setAutoGenerate(autoSendService ? autoSendService.value === 'true' : false);
 
-        const validServiceTypes = ['CONFIG', 'FEE'];
+        // Filter services: only ELECTRICITY_PRICE and WATER_PRICE for CONFIG, all FEE services
         const mappedServices = apiServices
-          .filter((service) => validServiceTypes.includes(service.type))
+          .filter((service) => 
+            (service.type === 'CONFIG' && ['ELECTRICITY_PRICE', 'WATER_PRICE'].includes(service.name)) ||
+            service.type === 'FEE'
+          )
           .map((service) => ({
             name: service.name,
             rate: parseFloat(service.value),
             unit: service.unit,
             type: service.type,
-            hasIndices: service.type === 'CONFIG',
+            hasIndices: service.type === 'CONFIG' && ['ELECTRICITY_PRICE', 'WATER_PRICE'].includes(service.name),
           }));
         setServices(mappedServices);
 
@@ -94,9 +98,8 @@ const InvoicePage = () => {
             const tenantsResponse = await findAllTenantsByFilter(room.id, true, 1, 1);
             const leadTenant = tenantsResponse.tenants?.[0] || null;
 
-            const guestsResponse =  await findAllTenantsByFilter(room.id, undefined, 1, 0);
+            const guestsResponse = await findAllTenantsByFilter(room.id, undefined, 1, 0);
             const guests = guestsResponse.total || 0;
-        
 
             return {
               id: room.id,

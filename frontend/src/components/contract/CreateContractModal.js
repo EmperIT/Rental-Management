@@ -28,17 +28,11 @@ const CreateContractModal = ({
   const [endDate, setEndDate] = useState(null);
   const [customEndDate, setCustomEndDate] = useState(null);
   const [guests, setGuests] = useState([{ name: '', phone: '', email: '' }]);
-
-  // Thông tin hợp đồng
   const [selectedRoomId, setSelectedRoomId] = useState('');
   const [rentPrice, setRentPrice] = useState('');
   const [deposit, setDeposit] = useState('');
-
-  // Chu kỳ thu tiền
   const [paymentCycle, setPaymentCycle] = useState('1 tháng');
   const [paymentDate, setPaymentDate] = useState(1);
-
-  // State cho dịch vụ và tài sản
   const [roomServices, setRoomServices] = useState([]);
   const [selectedServices, setSelectedServices] = useState([]);
   const [roomAssets, setRoomAssets] = useState([]);
@@ -50,60 +44,80 @@ const CreateContractModal = ({
   const [selectAllServices, setSelectAllServices] = useState(false);
   const [selectAllAssets, setSelectAllAssets] = useState(false);
   const [tenantsForRoom, setTenantsForRoom] = useState([]);
-  // State for loading and error handling
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
 
-  // Update room-specific services, assets, rental price, deposit, and tenants when a room is selected
+  // Debug rooms prop
+  useEffect(() => {
+    console.log('Rooms prop in CreateContractModal:', rooms);
+  }, [rooms]);
+
   useEffect(() => {
     if (!selectedRoomId) {
       setRoomServices([]);
       setRoomAssets([]);
       setSelectedServices([]);
+      setTempServices([]);
       setSelectedAssets([]);
+      setTempAssets([]);
       setRentPrice('');
       setDeposit('');
       setGuests([{ name: '', phone: '', email: '' }]);
       setTenantsForRoom([]);
       return;
     }
-    let isMounted = true;
-    // Get room-specific services and assets
-    const servicesForRoom = roomServicesMap[selectedRoomId] || [];
-    const assetsForRoom = roomAssetsMap[selectedRoomId] || [];
 
-    setRoomServices(servicesForRoom);
-    setSelectedServices(servicesForRoom);
-    setTempServices(servicesForRoom);
+    const fetchRoomData = async () => {
+      try {
+        console.log('roomServicesMap cho phòng', selectedRoomId, ':', roomServicesMap[selectedRoomId]);
+        const servicesForRoom = (roomServicesMap[selectedRoomId] || []).map(s => ({
+          id: s.id,
+          name: s.name,
+          price: s.price, // Adjusted to match roomServicesMap structure
+          unit: s.unit,
+        })).filter(
+          s => s && s.id && s.name && s.name !== 'Dịch vụ không xác định' && typeof s.price === 'number' && s.unit
+        );
+        console.log('Filtered servicesForRoom:', servicesForRoom);
 
-    setRoomAssets(assetsForRoom);
-    setSelectedAssets(assetsForRoom);
-    setTempAssets(assetsForRoom);
+        const assetsForRoom = (roomAssetsMap[selectedRoomId] || []).filter(
+          a => a && a.id && a.name
+        );
 
-    // Get rental price and deposit
-    const selectedRoom = rooms.find((room) => room.id === selectedRoomId);
-    if (selectedRoom) {
-      setRentPrice(selectedRoom.price ? selectedRoom.price.toString() : '');
-      setDeposit(selectedRoom.depositPrice ? selectedRoom.depositPrice.toString() : '');
-    }
+        setRoomServices(servicesForRoom);
+        setSelectedServices(servicesForRoom);
+        setTempServices(servicesForRoom);
 
-    // Get tenants for the selected room
-    // Fetch tenants for the selected room
-    const fetchTenants = async () => {
-      const fetchedTenants = await fetchTenantsForRoom(selectedRoomId);      setTenantsForRoom(fetchedTenants);
-      if (tenantsForRoom.length > 0) {
-        const mappedGuests = tenantsForRoom.map((tenant) => ({
-          name: tenant.name || '',
-          phone: tenant.phone || '',
-          email: tenant.email || '',
-        }));
-        setGuests(mappedGuests);
-      } else {
-        setGuests([{ name: '', phone: '', email: '' }]);
+        setRoomAssets(assetsForRoom);
+        setSelectedAssets(assetsForRoom.map(a => a.name));
+        setTempAssets(assetsForRoom.map(a => a.name));
+
+        const selectedRoom = rooms.find((room) => room.id === selectedRoomId);
+        if (selectedRoom) {
+          setRentPrice(selectedRoom.price ? selectedRoom.price.toString() : '');
+          setDeposit(selectedRoom.deposit ? selectedRoom.deposit.toString() : ''); // Use deposit instead of depositPrice
+        }
+
+        const fetchedTenants = await fetchTenantsForRoom(selectedRoomId);
+        console.log('Tenants cho room', selectedRoomId, ':', fetchedTenants);
+        setTenantsForRoom(fetchedTenants);
+        if (fetchedTenants.length > 0) {
+          setGuests(fetchedTenants.map(tenant => ({
+            name: tenant.name || '',
+            phone: tenant.phone || '',
+            email: tenant.email || '',
+          })));
+        } else {
+          setGuests([{ name: '', phone: '', email: '' }]);
+        }
+      } catch (err) {
+        setError('Không thể tải dữ liệu phòng: ' + (err.response?.data?.message || err.message || 'Lỗi không xác định.'));
       }
     };
-    fetchTenants();
-  }, [selectedRoomId, roomServicesMap, roomAssetsMap, fetchTenantsForRoom, rooms]);
+
+    fetchRoomData();
+  }, [selectedRoomId, roomServicesMap, roomAssetsMap, rooms, fetchTenantsForRoom]);
 
   useEffect(() => {
     if (duration > 0) {
@@ -116,51 +130,44 @@ const CreateContractModal = ({
   }, [duration, startDate, customEndDate]);
 
   useEffect(() => {
-    setSelectAllServices(tempServices.length === allServices.length);
-  }, [tempServices, allServices]);
+    setSelectAllServices(tempServices.length === roomServices.length && roomServices.length > 0);
+  }, [tempServices, roomServices]);
 
   useEffect(() => {
-    setSelectAllAssets(tempAssets.length === allAssets.length);
-  }, [tempAssets, allAssets]);
+    setSelectAllAssets(tempAssets.length === roomAssets.length && roomAssets.length > 0);
+  }, [tempAssets, roomAssets]);
 
   const handleAddGuest = () => {
     setGuests([...guests, { name: '', phone: '', email: '' }]);
-    setTenantsForRoom((prev) => prev.length > 0 ? [] : prev);
-    
   };
 
   const handleRemoveGuest = (index) => {
-    const updated = guests.filter((_, idx) => idx !== index);
-    setGuests(updated);
-    if(updated.length === 0 || index < tenantsForRoom.length) {
-      setTenantsForRoom([]);
-    }
+    setGuests(prev => prev.filter((_, idx) => idx !== index));
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[`guest${index}`];
+      return newErrors;
+    });
   };
 
   const handleChangeGuest = (index, field, value) => {
-    const updatedGuests = [...guests];
-    updatedGuests[index][field] = value;
-    setGuests(updatedGuests);
-    if (tenantsForRoom && index < tenantsForRoom.length) {
-      const originalTenanta = tenantsForRoom[index];
-      const modifiedTenant = updatedGuests[index];
-      if(
-        originalTenanta.name !== modifiedTenant.name || 
-        originalTenanta.phone !== modifiedTenant.phone ||
-        originalTenanta.email !== modifiedTenant.email
-      ){
-        setTenantsForRoom((prev) => {prev.slice(0, index)});
-      }
-    } else if(!tenantsForRoom){
-      console.warn('tenantsForRoom is undefined in handleChangeGuest:', { index, field, value, guests });
-    }
+    setGuests(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+    setFieldErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[`guest${index}`];
+      return newErrors;
+    });
   };
 
   const handleSelectAllServices = () => {
     if (selectAllServices) {
       setTempServices([]);
     } else {
-      setTempServices(allServices);
+      setTempServices(roomServices);
     }
     setSelectAllServices(!selectAllServices);
   };
@@ -169,31 +176,34 @@ const CreateContractModal = ({
     if (selectAllAssets) {
       setTempAssets([]);
     } else {
-      setTempAssets(allAssets);
+      setTempAssets(roomAssets.map(a => a.name));
     }
     setSelectAllAssets(!selectAllAssets);
   };
 
   const handleServiceChange = (service) => {
-    const isSelected = tempServices.some((s) => s.name === service.name);
-    if (isSelected) {
-      setTempServices(tempServices.filter((s) => s.name !== service.name));
-    } else {
-      setTempServices([...tempServices, service]);
-    }
+    if (!service || !service.id || !service.name || typeof service.price !== 'number' || !service.unit) return;
+    setTempServices(prev => {
+      const isSelected = prev.some(s => s.id === service.id);
+      if (isSelected) {
+        return prev.filter(s => s.id !== service.id);
+      }
+      return [...prev, service];
+    });
   };
 
   const handleAssetChange = (asset) => {
-    const isSelected = tempAssets.includes(asset);
-    if (isSelected) {
-      setTempAssets(tempAssets.filter((a) => a !== asset));
-    } else {
-      setTempAssets([...tempAssets, asset]);
-    }
+    setTempAssets(prev => {
+      const isSelected = prev.includes(asset);
+      if (isSelected) {
+        return prev.filter(a => a !== asset);
+      }
+      return [...prev, asset];
+    });
   };
 
   const applyServices = () => {
-    setSelectedServices(tempServices);
+    setSelectedServices(tempServices.filter(s => s && s.id && s.name && typeof s.price === 'number' && s.unit));
     setIsServiceModalOpen(false);
   };
 
@@ -202,67 +212,144 @@ const CreateContractModal = ({
     setIsAssetModalOpen(false);
   };
 
-  const handleCreateContract = async () => {
+  const validateForm = () => {
+    const errors = {};
     if (!selectedRoomId) {
-      alert('Vui lòng chọn phòng!');
-      return;
+      errors.room = 'Vui lòng chọn phòng!';
     }
-
+    if (!rentPrice || isNaN(rentPrice) || Number(rentPrice) <= 0) {
+      errors.rentPrice = 'Vui lòng nhập giá thuê hợp lệ!';
+    }
+    if (!deposit || isNaN(deposit) || Number(deposit) < 0) {
+      errors.deposit = 'Vui lòng nhập tiền cọc hợp lệ!';
+    }
+    if (!startDate) {
+      errors.startDate = 'Vui lòng chọn ngày bắt đầu!';
+    }
+    if (!endDate) {
+      errors.endDate = 'Vui lòng chọn ngày kết thúc!';
+    }
+    if (endDate && startDate && endDate <= startDate) {
+      errors.endDate = 'Ngày kết thúc phải sau ngày bắt đầu!';
+    }
     if (guests.length === 0 || !guests[0].name) {
-      alert('Vui lòng thêm ít nhất một khách thuê và nhập tên!');
+      errors.guest0 = 'Vui lòng thêm ít nhất một khách thuê và nhập tên!';
+    }
+    guests.forEach((guest, idx) => {
+      if (guest.name && !guest.phone) {
+        errors[`guest${idx}`] = 'Vui lòng nhập số điện thoại cho khách!';
+      }
+      if (guest.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guest.email)) {
+        errors[`guest${idx}`] = 'Email không hợp lệ!';
+      }
+    });
+    if (paymentDate < 1 || paymentDate > 28) {
+      errors.paymentDate = 'Ngày thu tiền phải từ 1 đến 28!';
+    }
+    if (selectedServices.length === 0) {
+      errors.services = 'Vui lòng chọn ít nhất một dịch vụ!';
+    }
+    if (selectedServices.some(s => !s || !s.id || !s.name || typeof s.price !== 'number' || !s.unit)) {
+      errors.services = 'Danh sách dịch vụ không hợp lệ! Vui lòng kiểm tra lại.';
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleCreateContract = async () => {
+    if (!validateForm()) {
       return;
     }
 
-    if (!startDate || !endDate) {
-      alert('Vui lòng chọn ngày bắt đầu và ngày kết thúc!');
-      return;
-    }
     setLoading(true);
     setError(null);
+    setFieldErrors({});
 
     try {
-      let tenantId;
-      // Use existing tenantId if available and not modified, otherwise create a new tenant
-      if (tenantsForRoom.length > 0 && guests[0].name === tenantsForRoom[0].name && guests[0].phone === tenantsForRoom[0].phone && guests[0].email === tenantsForRoom[0].email) {
-        tenantId = tenantsForRoom[0].id; // Use existing tenantId
-      } else {
-        const primaryGuest = guests[0];
-        const tenantData = {
-          name: primaryGuest.name,
-          phone: primaryGuest.phone,
-          email: primaryGuest.email,
-          roomId: selectedRoomId,
-          isLeadRoom: true,
-        };
-        tenantId = await createTenant(tenantData);
+      const tenantIds = await Promise.all(
+        guests.map(async (guest, idx) => {
+          if (!guest.name) return null;
+
+          const existingTenants = guest.email ? await fetchTenantsForRoom(selectedRoomId, guest.email) : [];
+          console.log('Existing tenants cho guest', guest.email, ':', existingTenants);
+          if (existingTenants.length > 0) {
+            const tenant = existingTenants[0];
+            if (tenant.roomId !== selectedRoomId) {
+              throw new Error(`Tenant ${tenant.name} (ID: ${tenant.id}) không liên kết với phòng ${selectedRoomId}`);
+            }
+            return tenant.id;
+          }
+
+          const tenantData = {
+            name: guest.name,
+            phone: guest.phone || '',
+            email: guest.email || '',
+            roomId: selectedRoomId,
+            isLeadRoom: idx === 0,
+            isActive: true,
+          };
+          console.log('Tạo tenant mới với dữ liệu:', tenantData);
+          const tenantId = await createTenant(tenantData);
+          console.log('Tenant mới tạo:', { tenantId, tenantData });
+          return tenantId;
+        })
+      );
+
+      const primaryTenantId = tenantIds[0];
+      if (!primaryTenantId) {
+        throw new Error('Không thể tạo hoặc tìm người thuê chính.');
       }
-      const formattedStartDate = startDate.toISOString().split('T')[0];
-      const formattedEndDate = endDate.toISOString().split('T')[0];
+
+      if (!selectedRoomId.match(/^[0-9a-fA-F]{24}$/)) {
+        throw new Error('roomId không hợp lệ.');
+      }
+      if (!primaryTenantId.match(/^[0-9a-fA-F]{24}$/)) {
+        throw new Error('tenantId không hợp lệ.');
+      }
+      const content = generateContractContent();
+      if (!content || content.length > 10000) {
+        throw new Error('Nội dung hợp đồng không hợp lệ hoặc quá dài.');
+      }
+
+      const formattedStartDate = startDate.toISOString();
+      const formattedEndDate = endDate.toISOString();
 
       const contractData = {
         roomId: selectedRoomId,
-        tenantId: tenantId,
+        tenantId: primaryTenantId,
+        content,
         startDate: formattedStartDate,
         endDate: formattedEndDate,
-        content: generateContractContent(),
+        services: selectedServices.map(s => ({
+          id: s.id,
+          name: s.name,
+          price: s.price,
+          unit: s.unit,
+        })),
       };
 
-      console.log('Creating contract with data:', contractData);
-
-      const response = await createContract(contractData);
-      console.log('Create contract response:', response);
-
+      console.log('Dữ liệu hợp đồng trước khi gửi:', JSON.stringify(contractData, null, 2));
+      await createContract(contractData);
       alert('Tạo hợp đồng thành công!');
-
       onContractCreated();
-
       onClose();
-
       resetForm();
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.message || 'Lỗi không xác định.';
-      setError('Không thể tạo hợp đồng: ' + errorMessage);
-      alert('Không thể tạo hợp đồng: ' + errorMessage);
+      if (errorMessage.includes('Internal server error')) {
+        setError('Lỗi tạo hợp đồng: Dữ liệu không hợp lệ. Vui lòng kiểm tra phòng, người thuê, dịch vụ và định dạng ngày.');
+      } else if (errorMessage.includes('roomId')) {
+        setError('Lỗi: Phòng không hợp lệ hoặc không tồn tại.');
+      } else if (errorMessage.includes('tenantId')) {
+        setError('Lỗi: Người thuê không hợp lệ hoặc không liên kết với phòng.');
+      } else {
+        setError('Không thể tạo hợp đồng: ' + errorMessage);
+      }
+      console.error('Chi tiết lỗi:', {
+        message: errorMessage,
+        response: err.response?.data,
+        status: err.response?.status,
+      });
     } finally {
       setLoading(false);
     }
@@ -286,13 +373,18 @@ const CreateContractModal = ({
     setTempAssets([]);
     setSelectAllServices(false);
     setSelectAllAssets(false);
+    setFieldErrors({});
+    setError(null);
   };
 
   const generateContractContent = () => {
-    const room = rooms.find((r) => r.id === selectedRoomId)?.roomNumber || 'N/A';
+    const room = rooms.find((r) => r.id === selectedRoomId)?.roomName || 'N/A'; // Use roomName
     const tenantName = guests[0].name || 'N/A';
     const formattedStartDate = startDate.toLocaleDateString('vi-VN');
     const formattedEndDate = endDate.toLocaleDateString('vi-VN');
+
+    const validServices = selectedServices.filter(s => s && s.id && s.name && typeof s.price === 'number' && s.unit);
+    console.log('Dịch vụ hợp lệ cho nội dung:', JSON.stringify(validServices, null, 2));
 
     return `
 CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
@@ -323,12 +415,15 @@ BÊN THUÊ (BÊN B):
 - Chu kỳ thu tiền: ${paymentCycle}, ngày thu tiền mỗi kỳ: ngày ${paymentDate}.
 
 Điều 3: Dịch vụ áp dụng
-${selectedServices.map((s) => `- ${s.name}: ${s.price || 'N/A'}`).join('\n')}
+${validServices.length > 0 ? validServices.map(s => `- ${s.name}: ${s.price.toLocaleString('vi-VN')} ${s.unit}`).join('\n') : '- Không có dịch vụ.'}
 
 Điều 4: Tài sản trong phòng
-${selectedAssets.map((a) => `- ${a}`).join('\n')}
+${selectedAssets.length > 0 ? selectedAssets.map(a => `- ${a}`).join('\n') : '- Không có tài sản.'}
 
-Điều 5: Điều khoản khác
+Điều 5: Các khách thuê
+${guests.map((g, idx) => `- ${g.name} (SĐT: ${g.phone || 'N/A'}, Email: ${g.email || 'N/A'})`).join('\n')}
+
+Điều 6: Điều khoản khác
 - Các bên cam kết thực hiện đúng các điều khoản trong hợp đồng.
 - Hợp đồng có hiệu lực từ ngày ký.
 
@@ -347,13 +442,13 @@ ${selectedAssets.map((a) => `- ${a}`).join('\n')}
         {error && <div className="ccm-error">{error}</div>}
         {loading && <div className="ccm-loading">Đang tạo hợp đồng...</div>}
 
-        {/* Thời hạn */}
         <label>Thời hạn hợp đồng</label>
         <select onChange={(e) => setDuration(Number(e.target.value))} value={duration}>
           {DURATION_OPTIONS.map((opt) => (
             <option key={opt.label} value={opt.months}>{opt.label}</option>
           ))}
         </select>
+        {fieldErrors.duration && <div className="ccm-field-error">{fieldErrors.duration}</div>}
 
         <div className="ccm-date-row">
           <div className="ccm-date-field">
@@ -364,6 +459,7 @@ ${selectedAssets.map((a) => `- ${a}`).join('\n')}
               dateFormat="dd/MM/yyyy"
               minDate={new Date()}
             />
+            {fieldErrors.startDate && <div className="ccm-field-error">{fieldErrors.startDate}</div>}
           </div>
           <div className="ccm-date-field">
             <label>Ngày kết thúc</label>
@@ -377,10 +473,10 @@ ${selectedAssets.map((a) => `- ${a}`).join('\n')}
               dateFormat="dd/MM/yyyy"
               minDate={startDate}
             />
+            {fieldErrors.endDate && <div className="ccm-field-error">{fieldErrors.endDate}</div>}
           </div>
         </div>
 
-        {/* Thông tin hợp đồng */}
         <h3>Thông tin hợp đồng</h3>
         <div className="ccm-contract-info-row">
           <div className="ccm-contract-field">
@@ -390,12 +486,17 @@ ${selectedAssets.map((a) => `- ${a}`).join('\n')}
               onChange={(e) => setSelectedRoomId(e.target.value)}
             >
               <option value="">Chọn phòng</option>
-              {rooms.map((room) => (
-                <option key={room.id} value={room.id}>
-                  Phòng {room.roomNumber}
-                </option>
-              ))}
+              {rooms.length === 0 ? (
+                <option value="" disabled>Không có phòng nào</option>
+              ) : (
+                rooms.map((room) => (
+                  <option key={room.id} value={room.id}>
+                    Phòng {room.roomName || 'N/A'}
+                  </option>
+                ))
+              )}
             </select>
+            {fieldErrors.room && <div className="ccm-field-error">{fieldErrors.room}</div>}
           </div>
           <div className="ccm-contract-field">
             <label>Giá thuê (VNĐ)</label>
@@ -405,6 +506,7 @@ ${selectedAssets.map((a) => `- ${a}`).join('\n')}
               value={rentPrice}
               onChange={(e) => setRentPrice(e.target.value)}
             />
+            {fieldErrors.rentPrice && <div className="ccm-field-error">{fieldErrors.rentPrice}</div>}
           </div>
           <div className="ccm-contract-field">
             <label>Tiền cọc (VNĐ)</label>
@@ -414,10 +516,10 @@ ${selectedAssets.map((a) => `- ${a}`).join('\n')}
               value={deposit}
               onChange={(e) => setDeposit(e.target.value)}
             />
+            {fieldErrors.deposit && <div className="ccm-field-error">{fieldErrors.deposit}</div>}
           </div>
         </div>
 
-        {/* Thông tin thanh toán */}
         <h3>Thanh toán</h3>
         <div className="ccm-payment-info-row">
           <div className="ccm-payment-field">
@@ -436,10 +538,10 @@ ${selectedAssets.map((a) => `- ${a}`).join('\n')}
               value={paymentDate}
               onChange={(e) => setPaymentDate(Number(e.target.value))}
             />
+            {fieldErrors.paymentDate && <div className="ccm-field-error">{fieldErrors.paymentDate}</div>}
           </div>
         </div>
 
-        {/* Danh sách khách */}
         <h3>Thông tin khách thuê</h3>
         <p>Tổng số khách: {guests.length}</p>
         {guests.map((guest, idx) => (
@@ -460,16 +562,15 @@ ${selectedAssets.map((a) => `- ${a}`).join('\n')}
               onChange={(e) => handleChangeGuest(idx, 'email', e.target.value)}
             />
             <button className="ccm-remove-btn" onClick={() => handleRemoveGuest(idx)}>Xoá</button>
+            {fieldErrors[`guest${idx}`] && <div className="ccm-field-error">{fieldErrors[`guest${idx}`]}</div>}
           </div>
         ))}
         <button onClick={handleAddGuest} className="ccm-add-guest-btn">+ Thêm khách</button>
 
-        {/* Dịch vụ */}
         <h3>Dịch vụ áp dụng</h3>
         <button
           onClick={() => {
             setTempServices(selectedServices);
-            setSelectAllServices(selectedServices.length === allServices.length);
             setIsServiceModalOpen(true);
           }}
           className="ccm-add-item-btn"
@@ -478,14 +579,14 @@ ${selectedAssets.map((a) => `- ${a}`).join('\n')}
         </button>
         <div className="ccm-services-grid">
           {selectedServices.map((service, idx) => (
-            <div key={idx} className="ccm-service-card">
-              <span className="ccm-service-name">{service.name}</span>
-              <span className="ccm-service-price">{service.price || 'N/A'}</span>
+            <div key={service.id || idx} className="ccm-service-card">
+              <span className="ccm-service-name">{service.name || 'N/A'}</span>
+              <span className="ccm-service-price">{service.price.toLocaleString('vi-VN')} {service.unit || ''}</span>
             </div>
           ))}
         </div>
+        {fieldErrors.services && <div className="ccm-field-error">{fieldErrors.services}</div>}
 
-        {/* Modal chọn dịch vụ */}
         {isServiceModalOpen && (
           <div className="ccm-modal-overlay" onClick={(e) => e.stopPropagation()}>
             <div className="ccm-modal ccm-selection-modal">
@@ -498,15 +599,16 @@ ${selectedAssets.map((a) => `- ${a}`).join('\n')}
                 />
                 <label>Chọn tất cả</label>
               </div>
-              {allServices.map((service, idx) => (
-                <div key={idx} className="ccm-checkbox-item">
+              {roomServices.map((service) => (
+                <div key={service.id} className="ccm-checkbox-item">
                   <input
                     type="checkbox"
-                    checked={tempServices.some((s) => s.name === service.name)}
+                    checked={tempServices.some(s => s.id === service.id)}
                     onChange={() => handleServiceChange(service)}
+                    disabled={!service.name || typeof service.price !== 'number' || !service.unit}
                   />
                   <label>
-                    {service.name} - {service.price || 'N/A'}
+                    {service.name || 'Dịch vụ không xác định'} - {service.price.toLocaleString('vi-VN')} {service.unit || ''}
                   </label>
                 </div>
               ))}
@@ -518,12 +620,10 @@ ${selectedAssets.map((a) => `- ${a}`).join('\n')}
           </div>
         )}
 
-        {/* Tài sản */}
         <h3>Tài sản có trong phòng</h3>
         <button
           onClick={() => {
             setTempAssets(selectedAssets);
-            setSelectAllAssets(selectedAssets.length === allAssets.length);
             setIsAssetModalOpen(true);
           }}
           className="ccm-add-item-btn"
@@ -538,7 +638,6 @@ ${selectedAssets.map((a) => `- ${a}`).join('\n')}
           ))}
         </div>
 
-        {/* Modal chọn tài sản */}
         {isAssetModalOpen && (
           <div className="ccm-modal-overlay" onClick={(e) => e.stopPropagation()}>
             <div className="ccm-modal ccm-selection-modal">
@@ -551,14 +650,14 @@ ${selectedAssets.map((a) => `- ${a}`).join('\n')}
                 />
                 <label>Chọn tất cả</label>
               </div>
-              {allAssets.map((asset, idx) => (
-                <div key={idx} className="ccm-checkbox-item">
+              {roomAssets.map((asset) => (
+                <div key={asset.id} className="ccm-checkbox-item">
                   <input
                     type="checkbox"
-                    checked={tempAssets.includes(asset)}
-                    onChange={() => handleAssetChange(asset)}
+                    checked={tempAssets.includes(asset.name)}
+                    onChange={() => handleAssetChange(asset.name)}
                   />
-                  <label>{asset}</label>
+                  <label>{asset.name}</label>
                 </div>
               ))}
               <div className="ccm-modal-actions">
@@ -569,7 +668,6 @@ ${selectedAssets.map((a) => `- ${a}`).join('\n')}
           </div>
         )}
 
-        {/* Action */}
         <div className="ccm-modal-actions">
           <button onClick={onClose} disabled={loading}>Đóng</button>
           <button className="ccm-primary" onClick={handleCreateContract} disabled={loading}>
